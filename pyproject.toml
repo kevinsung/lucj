@@ -1,0 +1,18 @@
+[build-system]
+requires = ["flit_core"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "lucj"
+description = "Numerical studies of the LUCJ ansatz."
+version = "0.0.0"
+requires-python = ">=3.10"
+dependencies = [
+    "ffsim",
+    "qiskit-addon-aqc-tensor[quimb-jax]",
+    "qiskit[visualization] >= 1.0",
+    "tqdm",
+]
+
+[project.optional-dependencies]
+dev = ["mypy", "pytest", "pre-commit", "ruff"]

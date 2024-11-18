@@ -1,2 +1,3 @@
 # lucj
-Numerical studies of the LUCJ ansatz
+
+Numerical studies of the LUCJ ansatz.
