@@ -17,7 +17,7 @@ MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 
 molecule_name = "n2"
 basis = "sto-6g"
-nelectron, norb = 6, 6
+nelectron, norb = 10, 8
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 plots_dir = os.path.join("plots", molecule_basename)
@@ -31,6 +31,7 @@ bond_distance = 1.0
 connectivities = [
     "all-to-all",
     "square",
+    "heavy-hex",
 ]
 n_reps_range = [
     2,
@@ -38,6 +39,9 @@ n_reps_range = [
     6,
     8,
     10,
+    12,
+    14,
+    16,
     None,
 ]
 tasks_lucj = [
@@ -85,41 +89,16 @@ colors = prop_cycle.by_key()["color"]
 alphas = [0.5, 1.0]
 linestyles = ["--", ":"]
 
-fig, axes = plt.subplots(3, len(connectivities), figsize=(12, 12), layout="constrained")
+fig, axes = plt.subplots(2, len(connectivities), figsize=(12, 6), layout="constrained")
 
 for i, connectivity in enumerate(connectivities):
     axes[0, i].axhline(
-        mol_data.hf_energy,
-        linestyle="--",
-        label="HF",
-        color=colors[-1],
-    )
-    axes[0, i].axhline(
-        mol_data.ccsd_energy,
-        linestyle="--",
-        label="CCSD",
-        color=colors[-2],
-    )
-    axes[0, i].axhline(
-        mol_data.fci_energy,
-        linestyle="-",
-        label="FCI",
-        color="black",
-    )
-
-    axes[0, i].axhline(
-        data_uccsd["energy"],
-        linestyle="--",
-        label="UCCSD",
-        color=colors[0],
-    )
-    axes[1, i].axhline(
         data_uccsd["error"],
         linestyle="--",
         label="UCCSD",
         color=colors[0],
     )
-    axes[2, i].plot(
+    axes[1, i].axhline(
         data_uccsd["spin_squared"],
         linestyle="--",
         label="UCCSD",
@@ -136,19 +115,13 @@ for i, connectivity in enumerate(connectivities):
         ),
     )
     axes[0, i].axhline(
-        data_lucj[task]["energy"],
+        data_lucj[task_lucj]["error"],
         linestyle="--",
         label="LUCJ",
         color=colors[1],
     )
     axes[1, i].axhline(
-        data_lucj[task]["error"],
-        linestyle="--",
-        label="LUCJ",
-        color=colors[1],
-    )
-    axes[2, i].plot(
-        data_lucj[task]["spin_squared"],
+        data_lucj[task_lucj]["spin_squared"],
         linestyle="--",
         label="LUCJ",
         color=colors[1],
@@ -172,19 +145,12 @@ for i, connectivity in enumerate(connectivities):
     spin_squares = [data_lucj[task]["spin_squared"] for task in tasks_lucj]
     axes[0, i].plot(
         these_n_reps,
-        energies,
-        f"{markers[0]}{linestyles[0]}",
-        label="LUCJ truncated",
-        color=colors[2],
-    )
-    axes[1, i].plot(
-        these_n_reps,
         errors,
         f"{markers[0]}{linestyles[0]}",
         label="LUCJ truncated",
         color=colors[2],
     )
-    axes[2, i].plot(
+    axes[1, i].plot(
         these_n_reps,
         spin_squares,
         f"{markers[0]}{linestyles[0]}",
@@ -192,18 +158,18 @@ for i, connectivity in enumerate(connectivities):
         color=colors[2],
     )
 
-    axes[0, i].legend()
     axes[0, i].set_title(connectivity)
-    axes[0, i].set_ylabel("Energy (Hartree)")
+    axes[0, i].set_yscale("log")
+    axes[0, i].axhline(1.6e-3, linestyle="--", color="gray")
+    axes[0, i].set_ylabel("Energy error (Hartree)")
     axes[0, i].set_xlabel("Repetitions")
-    axes[1, i].set_yscale("log")
-    axes[1, i].axhline(1.6e-3, linestyle="--", color="gray")
-    axes[1, i].set_ylabel("Energy error (Hartree)")
+    axes[0, i].set_xticks(these_n_reps)
+    axes[1, i].set_ylim(0, 0.1)
+    axes[1, i].set_ylabel("Spin squared")
     axes[1, i].set_xlabel("Repetitions")
-    axes[2, i].set_ylim(0, 0.1)
-    axes[2, i].set_ylabel("Spin squared")
-    axes[2, i].set_xlabel("Repetitions")
-    fig.suptitle(f"{molecule_basename} ({nelectron}e, {norb}o) initial parameters")
+    axes[1, i].set_xticks(these_n_reps)
+    axes[1, 0].legend()
+    fig.suptitle(f"{molecule_basename} ({nelectron}e, {norb}o) CCSD initial parameters")
 
 
 filepath = os.path.join(

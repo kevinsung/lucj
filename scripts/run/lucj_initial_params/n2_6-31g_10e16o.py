@@ -31,8 +31,8 @@ MAX_PROCESSES = 12
 OVERWRITE = True
 
 molecule_name = "n2"
-basis = "sto-6g"
-nelectron, norb = 10, 8
+basis = "6-31g"
+nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 start = 0.9
