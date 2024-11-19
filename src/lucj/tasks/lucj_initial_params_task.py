@@ -72,13 +72,13 @@ def run_lucj_initial_params_task(
         interaction_pairs=(pairs_aa, pairs_ab),
     )
 
-    logging.info(f"{task} Computing energy and other properties...\n")
-    # Compute energy and other properties of final state vector
+    # Compute final state
     final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
 
+    # Compute energy and other properties of final state vector
+    logging.info(f"{task} Computing energy and other properties...\n")
     energy = np.vdot(final_state, hamiltonian @ final_state).real
     error = energy - mol_data.fci_energy
-
     spin_squared = ffsim.spin_square(
         final_state, norb=mol_data.norb, nelec=mol_data.nelec
     )
