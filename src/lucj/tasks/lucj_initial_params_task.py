@@ -87,6 +87,7 @@ def run_lucj_initial_params_task(
         "energy": energy,
         "error": error,
         "spin_squared": spin_squared,
+        "n_reps": operator.n_reps,
     }
 
     logging.info(f"{task} Saving data...\n")

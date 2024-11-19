@@ -33,17 +33,7 @@ connectivities = [
     "square",
     "heavy-hex",
 ]
-n_reps_range = [
-    2,
-    4,
-    6,
-    8,
-    10,
-    12,
-    14,
-    16,
-    None,
-]
+n_reps_range = list(range(2, 25, 2)) + [None]
 tasks_lucj = [
     LUCJInitialParamsTask(
         molecule_basename=molecule_basename,
@@ -95,13 +85,13 @@ for i, connectivity in enumerate(connectivities):
     axes[0, i].axhline(
         data_uccsd["error"],
         linestyle="--",
-        label="UCCSD",
+        label="UCCSD init",
         color=colors[0],
     )
     axes[1, i].axhline(
         data_uccsd["spin_squared"],
         linestyle="--",
-        label="UCCSD",
+        label="UCCSD init",
         color=colors[0],
     )
 
@@ -114,16 +104,17 @@ for i, connectivity in enumerate(connectivities):
             with_final_orbital_rotation=True,
         ),
     )
+    full_n_reps = data_lucj[task_lucj]["n_reps"]
     axes[0, i].axhline(
         data_lucj[task_lucj]["error"],
         linestyle="--",
-        label="LUCJ",
+        label=f"LUCJ full ({full_n_reps} reps)",
         color=colors[1],
     )
     axes[1, i].axhline(
         data_lucj[task_lucj]["spin_squared"],
         linestyle="--",
-        label="LUCJ",
+        label=f"LUCJ full ({full_n_reps} reps)",
         color=colors[1],
     )
 
