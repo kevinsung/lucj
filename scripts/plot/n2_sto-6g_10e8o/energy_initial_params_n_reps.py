@@ -5,7 +5,6 @@ from pathlib import Path
 
 import ffsim
 import matplotlib.pyplot as plt
-import numpy as np
 
 from lucj.params import LUCJParams
 from lucj.tasks.lucj_initial_params_task import LUCJInitialParamsTask
