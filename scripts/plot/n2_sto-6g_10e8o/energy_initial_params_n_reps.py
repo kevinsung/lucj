@@ -159,7 +159,9 @@ for i, connectivity in enumerate(connectivities):
     axes[1, i].set_xlabel("Repetitions")
     axes[1, i].set_xticks(these_n_reps)
     axes[1, 0].legend()
-    fig.suptitle(f"{molecule_basename} ({nelectron}e, {norb}o) CCSD initial parameters")
+    fig.suptitle(
+        f"CCSD initial parameters {molecule_name} {basis} ({nelectron}e, {norb}o) R={bond_distance} Å"
+    )
 
 
 filepath = os.path.join(
