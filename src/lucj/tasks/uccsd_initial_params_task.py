@@ -49,7 +49,7 @@ def run_uccsd_initial_params_task(
     nelec = mol_data.nelec
     mol_hamiltonian = mol_data.hamiltonian
 
-    # Initialize Hamiltonian, initial state, and LUCJ parameters
+    # Initialize Hamiltonian and initial state
     hamiltonian = ffsim.linear_operator(mol_hamiltonian, norb=norb, nelec=nelec)
     reference_state = ffsim.hartree_fock_state(norb, nelec)
 
