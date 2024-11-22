@@ -4,9 +4,10 @@ import pickle
 from dataclasses import dataclass
 from pathlib import Path
 
-from molecules_catalog.util import load_molecular_data
 import ffsim
 import numpy as np
+import scipy.stats
+from molecules_catalog.util import load_molecular_data
 
 logger = logging.getLogger(__name__)
 
@@ -65,11 +66,14 @@ def run_uccsd_initial_params_task(
     spin_squared = ffsim.spin_square(
         final_state, norb=mol_data.norb, nelec=mol_data.nelec
     )
+    probs = np.abs(final_state) ** 2
+    entropy = scipy.stats.entropy(probs)
 
     data = {
         "energy": energy,
         "error": error,
         "spin_squared": spin_squared,
+        "entropy": entropy,
     }
 
     logging.info(f"{task} Saving data...\n")

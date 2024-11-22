@@ -25,7 +25,7 @@ logging.basicConfig(
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 12
+MAX_PROCESSES = 48
 OVERWRITE = True
 
 molecule_name = "n2"
