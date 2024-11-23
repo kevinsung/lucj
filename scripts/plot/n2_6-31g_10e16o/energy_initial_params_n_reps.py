@@ -7,6 +7,7 @@ import ffsim
 import matplotlib.pyplot as plt
 
 from lucj.params import LUCJParams
+from lucj.tasks.fci_task import FCITask
 from lucj.tasks.lucj_initial_params_task import LUCJInitialParamsTask
 from lucj.tasks.uccsd_initial_params_task import UCCSDInitialParamsTask
 
@@ -48,6 +49,7 @@ tasks_lucj = [
 task_uccsd = UCCSDInitialParamsTask(
     molecule_basename=molecule_basename, bond_distance=bond_distance
 )
+task_fci = FCITask(molecule_basename=molecule_basename, bond_distance=bond_distance)
 
 
 filepath = os.path.join(
@@ -65,11 +67,12 @@ for task in tasks_lucj:
     filepath = DATA_ROOT / "lucj_initial_params" / task.dirpath / "data.pickle"
     with open(filepath, "rb") as f:
         data_lucj[task] = pickle.load(f)
-data_uccsd = {}
-
 filepath = DATA_ROOT / "uccsd_initial_params" / task_uccsd.dirpath / "data.pickle"
 with open(filepath, "rb") as f:
     data_uccsd = pickle.load(f)
+filepath = DATA_ROOT / "fci" / task_fci.dirpath / "data.pickle"
+with open(filepath, "rb") as f:
+    data_fci = pickle.load(f)
 print("Done loading data.")
 
 markers = ["o", "s", "v", "D", "p", "*", "P", "X"]
@@ -78,7 +81,7 @@ colors = prop_cycle.by_key()["color"]
 alphas = [0.5, 1.0]
 linestyles = ["--", ":"]
 
-fig, axes = plt.subplots(2, len(connectivities), figsize=(12, 6), layout="constrained")
+fig, axes = plt.subplots(3, len(connectivities), figsize=(12, 9), layout="constrained")
 
 for i, connectivity in enumerate(connectivities):
     axes[0, i].axhline(
@@ -92,6 +95,19 @@ for i, connectivity in enumerate(connectivities):
         linestyle="--",
         label="UCCSD init",
         color=colors[0],
+    )
+    axes[2, i].axhline(
+        data_uccsd["entropy"],
+        linestyle="--",
+        label="UCCSD init",
+        color=colors[0],
+    )
+
+    axes[2, i].axhline(
+        data_fci["entropy"],
+        linestyle="--",
+        label="FCI",
+        color=colors[-1],
     )
 
     task_lucj = LUCJInitialParamsTask(
@@ -116,6 +132,12 @@ for i, connectivity in enumerate(connectivities):
         label=f"LUCJ full ({full_n_reps} reps)",
         color=colors[1],
     )
+    axes[2, i].axhline(
+        data_lucj[task_lucj]["entropy"],
+        linestyle="--",
+        label=f"LUCJ full ({full_n_reps} reps)",
+        color=colors[1],
+    )
 
     these_n_reps = [n_reps for n_reps in n_reps_range if n_reps is not None]
     tasks_lucj = [
@@ -133,6 +155,7 @@ for i, connectivity in enumerate(connectivities):
     energies = [data_lucj[task]["energy"] for task in tasks_lucj]
     errors = [data_lucj[task]["error"] for task in tasks_lucj]
     spin_squares = [data_lucj[task]["spin_squared"] for task in tasks_lucj]
+    entropies = [data_lucj[task]["entropy"] for task in tasks_lucj]
     axes[0, i].plot(
         these_n_reps,
         errors,
@@ -143,6 +166,13 @@ for i, connectivity in enumerate(connectivities):
     axes[1, i].plot(
         these_n_reps,
         spin_squares,
+        f"{markers[0]}{linestyles[0]}",
+        label="LUCJ truncated",
+        color=colors[2],
+    )
+    axes[2, i].plot(
+        these_n_reps,
+        entropies,
         f"{markers[0]}{linestyles[0]}",
         label="LUCJ truncated",
         color=colors[2],
@@ -158,7 +188,10 @@ for i, connectivity in enumerate(connectivities):
     axes[1, i].set_ylabel("Spin squared")
     axes[1, i].set_xlabel("Repetitions")
     axes[1, i].set_xticks(these_n_reps)
-    axes[1, 0].legend()
+    axes[2, i].set_ylabel("Entropy")
+    axes[2, i].set_xlabel("Repetitions")
+    axes[2, i].set_xticks(these_n_reps)
+    axes[2, 0].legend()
     fig.suptitle(
         f"CCSD initial parameters {molecule_name} {basis} ({nelectron}e, {norb}o) R={bond_distance} Å"
     )

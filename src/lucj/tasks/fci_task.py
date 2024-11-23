@@ -51,7 +51,7 @@ def run_fci_task(
     previous_fci_energy = mol_data.fci_energy
     mol_data.run_fci(store_fci_vec=True)
     np.testing.assert_allclose(mol_data.fci_energy, previous_fci_energy)
-    fci_vec = mol_data.fci_vec
+    fci_vec = mol_data.fci_vec.reshape(-1)
 
     # Compute energy and other properties of final state vector
     spin_squared = ffsim.spin_square(fci_vec, norb=mol_data.norb, nelec=mol_data.nelec)
