@@ -44,6 +44,11 @@ class LBFGSBParams(Params):
 
 
 @dataclass(frozen=True, kw_only=True)
+class COBYQAParams(Params):
+    maxiter: int
+
+
+@dataclass(frozen=True, kw_only=True)
 class LinearMethodParams(Params):
     maxiter: int
     lindep: float
