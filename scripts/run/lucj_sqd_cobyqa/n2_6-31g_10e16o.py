@@ -57,7 +57,7 @@ tasks = [
             n_reps=n_reps,
             with_final_orbital_rotation=True,
         ),
-        cobyqa_params=COBYQAParams(maxiter=10_000),
+        cobyqa_params=COBYQAParams(maxiter=1000),
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
