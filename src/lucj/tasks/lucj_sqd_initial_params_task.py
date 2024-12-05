@@ -87,6 +87,7 @@ def run_lucj_sqd_initial_params_task(
     )
 
     # Compute final state
+    logging.info(f"{task} Computing state vector...\n")
     final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
 
     # Run SQD
