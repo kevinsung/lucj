@@ -76,10 +76,16 @@ def run_lucj_sqd_cobyqa_task(
     ):
         logger.info(f"Data for {task} already exists. Skipping...\n")
         return task
+    intermediate_result_filename = (
+        data_dir / task.dirpath / "intermediate_result.pickle"
+    )
 
     # Get molecular data and molecular Hamiltonian
+    molecule_basename = task.molecule_basename
+    if task.bond_distance is not None:
+        molecule_basename += "_d-{task.bond_distance:.2f}"
     mol_data = load_molecular_data(
-        f"{task.molecule_basename}_d-{task.bond_distance:.2f}",
+        molecule_basename,
         molecules_catalog_dir=molecules_catalog_dir,
     )
     norb = mol_data.norb
@@ -180,9 +186,12 @@ def run_lucj_sqd_cobyqa_task(
 
     def callback(intermediate_result: scipy.optimize.OptimizeResult):
         logger.info(f"Task {task} is on iteration {info['nit']}.\n")
+        logger.info(f"\tObjective function value: {intermediate_result.fun}.\n")
         info["x"].append(intermediate_result.x)
         info["fun"].append(intermediate_result.fun)
         info["nit"] += 1
+        with open(intermediate_result_filename, "wb") as f:
+            pickle.dump(intermediate_result, f)
 
     t0 = timeit.default_timer()
     result = scipy.optimize.minimize(
