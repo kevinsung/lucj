@@ -8,10 +8,7 @@ from lucj.params import COBYQAParams, LUCJParams
 from lucj.tasks.lucj_sqd_cobyqa_task import LUCJSQDCOBYQATask
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
-DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 96
-OVERWRITE = True
 
 molecule_name = "n2"
 basis = "6-31g"
