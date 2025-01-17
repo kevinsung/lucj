@@ -1,0 +1,6 @@
+export LUCJ_DATA_ROOT=/disk1/kevinsung@ibm.com/lucj
+export MOLECULES_CATALOG_DIR=/disk1/kevinsung@ibm.com/molecules-catalog
+export OMP_NUM_THREADS=1
+export RAYON_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
