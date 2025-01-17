@@ -83,7 +83,7 @@ def run_lucj_sqd_cobyqa_task(
     # Get molecular data and molecular Hamiltonian
     molecule_basename = task.molecule_basename
     if task.bond_distance is not None:
-        molecule_basename += "_d-{task.bond_distance:.2f}"
+        molecule_basename += f"_d-{task.bond_distance:.2f}"
     mol_data = load_molecular_data(
         molecule_basename,
         molecules_catalog_dir=molecules_catalog_dir,

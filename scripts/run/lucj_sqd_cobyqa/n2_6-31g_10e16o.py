@@ -26,8 +26,8 @@ logging.basicConfig(
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 96
-OVERWRITE = True
+MAX_PROCESSES = 48
+OVERWRITE = False
 
 molecule_name = "n2"
 basis = "6-31g"
@@ -40,7 +40,7 @@ step = 0.1
 bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) + 1)
 
 connectivity = "heavy-hex"
-n_reps = 1
+n_reps = 3
 shots = 100_000
 samples_per_batch = 5000
 n_batches = 3
