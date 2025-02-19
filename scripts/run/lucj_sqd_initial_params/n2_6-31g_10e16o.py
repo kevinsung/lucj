@@ -45,7 +45,7 @@ connectivities = [
     "square",
     "all-to-all",
 ]
-n_reps_range = [1] + list(range(2, 25, 2)) + [None]
+n_reps_range = [1] + list(range(2, 25, 2)) + [None, 3]
 shots = 100_000
 samples_per_batch_range = [1000, 2000, 5000]
 n_batches = 3
