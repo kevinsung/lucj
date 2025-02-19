@@ -10,10 +10,7 @@ import numpy as np
 from tqdm import tqdm
 
 from lucj.params import LUCJParams
-from lucj.tasks.lucj_initial_params_task import (
-    LUCJInitialParamsTask,
-    run_lucj_initial_params_task,
-)
+from lucj.tasks.lucj_aqc_mps_task import LUCJAQCMPSTask, run_lucj_aqc_task
 
 filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
@@ -28,7 +25,7 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 96
-OVERWRITE = False
+OVERWRITE = True
 
 molecule_name = "n2"
 basis = "sto-6g"
@@ -42,22 +39,15 @@ bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) 
 
 connectivities = [
     "heavy-hex",
-    "square",
-    "all-to-all",
 ]
 n_reps_range = [
     1,
     2,
     3,
-    4,
-    6,
-    8,
-    10,
-    None,
 ]
 
 tasks = [
-    LUCJInitialParamsTask(
+    LUCJAQCMPSTask(
         molecule_basename=molecule_basename,
         bond_distance=d,
         lucj_params=LUCJParams(
@@ -65,6 +55,9 @@ tasks = [
             n_reps=n_reps,
             with_final_orbital_rotation=True,
         ),
+        init_params="ccsd",
+        max_bond=None,
+        cutoff=1e-10,
     )
     for connectivity, n_reps in itertools.product(connectivities, n_reps_range)
     for d in bond_distance_range
@@ -72,7 +65,7 @@ tasks = [
 
 if MAX_PROCESSES == 1:
     for task in tqdm(tasks):
-        run_lucj_initial_params_task(
+        run_lucj_aqc_task(
             task,
             data_dir=DATA_DIR,
             molecules_catalog_dir=MOLECULES_CATALOG_DIR,
@@ -83,7 +76,7 @@ else:
         with ProcessPoolExecutor(MAX_PROCESSES) as executor:
             for task in tasks:
                 future = executor.submit(
-                    run_lucj_initial_params_task,
+                    run_lucj_aqc_task,
                     task,
                     data_dir=DATA_DIR,
                     molecules_catalog_dir=MOLECULES_CATALOG_DIR,
