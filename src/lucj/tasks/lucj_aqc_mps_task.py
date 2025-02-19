@@ -12,7 +12,7 @@ import scipy.optimize
 import scipy.stats
 from molecules_catalog.util import load_lucj_circuit, load_molecular_data
 from qiskit.quantum_info import Statevector
-from qiskit_addon_aqc_tensor import generate_ansatz_from_circuit
+from qiskit_addon_aqc_tensor.ansatz_generation import parametrize_circuit
 from qiskit_addon_aqc_tensor.objective import OneMinusFidelity
 from qiskit_addon_aqc_tensor.simulation import (
     compute_overlap,
@@ -99,10 +99,7 @@ def run_lucj_aqc_task(
     ansatz_circuit = ffsim.qiskit.PRE_INIT.run(ansatz_circuit).decompose()
 
     # AQC ansatz
-    # TODO use LUCJ ansatz directly
-    aqc_ansatz, aqc_initial_parameters = generate_ansatz_from_circuit(
-        ansatz_circuit, qubits_initially_zero=True
-    )
+    aqc_ansatz, aqc_initial_parameters = parametrize_circuit(ansatz_circuit)
 
     # Simulator settings
     simulator_settings = QuimbSimulator(
