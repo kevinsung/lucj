@@ -34,6 +34,7 @@ reference_bond_distance_range = np.linspace(
 connectivities = [
     "heavy-hex",
     "hex",
+    "square",
 ]
 n_reps_range = [
     1,
@@ -146,7 +147,9 @@ colors = prop_cycle.by_key()["color"]
 alphas = [0.5, 1.0]
 linestyles = ["--", ":"]
 
-fig, axes = plt.subplots(3, len(connectivities), figsize=(12, 12), layout="constrained")
+fig, axes = plt.subplots(
+    3, len(connectivities), figsize=(5 * len(connectivities), 12), layout="constrained"
+)
 
 for i, connectivity in enumerate(connectivities):
     axes[0, i].plot(
