@@ -154,12 +154,15 @@ def run_lucj_aqc_task(
     )
     probs = np.abs(final_vec_ffsim) ** 2
     entropy = scipy.stats.entropy(probs)
+    norm = np.linalg.norm(final_vec_ffsim)
+    logging.info(f"{task} State vector norm: {norm}\n")
 
     data = {
         "energy": energy,
         "error": error,
         "spin_squared": spin_squared,
         "entropy": entropy,
+        "norm": norm,
     }
 
     logging.info(f"{task} Saving data...\n")
