@@ -50,7 +50,7 @@ class LUCJAQCMPSTask:
         )
 
 
-def run_lucj_aqc_task(
+def run_lucj_aqc_mps_task(
     task: LUCJAQCMPSTask,
     *,
     data_dir: Path,

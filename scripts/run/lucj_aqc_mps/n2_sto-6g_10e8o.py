@@ -10,7 +10,7 @@ import numpy as np
 from tqdm import tqdm
 
 from lucj.params import LUCJParams
-from lucj.tasks.lucj_aqc_mps_task import LUCJAQCMPSTask, run_lucj_aqc_task
+from lucj.tasks.lucj_aqc_mps_task import LUCJAQCMPSTask, run_lucj_aqc_mps_task
 
 filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
@@ -67,7 +67,7 @@ tasks = [
 
 if MAX_PROCESSES == 1:
     for task in tqdm(tasks):
-        run_lucj_aqc_task(
+        run_lucj_aqc_mps_task(
             task,
             data_dir=DATA_DIR,
             molecules_catalog_dir=MOLECULES_CATALOG_DIR,
@@ -78,7 +78,7 @@ else:
         with ProcessPoolExecutor(MAX_PROCESSES) as executor:
             for task in tasks:
                 future = executor.submit(
-                    run_lucj_aqc_task,
+                    run_lucj_aqc_mps_task,
                     task,
                     data_dir=DATA_DIR,
                     molecules_catalog_dir=MOLECULES_CATALOG_DIR,
