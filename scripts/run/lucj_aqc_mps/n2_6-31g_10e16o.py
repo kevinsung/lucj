@@ -58,8 +58,8 @@ tasks = [
             with_final_orbital_rotation=True,
         ),
         init_params="ccsd",
-        max_bond=None,
-        cutoff=1e-5,
+        max_bond=100,
+        cutoff=1e-3,
     )
     for connectivity, n_reps in itertools.product(connectivities, n_reps_range)
     for d in bond_distance_range
