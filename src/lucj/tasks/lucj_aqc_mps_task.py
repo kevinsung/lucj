@@ -11,7 +11,6 @@ import quimb.tensor
 import scipy.optimize
 import scipy.stats
 from molecules_catalog.util import load_lucj_circuit, load_molecular_data
-from qiskit.quantum_info import Statevector
 from qiskit_addon_aqc_tensor.ansatz_generation import parametrize_circuit
 from qiskit_addon_aqc_tensor.objective import OneMinusFidelity
 from qiskit_addon_aqc_tensor.simulation import (
@@ -129,10 +128,9 @@ def run_lucj_aqc_mps_task(
     logging.info(f"{task} Computing optimized state vector...\n")
     final_circuit = aqc_ansatz.assign_parameters(result.x)
     # TODO simulate with ffsim instead of Statevector
-    final_vec_qiskit = Statevector(final_circuit).data
-    final_vec_ffsim = ffsim.qiskit.qiskit_vec_to_ffsim_vec(
-        final_vec_qiskit, norb=norb, nelec=nelec
-    )
+    final_vec = ffsim.qiskit.final_state_vector(
+        final_circuit, norb=norb, nelec=nelec
+    ).vec
 
     # Log initial and final fidelities
     initial_mps = tensornetwork_from_circuit(ansatz_circuit, simulator_settings)
@@ -145,14 +143,14 @@ def run_lucj_aqc_mps_task(
 
     # Compute energy and other properties of final state vector
     logging.info(f"{task} Computing energy and other properties...\n")
-    energy = np.vdot(final_vec_ffsim, linop @ final_vec_ffsim).real
+    energy = np.vdot(final_vec, linop @ final_vec).real
     error = energy - mol_data.fci_energy
     spin_squared = ffsim.spin_square(
-        final_vec_ffsim, norb=mol_data.norb, nelec=mol_data.nelec
+        final_vec, norb=mol_data.norb, nelec=mol_data.nelec
     )
-    probs = np.abs(final_vec_ffsim) ** 2
+    probs = np.abs(final_vec) ** 2
     entropy = scipy.stats.entropy(probs)
-    norm = np.linalg.norm(final_vec_ffsim)
+    norm = np.linalg.norm(final_vec)
     logging.info(f"{task} State vector norm: {norm}\n")
 
     data = {

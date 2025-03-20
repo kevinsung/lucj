@@ -24,7 +24,7 @@ plots_dir = os.path.join("plots", molecule_basename)
 os.makedirs(plots_dir, exist_ok=True)
 
 start = 0.9
-stop = 2.7
+stop = 2.1
 step = 0.1
 bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) + 1)
 reference_bond_distance_range = np.linspace(
@@ -33,6 +33,8 @@ reference_bond_distance_range = np.linspace(
 
 connectivities = [
     "heavy-hex",
+    "hex",
+    "square",
 ]
 n_reps_range = [
     1,
@@ -114,6 +116,8 @@ fci_energies_reference = np.array(
 ccsd_energies_reference = np.array(
     [mol_data.ccsd_energy for mol_data in mol_datas_reference.values()]
 )
+ccsd_errors_reference = ccsd_energies_reference - fci_energies_reference
+
 hf_energies_experiment = np.array(
     [mol_data.hf_energy for mol_data in mol_datas_experiment.values()]
 )
@@ -143,49 +147,30 @@ colors = prop_cycle.by_key()["color"]
 alphas = [0.5, 1.0]
 linestyles = ["--", ":"]
 
+fig, axes = plt.subplots(
+    3, len(connectivities), figsize=(5 * len(connectivities), 12), layout="constrained"
+)
 
-for connectivity in connectivities:
-    fig, axes = plt.subplots(3, 1, figsize=(9, 12), layout="constrained")
-
-    axes[0].plot(
+for i, connectivity in enumerate(connectivities):
+    axes[0, i].plot(
         reference_bond_distance_range,
-        hf_energies_reference,
-        "--",
-        label="HF",
-        color="blue",
-    )
-    axes[0].plot(
-        reference_bond_distance_range,
-        ccsd_energies_reference,
+        ccsd_errors_reference,
         "--",
         label="CCSD",
         color="orange",
     )
-    axes[0].plot(
-        reference_bond_distance_range,
-        fci_energies_reference,
-        "-",
-        label="FCI",
-        color="black",
-    )
+
     energies = [data[task]["energy"] for task in tasks_lucj_ccsd]
     errors = [data[task]["error"] for task in tasks_lucj_ccsd]
     spin_squares = [data[task]["spin_squared"] for task in tasks_lucj_ccsd]
-    axes[0].plot(
-        bond_distance_range,
-        energies,
-        f"{markers[0]}{linestyles[0]}",
-        label="LUCJ CCSD",
-        color=colors[0],
-    )
-    axes[1].plot(
+    axes[0, i].plot(
         bond_distance_range,
         errors,
         f"{markers[0]}{linestyles[0]}",
         label="LUCJ CCSD",
         color=colors[0],
     )
-    axes[2].plot(
+    axes[2, i].plot(
         bond_distance_range,
         spin_squares,
         f"{markers[0]}{linestyles[0]}",
@@ -209,15 +194,7 @@ for connectivity in connectivities:
         energies = [data[task]["energy"] for task in tasks_lucj]
         errors = [data[task]["error"] for task in tasks_lucj]
         spin_squares = [data[task]["spin_squared"] for task in tasks_lucj]
-        axes[0].plot(
-            bond_distance_range,
-            energies,
-            f"{marker}{linestyles[0]}",
-            label=f"LUCJ CCSD L={n_reps}",
-            color=color,
-            alpha=0.5,
-        )
-        axes[1].plot(
+        axes[0, i].plot(
             bond_distance_range,
             errors,
             f"{marker}{linestyles[0]}",
@@ -225,7 +202,7 @@ for connectivity in connectivities:
             color=color,
             alpha=0.5,
         )
-        axes[2].plot(
+        axes[2, i].plot(
             bond_distance_range,
             spin_squares,
             f"{marker}{linestyles[0]}",
@@ -252,21 +229,22 @@ for connectivity in connectivities:
         energies = [data[task]["energy"] for task in tasks_aqc_mps]
         errors = [data[task]["error"] for task in tasks_aqc_mps]
         spin_squares = [data[task]["spin_squared"] for task in tasks_aqc_mps]
-        axes[0].plot(
-            bond_distance_range,
-            energies,
-            f"{marker}{linestyles[0]}",
-            label=f"LUCJ AQC L={n_reps}",
-            color=color,
-        )
-        axes[1].plot(
+        norm_devs = [1 - data[task]["norm"] for task in tasks_aqc_mps]
+        axes[0, i].plot(
             bond_distance_range,
             errors,
             f"{marker}{linestyles[0]}",
             label=f"LUCJ AQC L={n_reps}",
             color=color,
         )
-        axes[2].plot(
+        axes[1, i].plot(
+            bond_distance_range,
+            norm_devs,
+            f"{marker}{linestyles[0]}",
+            label=f"LUCJ AQC L={n_reps}",
+            color=color,
+        )
+        axes[2, i].plot(
             bond_distance_range,
             spin_squares,
             f"{marker}{linestyles[0]}",
@@ -274,22 +252,23 @@ for connectivity in connectivities:
             color=color,
         )
 
-    axes[0].legend()
-    axes[0].set_title(connectivity)
-    axes[0].set_ylabel("Energy (Hartree)")
-    axes[0].set_xlabel("Bond length (Å)")
-    axes[1].set_yscale("log")
-    axes[1].axhline(1.6e-3, linestyle="--", color="gray")
-    axes[1].set_ylabel("Energy error (Hartree)")
-    axes[1].set_xlabel("Bond length (Å)")
-    axes[2].set_ylim(0, 0.1)
-    axes[2].set_ylabel("Spin squared")
-    axes[2].set_xlabel("Bond length (Å)")
-    fig.suptitle(f"{molecule_basename} ({nelectron}e, {norb}o) AQC MPS {connectivity}")
+    axes[0, i].legend()
+    axes[0, i].set_title(connectivity)
+    axes[0, i].set_yscale("log")
+    axes[0, i].axhline(1.6e-3, linestyle="--", color="gray")
+    axes[0, i].set_ylabel("Energy error (Hartree)")
+    axes[0, i].set_xlabel("Bond length (Å)")
+    axes[1, i].set_yscale("log")
+    axes[1, i].set_ylabel(r"1 - $|\psi|^2$")
+    axes[1, i].set_xlabel("Bond length (Å)")
+    axes[2, i].set_ylim(0, 0.1)
+    axes[2, i].set_ylabel("Spin squared")
+    axes[2, i].set_xlabel("Bond length (Å)")
+    fig.suptitle(f"{molecule_basename} ({nelectron}e, {norb}o) AQC MPS")
 
-    filepath = os.path.join(
-        plots_dir,
-        f"{os.path.splitext(os.path.basename(__file__))[0]}_{connectivity}.pdf",
-    )
-    plt.savefig(filepath)
-    plt.close()
+filepath = os.path.join(
+    plots_dir,
+    f"{os.path.splitext(os.path.basename(__file__))[0]}.pdf",
+)
+plt.savefig(filepath)
+plt.close()
