@@ -149,6 +149,7 @@ def run_lucj_aqc_mps_task(
     )
     probs = np.abs(final_vec) ** 2
     entropy = scipy.stats.entropy(probs)
+    # TODO don't need to compute norm anymore since the circuit preserves symmetries
     norm = np.linalg.norm(final_vec)
     logging.info(f"{task} State vector norm: {norm}\n")
 
