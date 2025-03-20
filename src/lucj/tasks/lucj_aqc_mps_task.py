@@ -127,7 +127,6 @@ def run_lucj_aqc_mps_task(
     # Compute optimized state vector
     logging.info(f"{task} Computing optimized state vector...\n")
     final_circuit = aqc_ansatz.assign_parameters(result.x)
-    # TODO simulate with ffsim instead of Statevector
     final_vec = ffsim.qiskit.final_state_vector(
         final_circuit, norb=norb, nelec=nelec
     ).vec
