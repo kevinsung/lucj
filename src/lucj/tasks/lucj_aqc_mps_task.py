@@ -1,6 +1,7 @@
 import logging
 import os
 import pickle
+import timeit
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
@@ -116,6 +117,7 @@ def run_lucj_aqc_mps_task(
     # Optimize
     logging.info(f"{task} Optimizing ansatz MPS...\n")
     objective = OneMinusFidelity(aqc_target_mps, aqc_ansatz, simulator_settings)
+    t0 = timeit.default_timer()
     result = scipy.optimize.minimize(
         objective,
         aqc_initial_parameters,
@@ -123,6 +125,9 @@ def run_lucj_aqc_mps_task(
         jac=True,
         # options=dict(maxiter=100),
     )
+    t1 = timeit.default_timer()
+    optimize_time = t1 - t0
+    logging.info(f"{task} Optimizing ansatz MPS finished in {optimize_time} seconds.\n")
 
     # Compute optimized state vector
     logging.info(f"{task} Computing optimized state vector...\n")
@@ -149,16 +154,13 @@ def run_lucj_aqc_mps_task(
     )
     probs = np.abs(final_vec) ** 2
     entropy = scipy.stats.entropy(probs)
-    # TODO don't need to compute norm anymore since the circuit preserves symmetries
-    norm = np.linalg.norm(final_vec)
-    logging.info(f"{task} State vector norm: {norm}\n")
 
     data = {
         "energy": energy,
         "error": error,
         "spin_squared": spin_squared,
         "entropy": entropy,
-        "norm": norm,
+        "optimize_time": optimize_time,
     }
 
     logging.info(f"{task} Saving data...\n")

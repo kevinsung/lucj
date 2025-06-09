@@ -6,7 +6,6 @@ import os
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
-import numpy as np
 from tqdm import tqdm
 
 from lucj.params import LUCJParams
@@ -25,7 +24,7 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 96
-OVERWRITE = True
+OVERWRITE = False
 
 molecule_name = "n2"
 basis = "sto-6g"
@@ -33,20 +32,26 @@ nelectron, norb = 10, 8
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 start = 0.9
-stop = 2.7
+stop = 1.8
 step = 0.1
-bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) + 1)
+# bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) + 1)
+bond_distance_range = [0.9, 1.2, 1.5, 1.8]
 
 connectivities = [
     "heavy-hex",
-    "hex",
+    # "hex",
     "square",
 ]
 n_reps_range = [
     1,
     2,
     3,
+    4,
+    5,
+    6,
 ]
+max_bonds = [10, 20, 30, 40, 50]
+cutoff = 1e-10
 
 tasks = [
     LUCJAQCMPSTask(
@@ -58,10 +63,11 @@ tasks = [
             with_final_orbital_rotation=True,
         ),
         init_params="ccsd",
-        max_bond=None,
-        cutoff=1e-10,
+        max_bond=max_bond,
+        cutoff=cutoff,
     )
     for connectivity, n_reps in itertools.product(connectivities, n_reps_range)
+    for max_bond in max_bonds
     for d in bond_distance_range
 ]
 

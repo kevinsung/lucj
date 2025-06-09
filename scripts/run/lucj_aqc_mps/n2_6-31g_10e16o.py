@@ -6,7 +6,6 @@ import os
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
-import numpy as np
 from tqdm import tqdm
 
 from lucj.params import LUCJParams
@@ -33,20 +32,27 @@ nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 start = 0.9
-stop = 2.7
+stop = 1.8
 step = 0.1
-bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) + 1)
+bond_distance_range = [
+    # 0.9,
+    1.2,
+    # 1.5,
+    # 1.8,
+]
 
 connectivities = [
-    "heavy-hex",
-    "hex",
+    # "heavy-hex",
+    # "hex",
     "square",
 ]
 n_reps_range = [
     1,
     2,
-    3,
+    4,
 ]
+max_bonds = [10, 20, 30, 40]
+cutoff = 1e-10
 
 tasks = [
     LUCJAQCMPSTask(
@@ -58,10 +64,11 @@ tasks = [
             with_final_orbital_rotation=True,
         ),
         init_params="ccsd",
-        max_bond=100,
-        cutoff=1e-3,
+        max_bond=max_bond,
+        cutoff=cutoff,
     )
     for connectivity, n_reps in itertools.product(connectivities, n_reps_range)
+    for max_bond in max_bonds
     for d in bond_distance_range
 ]
 
