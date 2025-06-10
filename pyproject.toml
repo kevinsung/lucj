@@ -13,6 +13,16 @@ dependencies = [
     "qiskit-addon-sqd",
     "qiskit[visualization] >= 1.0",
     "tqdm",
+    # recommended optional dependencies for cotengra
+    "autoray",
+    "cmaes",
+    "cotengrust",
+    "cytoolz",
+    "kahypar",
+    "loky",
+    "networkx",
+    "opt_einsum",
+    "optuna",
 ]
 
 [project.optional-dependencies]
