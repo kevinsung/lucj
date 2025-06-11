@@ -70,7 +70,7 @@ for d in reference_bond_distance_range:
         MOLECULES_CATALOG_DIR,
         "data",
         "molecular_data",
-        f"{molecule_basename}_d-{d:.2f}.json.xz",
+        f"{molecule_basename}_d-{d:.5f}.json.xz",
     )
     mol_datas_reference[d] = ffsim.MolecularData.from_json(filepath, compression="lzma")
 
@@ -79,7 +79,7 @@ for d in bond_distance_range:
         MOLECULES_CATALOG_DIR,
         "data",
         "molecular_data",
-        f"{molecule_basename}_d-{d:.2f}.json.xz",
+        f"{molecule_basename}_d-{d:.5f}.json.xz",
     )
     mol_datas_experiment[d] = ffsim.MolecularData.from_json(
         filepath, compression="lzma"

@@ -22,7 +22,7 @@ class FCITask:
         return Path(self.molecule_basename) / (
             ""
             if self.bond_distance is None
-            else f"bond_distance-{self.bond_distance:.2f}"
+            else f"bond_distance-{self.bond_distance:.5f}"
         )
 
 
@@ -43,7 +43,7 @@ def run_fci_task(
 
     # Get molecular data and molecular Hamiltonian
     mol_data = load_molecular_data(
-        f"{task.molecule_basename}_d-{task.bond_distance:.2f}",
+        f"{task.molecule_basename}_d-{task.bond_distance:.5f}",
         molecules_catalog_dir=molecules_catalog_dir,
     )
 

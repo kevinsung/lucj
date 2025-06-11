@@ -20,7 +20,6 @@ class LUCJInitialParamsTask:
     molecule_basename: str
     bond_distance: float | None
     lucj_params: LUCJParams
-    digits: int = 2
 
     @property
     def dirpath(self) -> Path:
@@ -29,7 +28,7 @@ class LUCJInitialParamsTask:
             / (
                 ""
                 if self.bond_distance is None
-                else f"bond_distance-{self.bond_distance:.{self.digits}f}"
+                else f"bond_distance-{self.bond_distance:.5f}"
             )
             / self.lucj_params.dirpath
         )
@@ -52,7 +51,7 @@ def run_lucj_initial_params_task(
 
     # Get molecular data and molecular Hamiltonian
     mol_data = load_molecular_data(
-        f"{task.molecule_basename}_d-{task.bond_distance:.{task.digits}f}",
+        f"{task.molecule_basename}_d-{task.bond_distance:.5f}",
         molecules_catalog_dir=molecules_catalog_dir,
     )
     norb = mol_data.norb

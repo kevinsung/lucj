@@ -30,7 +30,6 @@ stop = 3.0 * equilibrium_bond_distance
 step = 0.1 * equilibrium_bond_distance
 bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) + 1)
 reference_bond_distance_range = bond_distance_range
-digits = 5
 
 connectivities = [
     "heavy-hex",
@@ -46,7 +45,6 @@ tasks_lucj = [
             n_reps=n_reps,
             with_final_orbital_rotation=True,
         ),
-        digits=digits,
     )
     for connectivity, n_reps in itertools.product(connectivities, n_reps_range)
     for d in bond_distance_range
@@ -65,7 +63,7 @@ for d in reference_bond_distance_range:
         MOLECULES_CATALOG_DIR,
         "data",
         "molecular_data",
-        f"{molecule_basename}_d-{d:.{digits}f}.json.xz",
+        f"{molecule_basename}_d-{d:.5f}.json.xz",
     )
     mol_datas_reference[d] = ffsim.MolecularData.from_json(filepath, compression="lzma")
 
@@ -74,7 +72,7 @@ for d in bond_distance_range:
         MOLECULES_CATALOG_DIR,
         "data",
         "molecular_data",
-        f"{molecule_basename}_d-{d:.{digits}f}.json.xz",
+        f"{molecule_basename}_d-{d:.5f}.json.xz",
     )
     mol_datas_experiment[d] = ffsim.MolecularData.from_json(
         filepath, compression="lzma"
@@ -172,7 +170,6 @@ for i, connectivity in enumerate(connectivities):
                     n_reps=n_reps,
                     with_final_orbital_rotation=True,
                 ),
-                digits=digits,
             )
             for d in bond_distance_range
         ]

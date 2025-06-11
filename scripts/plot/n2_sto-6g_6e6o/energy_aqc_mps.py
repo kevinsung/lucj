@@ -24,23 +24,28 @@ plots_dir = os.path.join("plots", molecule_basename)
 os.makedirs(plots_dir, exist_ok=True)
 
 start = 0.9
-stop = 2.1
+stop = 1.8
 step = 0.1
-bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) + 1)
-reference_bond_distance_range = np.linspace(
-    start, stop, num=round((stop - start) / 0.05) + 1
-)
+# bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) + 1)
+bond_distance_range = [0.9, 1.2, 1.5, 1.8]
 
 connectivities = [
     "heavy-hex",
-    "hex",
+    # "hex",
     "square",
 ]
 n_reps_range = [
     1,
     2,
-    3,
+    4,
+    6,
 ]
+max_bond = 50
+cutoff = 1e-10
+
+reference_bond_distance_range = np.linspace(
+    start, stop, num=round((stop - start) / 0.05) + 1
+)
 tasks_lucj_ccsd = [
     LUCJInitialParamsTask(
         molecule_basename=molecule_basename,
@@ -76,8 +81,8 @@ tasks_aqc_mps = [
             with_final_orbital_rotation=True,
         ),
         init_params="ccsd",
-        max_bond=None,
-        cutoff=1e-10,
+        max_bond=max_bond,
+        cutoff=cutoff,
     )
     for connectivity, n_reps in itertools.product(connectivities, n_reps_range)
     for d in bond_distance_range
@@ -92,7 +97,7 @@ for d in reference_bond_distance_range:
         MOLECULES_CATALOG_DIR,
         "data",
         "molecular_data",
-        f"{molecule_basename}_d-{d:.2f}.json.xz",
+        f"{molecule_basename}_d-{d:.5f}.json.xz",
     )
     mol_datas_reference[d] = ffsim.MolecularData.from_json(filepath, compression="lzma")
 
@@ -101,7 +106,7 @@ for d in bond_distance_range:
         MOLECULES_CATALOG_DIR,
         "data",
         "molecular_data",
-        f"{molecule_basename}_d-{d:.2f}.json.xz",
+        f"{molecule_basename}_d-{d:.5f}.json.xz",
     )
     mol_datas_experiment[d] = ffsim.MolecularData.from_json(
         filepath, compression="lzma"
@@ -221,15 +226,15 @@ for i, connectivity in enumerate(connectivities):
                     with_final_orbital_rotation=True,
                 ),
                 init_params="ccsd",
-                max_bond=None,
-                cutoff=1e-10,
+                max_bond=max_bond,
+                cutoff=cutoff,
             )
             for d in bond_distance_range
         ]
         energies = [data[task]["energy"] for task in tasks_aqc_mps]
         errors = [data[task]["error"] for task in tasks_aqc_mps]
         spin_squares = [data[task]["spin_squared"] for task in tasks_aqc_mps]
-        norm_devs = [1 - data[task]["norm"] for task in tasks_aqc_mps]
+        optimize_times = [data[task]["optimize_time"] for task in tasks_aqc_mps]
         axes[0, i].plot(
             bond_distance_range,
             errors,
@@ -239,7 +244,7 @@ for i, connectivity in enumerate(connectivities):
         )
         axes[1, i].plot(
             bond_distance_range,
-            norm_devs,
+            optimize_times,
             f"{marker}{linestyles[0]}",
             label=f"LUCJ AQC L={n_reps}",
             color=color,
@@ -258,8 +263,8 @@ for i, connectivity in enumerate(connectivities):
     axes[0, i].axhline(1.6e-3, linestyle="--", color="gray")
     axes[0, i].set_ylabel("Energy error (Hartree)")
     axes[0, i].set_xlabel("Bond length (Å)")
-    axes[1, i].set_yscale("log")
-    axes[1, i].set_ylabel(r"1 - $|\psi|^2$")
+    # axes[1, i].set_yscale("log")
+    axes[1, i].set_ylabel("Optimization time (s)")
     axes[1, i].set_xlabel("Bond length (Å)")
     axes[2, i].set_ylim(0, 0.1)
     axes[2, i].set_ylabel("Spin squared")

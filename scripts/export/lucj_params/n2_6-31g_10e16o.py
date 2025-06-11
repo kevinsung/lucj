@@ -54,7 +54,7 @@ for task in tasks:
         Path(MOLECULES_CATALOG_DIR)
         / "data"
         / "lucj_params"
-        / f"{molecule_name}_{basis}_{nelectron}e{norb}o_d-{task.bond_distance:.2f}"
+        / f"{molecule_name}_{basis}_{nelectron}e{norb}o_d-{task.bond_distance:.5f}"
         / task.lucj_params.connectivity
         / f"n_reps-{task.lucj_params.n_reps}"
         / "optimized-for-qsci.npy"

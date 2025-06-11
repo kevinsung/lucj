@@ -71,7 +71,7 @@ for bond_distance in bond_distance_range:
         MOLECULES_CATALOG_DIR,
         "data",
         "molecular_data",
-        f"{molecule_basename}_d-{bond_distance:.2f}.json.xz",
+        f"{molecule_basename}_d-{bond_distance:.5f}.json.xz",
     )
     mol_datas[bond_distance] = ffsim.MolecularData.from_json(
         filepath, compression="lzma"

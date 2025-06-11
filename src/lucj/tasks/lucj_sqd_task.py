@@ -37,7 +37,7 @@ class LUCJSQDTask:
             / (
                 ""
                 if self.bond_distance is None
-                else f"bond_distance-{self.bond_distance:.2f}"
+                else f"bond_distance-{self.bond_distance:.5f}"
             )
             / self.lucj_params.dirpath
             / f"params-{self.params}"
@@ -73,7 +73,7 @@ def run_lucj_sqd_task(
     # Get molecular data and molecular Hamiltonian
     molecule_basename = task.molecule_basename
     if task.bond_distance is not None:
-        molecule_basename += f"_d-{task.bond_distance:.2f}"
+        molecule_basename += f"_d-{task.bond_distance:.5f}"
     mol_data = load_molecular_data(
         molecule_basename=molecule_basename,
         molecules_catalog_dir=molecules_catalog_dir,

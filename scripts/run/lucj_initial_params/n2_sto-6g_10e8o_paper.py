@@ -57,7 +57,6 @@ tasks = [
             n_reps=n_reps,
             with_final_orbital_rotation=True,
         ),
-        digits=5,
     )
     for connectivity, n_reps in itertools.product(connectivities, n_reps_range)
     for d in bond_distance_range

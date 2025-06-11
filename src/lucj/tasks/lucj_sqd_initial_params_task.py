@@ -38,7 +38,7 @@ class LUCJSQDInitialParamsTask:
             / (
                 ""
                 if self.bond_distance is None
-                else f"bond_distance-{self.bond_distance:.2f}"
+                else f"bond_distance-{self.bond_distance:.5f}"
             )
             / self.lucj_params.dirpath
             / f"shots-{self.shots}"
@@ -66,7 +66,7 @@ def run_lucj_sqd_initial_params_task(
 
     # Get molecular data and molecular Hamiltonian
     mol_data = load_molecular_data(
-        f"{task.molecule_basename}_d-{task.bond_distance:.2f}",
+        f"{task.molecule_basename}_d-{task.bond_distance:.5f}",
         molecules_catalog_dir=molecules_catalog_dir,
     )
     norb = mol_data.norb

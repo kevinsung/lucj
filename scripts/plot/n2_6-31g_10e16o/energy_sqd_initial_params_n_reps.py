@@ -75,7 +75,7 @@ filepath = os.path.join(
     MOLECULES_CATALOG_DIR,
     "data",
     "molecular_data",
-    f"{molecule_basename}_d-{bond_distance:.2f}.json.xz",
+    f"{molecule_basename}_d-{bond_distance:.5f}.json.xz",
 )
 mol_data = ffsim.MolecularData.from_json(filepath, compression="lzma")
 
