@@ -60,8 +60,13 @@ def run_lucj_aqc_mps_task(
     logging.info(f"{task} Starting...\n")
     os.makedirs(data_dir / task.dirpath, exist_ok=True)
 
+    result_filename = data_dir / task.dirpath / "result.pickle"
     data_filename = data_dir / task.dirpath / "data.pickle"
-    if (not overwrite) and os.path.exists(data_filename):
+    if (
+        (not overwrite)
+        and os.path.exists(result_filename)
+        and os.path.exists(data_filename)
+    ):
         logging.info(f"Data for {task} already exists. Skipping...\n")
         return task
 
@@ -164,5 +169,7 @@ def run_lucj_aqc_mps_task(
     }
 
     logging.info(f"{task} Saving data...\n")
+    with open(result_filename, "wb") as f:
+        pickle.dump(result, f)
     with open(data_filename, "wb") as f:
         pickle.dump(data, f)
