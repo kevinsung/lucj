@@ -2,6 +2,11 @@
 
 Numerical studies of the LUCJ ansatz.
 
+## Dependencies
+
+- uv https://docs.astral.sh/uv/getting-started/installation/
+- molecules-catalog https://github.ibm.com/ibm-q-research/molecules-catalog
+
 ## Generate data
 
 ```bash
