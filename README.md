@@ -13,3 +13,9 @@ Numerical studies of the LUCJ ansatz.
 uv run scripts/run/lucj_initial_params/n2_sto-6g_6e6o.py
 uv run scripts/run/lucj_aqc_mps/n2_sto-6g_6e6o.py
 ```
+
+## Generate plots
+
+```bash
+uv run scripts/plot/n2_sto-6g_6e6o/energy_aqc_mps_max_bond.py
+```
