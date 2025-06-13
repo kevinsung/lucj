@@ -7,6 +7,7 @@ from pathlib import Path
 
 import ffsim
 import numpy as np
+from ffsim.variational.util import interaction_pairs_spin_balanced
 from molecules_catalog.util import load_molecular_data
 from qiskit_addon_sqd.counts import counts_to_arrays
 from qiskit_addon_sqd.fermion import (
@@ -15,7 +16,6 @@ from qiskit_addon_sqd.fermion import (
 from qiskit_addon_sqd.subsampling import postselect_and_subsample
 
 from lucj.params import LUCJParams
-from lucj.util import interaction_pairs_spin_balanced
 
 logger = logging.getLogger(__name__)
 

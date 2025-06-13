@@ -7,10 +7,10 @@ from pathlib import Path
 import ffsim
 import numpy as np
 import scipy.stats
+from ffsim.variational.util import interaction_pairs_spin_balanced
 from molecules_catalog.util import load_molecular_data
 
 from lucj.params import LUCJParams
-from lucj.util import interaction_pairs_spin_balanced
 
 logger = logging.getLogger(__name__)
 

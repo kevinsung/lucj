@@ -10,7 +10,10 @@ from pathlib import Path
 import ffsim
 import numpy as np
 import scipy.optimize
-from ffsim.variational.util import orbital_rotation_to_parameters
+from ffsim.variational.util import (
+    interaction_pairs_spin_balanced,
+    orbital_rotation_to_parameters,
+)
 from molecules_catalog.util import load_molecular_data
 from qiskit_addon_sqd.counts import counts_to_arrays
 from qiskit_addon_sqd.fermion import (
@@ -19,7 +22,6 @@ from qiskit_addon_sqd.fermion import (
 from qiskit_addon_sqd.subsampling import postselect_and_subsample
 
 from lucj.params import COBYQAParams, LUCJParams
-from lucj.util import interaction_pairs_spin_balanced
 
 logger = logging.getLogger(__name__)
 
