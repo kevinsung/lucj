@@ -135,11 +135,11 @@ def run_lucj_sqd_cobyqa_task(
         for i, batch in enumerate(batches):
             energy_sci, _, _, _ = solve_fermion(
                 batch,
-                mol_data.one_body_integrals,
-                mol_data.two_body_integrals,
+                mol_data.hamiltonian.one_body_tensor,
+                mol_data.hamiltonian.two_body_tensor,
                 open_shell=False,
                 spin_sq=0,
-                max_davidson=task.max_davidson,
+                max_cycle=task.max_davidson,
             )
             energies[i] = energy_sci + mol_data.core_energy
         index = np.argmin(energies)

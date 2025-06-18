@@ -36,7 +36,7 @@ molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 bond_distance_range = [0.9, 1.2, 1.5, 1.8]
 
-connectivities = ["square", "all-to-all"]
+connectivities = ["all-to-all"]
 n_reps_range = [1, 2, 3, None]
 
 tasks = [

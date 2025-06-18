@@ -118,11 +118,11 @@ def run_lucj_sqd_initial_params_task(
     for i, batch in enumerate(batches):
         energy_sci, sci_state, avg_occs, spin = solve_fermion(
             batch,
-            mol_data.one_body_integrals,
-            mol_data.two_body_integrals,
+            mol_data.hamiltonian.one_body_tensor,
+            mol_data.hamiltonian.two_body_tensor,
             open_shell=False,
             spin_sq=0,
-            max_davidson=task.max_davidson,
+            max_cycle=task.max_davidson,
         )
         energies[i] = energy_sci + mol_data.core_energy
         spin_squareds[i] = spin

@@ -22,20 +22,20 @@ molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 plots_dir = os.path.join("plots", molecule_basename)
 os.makedirs(plots_dir, exist_ok=True)
 
-start = 0.9
-stop = 2.7
-step = 0.1
-bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) + 1)
+bond_distance_range = [0.9, 1.2, 1.5, 1.8]
+start = bond_distance_range[0]
+stop = bond_distance_range[-1]
 reference_bond_distance_range = np.linspace(
     start, stop, num=round((stop - start) / 0.05) + 1
 )
 
-connectivity = "heavy-hex"
+connectivity = "square"
 n_reps = 1
 shots = 100_000
-samples_per_batch = 5000
+samples_per_batch = 100
 n_batches = 3
 max_davidson = 200
+maxiter = 1_000
 # TODO set entropy and generate seeds properly
 entropy = None
 
@@ -48,7 +48,7 @@ tasks_cobyqa = [
             n_reps=n_reps,
             with_final_orbital_rotation=True,
         ),
-        cobyqa_params=COBYQAParams(maxiter=10_000),
+        cobyqa_params=COBYQAParams(maxiter=maxiter),
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,

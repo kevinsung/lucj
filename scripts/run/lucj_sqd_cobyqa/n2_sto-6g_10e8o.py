@@ -5,7 +5,6 @@ import os
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
-import numpy as np
 from tqdm import tqdm
 
 from lucj.params import COBYQAParams, LUCJParams
@@ -26,7 +25,7 @@ logging.basicConfig(
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 96
+MAX_PROCESSES = 1
 OVERWRITE = True
 
 molecule_name = "n2"
@@ -34,17 +33,15 @@ basis = "sto-6g"
 nelectron, norb = 10, 8
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-start = 0.9
-stop = 2.7
-step = 0.1
-bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) + 1)
+bond_distance_range = [0.9, 1.2, 1.5, 1.8]
 
-connectivity = "heavy-hex"
+connectivity = "square"
 n_reps = 1
 shots = 100_000
-samples_per_batch = 5000
+samples_per_batch = 100
 n_batches = 3
 max_davidson = 200
+maxiter = 1_000
 # TODO set entropy and generate seeds properly
 entropy = None
 
@@ -57,7 +54,7 @@ tasks = [
             n_reps=n_reps,
             with_final_orbital_rotation=True,
         ),
-        cobyqa_params=COBYQAParams(maxiter=10_000),
+        cobyqa_params=COBYQAParams(maxiter=maxiter),
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
