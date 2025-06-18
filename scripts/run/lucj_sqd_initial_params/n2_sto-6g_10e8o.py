@@ -6,7 +6,6 @@ import os
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
-import numpy as np
 from tqdm import tqdm
 
 from lucj.params import LUCJParams
@@ -35,10 +34,7 @@ basis = "sto-6g"
 nelectron, norb = 10, 8
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-start = 0.9
-stop = 2.7
-step = 0.1
-bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) + 1)
+bond_distance_range = [0.9, 1.2, 1.5, 1.8]
 
 connectivities = [
     "square",
@@ -48,7 +44,11 @@ n_reps_range = [1, None]
 shots = 100_000
 samples_per_batch_range = [100]
 n_batches = 3
-max_davidson = 200
+energy_tol = 1e-5
+occupancies_tol = 1e-3
+carryover_threshold = 1e-3
+max_iterations = 100
+symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = None
 
@@ -64,7 +64,11 @@ tasks = [
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
-        max_davidson=max_davidson,
+        energy_tol=energy_tol,
+        occupancies_tol=occupancies_tol,
+        carryover_threshold=carryover_threshold,
+        max_iterations=max_iterations,
+        symmetrize_spin=symmetrize_spin,
         entropy=entropy,
     )
     for connectivity, n_reps in itertools.product(connectivities, n_reps_range)

@@ -34,8 +34,12 @@ n_reps = 1
 shots = 100_000
 samples_per_batch = 100
 n_batches = 3
-max_davidson = 200
-maxiter = 1_000
+energy_tol = 1e-5
+occupancies_tol = 1e-3
+carryover_threshold = 1e-3
+max_iterations = 100
+symmetrize_spin = True
+cobyqa_maxiter = 100
 # TODO set entropy and generate seeds properly
 entropy = None
 
@@ -48,11 +52,15 @@ tasks_cobyqa = [
             n_reps=n_reps,
             with_final_orbital_rotation=True,
         ),
-        cobyqa_params=COBYQAParams(maxiter=maxiter),
+        cobyqa_params=COBYQAParams(maxiter=cobyqa_maxiter),
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
-        max_davidson=max_davidson,
+        energy_tol=energy_tol,
+        occupancies_tol=occupancies_tol,
+        carryover_threshold=carryover_threshold,
+        max_iterations=max_iterations,
+        symmetrize_spin=symmetrize_spin,
         entropy=entropy,
     )
     for d in bond_distance_range
@@ -69,7 +77,11 @@ tasks_ccsd = [
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
-        max_davidson=max_davidson,
+        energy_tol=energy_tol,
+        occupancies_tol=occupancies_tol,
+        carryover_threshold=carryover_threshold,
+        max_iterations=max_iterations,
+        symmetrize_spin=symmetrize_spin,
         entropy=entropy,
     )
     for d in bond_distance_range

@@ -42,7 +42,7 @@ tasks = [
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
-        max_davidson=max_davidson,
+        max_cycle=max_davidson,
         entropy=entropy,
     )
     for d in bond_distance_range

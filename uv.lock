@@ -1096,7 +1096,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "qiskit", extras = ["visualization"], specifier = ">=1.0" },
     { name = "qiskit-addon-aqc-tensor", extras = ["quimb-jax"], editable = "../qiskit-addon-aqc-tensor" },
-    { name = "qiskit-addon-sqd" },
+    { name = "qiskit-addon-sqd", editable = "../qiskit-addon-sqd" },
     { name = "qiskit-quimb", specifier = ">=0.0.9" },
     { name = "ruff", marker = "extra == 'dev'" },
     { name = "tqdm" },
@@ -2207,7 +2207,7 @@ provides-extras = ["quimb", "quimb-autograd", "quimb-jax", "quimb-all", "aer", "
 [[package]]
 name = "qiskit-addon-sqd"
 version = "0.11.0"
-source = { registry = "https://pypi.org/simple" }
+source = { editable = "../qiskit-addon-sqd" }
 dependencies = [
     { name = "jax" },
     { name = "jaxlib" },
@@ -2216,10 +2216,48 @@ dependencies = [
     { name = "qiskit" },
     { name = "scipy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ee/0d/fe2a03ee82ffd26083bfd63bb12ddbb944e64a604067ea7dc3878fe2a33d/qiskit_addon_sqd-0.11.0.tar.gz", hash = "sha256:fb71f6ce2c82d63bebc6e1db75291536b3476339927e3a9d2053fbc4bc8cad1b", size = 674409, upload-time = "2025-06-05T15:35:05.29Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/00/38/6ff5407b3464212d802576c5e2c399930e4b04c9520f87a70657410ce973/qiskit_addon_sqd-0.11.0-py3-none-any.whl", hash = "sha256:b93a4a54f16baa92f1c59e6507c85fdab032086a2811a01145cfbff51517c1a4", size = 34303, upload-time = "2025-06-05T15:35:03.723Z" },
+
+[package.metadata]
+requires-dist = [
+    { name = "ffsim", marker = "extra == 'notebook-dependencies'" },
+    { name = "jax", specifier = ">=0.4.30" },
+    { name = "jaxlib", specifier = ">=0.4.30" },
+    { name = "jupyter-sphinx", marker = "extra == 'docs'" },
+    { name = "matplotlib", marker = "extra == 'notebook-dependencies'" },
+    { name = "mypy", marker = "extra == 'lint'", specifier = "==1.16.0" },
+    { name = "nbmake", marker = "extra == 'nbtest'", specifier = ">=1.5.0" },
+    { name = "nbqa", marker = "extra == 'style'", specifier = ">=1.8.5" },
+    { name = "nbsphinx", marker = "extra == 'docs'", specifier = ">=0.9.4" },
+    { name = "numpy", specifier = ">=1.26" },
+    { name = "pylatexenc", marker = "extra == 'notebook-dependencies'" },
+    { name = "pylint", marker = "extra == 'lint'", specifier = "==3.3.6" },
+    { name = "pyscf", marker = "sys_platform != 'win32'", specifier = ">=2.5" },
+    { name = "pytest", marker = "extra == 'basetest'", specifier = ">=8.0" },
+    { name = "pytest-cov", marker = "extra == 'basetest'", specifier = ">=5.0" },
+    { name = "qiskit", specifier = ">=1.2,<3" },
+    { name = "qiskit", marker = "extra == 'notebook-dependencies'" },
+    { name = "qiskit-addon-sqd", marker = "extra == 'notebook-dependencies'" },
+    { name = "qiskit-addon-sqd", extras = ["basetest"], marker = "extra == 'nbtest'" },
+    { name = "qiskit-addon-sqd", extras = ["basetest"], marker = "extra == 'test'" },
+    { name = "qiskit-addon-sqd", extras = ["style"], marker = "extra == 'lint'" },
+    { name = "qiskit-addon-sqd", extras = ["test", "nbtest", "lint", "docs"], marker = "extra == 'dev'" },
+    { name = "qiskit-addon-sqd", extras = ["test", "notebook-dependencies"], marker = "extra == 'docs'" },
+    { name = "qiskit-addon-utils", marker = "extra == 'notebook-dependencies'" },
+    { name = "qiskit-aer", marker = "extra == 'notebook-dependencies'" },
+    { name = "qiskit-ibm-runtime", marker = "extra == 'notebook-dependencies'" },
+    { name = "qiskit-sphinx-theme", marker = "extra == 'docs'", specifier = "~=2.0.0" },
+    { name = "reno", marker = "extra == 'docs'", specifier = ">=4.1" },
+    { name = "reno", marker = "extra == 'lint'", specifier = ">=4.1" },
+    { name = "ruff", marker = "extra == 'style'", specifier = "==0.11.12" },
+    { name = "scipy", specifier = ">=1.13.1" },
+    { name = "sphinx-autodoc-typehints", marker = "extra == 'docs'" },
+    { name = "sphinx-copybutton", marker = "extra == 'docs'" },
+    { name = "sphinx-design", marker = "extra == 'docs'" },
+    { name = "sphinx-reredirects", marker = "extra == 'docs'" },
+    { name = "toml", marker = "extra == 'lint'", specifier = ">=0.9.6" },
+    { name = "tox", marker = "extra == 'dev'", specifier = ">=4.4.3" },
 ]
+provides-extras = ["dev", "basetest", "test", "nbtest", "style", "lint", "notebook-dependencies", "docs"]
 
 [[package]]
 name = "qiskit-quimb"
