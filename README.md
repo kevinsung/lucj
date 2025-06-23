@@ -12,11 +12,12 @@ The instructions below use uv (https://docs.astral.sh/uv/getting-started/install
 
 ```bash
 uv run scripts/run/lucj_initial_params/n2_sto-6g_10e8o.py
-uv run scripts/run/lucj_aqc_mps/n2_sto-6g_10e8o.py
+uv run scripts/run/lucj_sqd_initial_params/n2_sto-6g_10e8o.py
+uv run scripts/run/lucj_sqd_cobyqa/n2_sto-6g_10e8o.py
 ```
 
 ## Generate plots
 
 ```bash
-uv run scripts/plot/n2_sto-6g_10e8o/energy_aqc_mps_max_bond.py
+uv run scripts/plot/n2_sto-6g_10e8o/energy_sqd_cobyqa.py
 ```
