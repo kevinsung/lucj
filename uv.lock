@@ -543,8 +543,8 @@ wheels = [
 
 [[package]]
 name = "ffsim"
-version = "0.0.57"
-source = { registry = "https://pypi.org/simple" }
+version = "0.0.58.dev0"
+source = { editable = "../ffsim" }
 dependencies = [
     { name = "numpy" },
     { name = "opt-einsum" },
@@ -554,12 +554,31 @@ dependencies = [
     { name = "scipy" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/45/09/312a0462d2054150fdfff6c282f9861db2fa10cd2c913d0cdac70159c7f2/ffsim-0.0.57.tar.gz", hash = "sha256:761785c375d0498f1cd6863731a4293858b277477a10fa980db34d64bb751f18", size = 1233438, upload-time = "2025-06-06T20:34:08.293Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/79/5d/607c43982505a8a429ad348c23253b62940dcca6af46f5eebde2a5c73a11/ffsim-0.0.57-cp39-abi3-macosx_10_9_x86_64.whl", hash = "sha256:36c82e1ee90f813fa8d7cacc527c8d8f6d96e29d5078e8b0735fd3546fde1e41", size = 600871, upload-time = "2025-06-06T20:33:58.325Z" },
-    { url = "https://files.pythonhosted.org/packages/dd/4f/0eb0773d69f0b04d7a34c9bbef9232983bd96e00ad1ae216150b5eeabe1a/ffsim-0.0.57-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:1e227794cc29c4bb6de6dc0acbb963eaddd1418d1afccfad2ae10cd128ebe38a", size = 597795, upload-time = "2025-06-06T20:34:00.637Z" },
-    { url = "https://files.pythonhosted.org/packages/0c/f6/20166ae336324c852c617a49fccc110ebe4f4c55f8233f593b32d5082a85/ffsim-0.0.57-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2c410b9f0f83109c00ce4ea9dace68dfe965bbbfa45ec9fb9424d9fd91905b88", size = 13100302, upload-time = "2025-06-06T20:34:02.696Z" },
+
+[package.metadata]
+requires-dist = [
+    { name = "coverage", marker = "extra == 'dev'" },
+    { name = "maturin", marker = "extra == 'dev'" },
+    { name = "mypy", marker = "extra == 'dev'" },
+    { name = "myst-parser", marker = "extra == 'dev'" },
+    { name = "nbmake", marker = "extra == 'dev'" },
+    { name = "nbsphinx", marker = "extra == 'dev'" },
+    { name = "numpy" },
+    { name = "opt-einsum" },
+    { name = "orjson" },
+    { name = "pre-commit", marker = "extra == 'dev'" },
+    { name = "pyscf", specifier = ">=2.9" },
+    { name = "pytest", marker = "extra == 'dev'" },
+    { name = "qiskit", specifier = ">=1.3" },
+    { name = "qiskit", extras = ["visualization"], marker = "extra == 'dev'" },
+    { name = "qiskit-sphinx-theme", marker = "extra == 'dev'" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = "==0.9.9" },
+    { name = "scipy" },
+    { name = "sphinx", marker = "extra == 'dev'" },
+    { name = "sphinx-autodoc-typehints", marker = "extra == 'dev'" },
+    { name = "typing-extensions" },
 ]
+provides-extras = ["dev"]
 
 [[package]]
 name = "filelock"
@@ -1084,7 +1103,7 @@ requires-dist = [
     { name = "cmaes" },
     { name = "cotengrust" },
     { name = "cytoolz" },
-    { name = "ffsim" },
+    { name = "ffsim", editable = "../ffsim" },
     { name = "kahypar" },
     { name = "loky" },
     { name = "molecules-catalog", editable = "../../../../media/storage/kevinsung-public/molecules-catalog" },
