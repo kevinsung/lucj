@@ -11,7 +11,7 @@ from ffsim.variational.util import interaction_pairs_spin_balanced
 from molecules_catalog.util import load_molecular_data
 
 from lucj.params import LUCJParams
-from lucj.tasks.lucj_compressed_t2_task_ffsim.compressed_t2_all_to_all import from_t_amplitudes_compressed
+from lucj.tasks.lucj_compressed_t2_task_ffsim.compressed import from_t_amplitudes_compressed
 
 logger = logging.getLogger(__name__)
 
