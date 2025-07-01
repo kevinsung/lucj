@@ -21,3 +21,4 @@ uv run scripts/run/lucj_sqd_cobyqa/n2_sto-6g_10e8o.py
 ```bash
 uv run scripts/plot/n2_sto-6g_10e8o/energy_sqd_cobyqa.py
 ```
+

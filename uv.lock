@@ -1106,7 +1106,7 @@ requires-dist = [
     { name = "ffsim", editable = "../ffsim" },
     { name = "kahypar" },
     { name = "loky" },
-    { name = "molecules-catalog", editable = "../../../../media/storage/kevinsung-public/molecules-catalog" },
+    { name = "molecules-catalog", editable = "../molecules-catalog" },
     { name = "mypy", marker = "extra == 'dev'" },
     { name = "networkx" },
     { name = "opt-einsum" },
@@ -1313,7 +1313,7 @@ wheels = [
 [[package]]
 name = "molecules-catalog"
 version = "0.0.0"
-source = { editable = "../../../../media/storage/kevinsung-public/molecules-catalog" }
+source = { editable = "../molecules-catalog" }
 dependencies = [
     { name = "ffsim" },
     { name = "matplotlib" },
@@ -2208,7 +2208,7 @@ requires-dist = [
     { name = "qiskit-addon-utils", marker = "extra == 'test'", specifier = ">=0.1.0" },
     { name = "qiskit-aer", marker = "extra == 'aer'", specifier = ">=0.14.2" },
     { name = "qiskit-ibm-runtime", marker = "extra == 'notebook-dependencies'", specifier = ">=0.24.0" },
-    { name = "qiskit-quimb", marker = "python_full_version < '3.14' and extra == 'quimb'", specifier = ">=0.0.9,<0.1" },
+    { name = "qiskit-quimb", marker = "python_full_version < '3.14' and extra == 'quimb'", specifier = ">=0.0.8,<0.1" },
     { name = "qiskit-sphinx-theme", marker = "extra == 'docs'", specifier = "~=2.0.0" },
     { name = "quimb", marker = "python_full_version < '3.14' and extra == 'quimb'", specifier = ">=1.11.0,<2" },
     { name = "reno", marker = "extra == 'docs'", specifier = ">=3.4.0" },
@@ -2249,7 +2249,7 @@ requires-dist = [
     { name = "nbsphinx", marker = "extra == 'docs'", specifier = ">=0.9.4" },
     { name = "numpy", specifier = ">=1.26" },
     { name = "pylatexenc", marker = "extra == 'notebook-dependencies'" },
-    { name = "pylint", marker = "extra == 'lint'", specifier = "==3.3.6" },
+    { name = "pylint", marker = "extra == 'lint'", specifier = "==3.3.7" },
     { name = "pyscf", marker = "sys_platform != 'win32'", specifier = ">=2.5" },
     { name = "pytest", marker = "extra == 'basetest'", specifier = ">=8.0" },
     { name = "pytest-cov", marker = "extra == 'basetest'", specifier = ">=5.0" },
