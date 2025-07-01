@@ -95,7 +95,7 @@ def run_lucj_compressed_t2_task(
         "init_loss": init_loss, 
         "final_loss": final_loss
     }
-
+    
     logging.info(f"{task} Saving data...\n")
     with open(data_filename, "wb") as f:
         pickle.dump(data, f)

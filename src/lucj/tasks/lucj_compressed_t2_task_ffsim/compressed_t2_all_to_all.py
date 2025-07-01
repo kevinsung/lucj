@@ -134,7 +134,22 @@ def double_factorized_t2_compress(
     # method = "COBYLA"
     options = {"maxiter": 100}
 
-    diag_coulomb_mask = np.ones((norb, norb), dtype=bool)
+    pairs_aa, pairs_ab = interaction_pairs
+
+    # Zero out diagonal coulomb matrix entries
+    pairs = []
+    if pairs_aa is not None:
+        pairs += pairs_aa
+    if pairs_ab is not None:
+        pairs += pairs_ab
+    if not pairs:
+        diag_coulomb_mask = np.ones((norb, norb), dtype=bool)
+    else:
+        diag_coulomb_mask = np.zeros((norb, norb), dtype=bool)
+        rows, cols = zip(*pairs)
+        diag_coulomb_mask[rows, cols] = True
+        diag_coulomb_mask[cols, rows] = True
+
     diag_coulomb_mask = np.triu(diag_coulomb_mask)
 
     # print(orbital_rotations.shape)

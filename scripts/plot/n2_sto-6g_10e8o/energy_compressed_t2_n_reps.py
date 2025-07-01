@@ -182,9 +182,13 @@ for i, connectivity in enumerate(connectivities):
         )
         for n_reps in these_n_reps
     ]
-
+    # for task in tasks_compressed_t2:
+    #     print(results_compressed_t2[task])
+    #     input()
     energies = [results_compressed_t2[task]['energy'] for task in tasks_compressed_t2]
     errors = [results_compressed_t2[task]["error"] for task in tasks_compressed_t2]
+    init_loss = [results_compressed_t2[task]["init_loss"] for task in tasks_compressed_t2]
+    final_loss = [results_compressed_t2[task]["final_loss"] for task in tasks_compressed_t2]
 
     axes[0, i].plot(
         these_n_reps,
@@ -201,6 +205,22 @@ for i, connectivity in enumerate(connectivities):
         color=colors[3],
     )
 
+    axes[2, i].plot(
+        these_n_reps,
+        init_loss,
+        f"{markers[0]}{linestyles[0]}",
+        label="LUCJ Compressed-t2 truncated",
+        color=colors[4],
+    )
+
+    axes[2, i].plot(
+        these_n_reps,
+        final_loss,
+        f"{markers[0]}{linestyles[0]}",
+        label="LUCJ Compressed-t2 truncated",
+        color=colors[3],
+    )
+
     axes[0, i].set_title(connectivity)
     axes[0, i].set_yscale("log")
     axes[0, i].axhline(1.6e-3, linestyle="--", color="gray")
@@ -212,6 +232,11 @@ for i, connectivity in enumerate(connectivities):
     axes[1, i].set_xlabel("Repetitions")
     axes[1, i].set_xticks(these_n_reps)
     axes[1, 0].legend()
+
+    # axes[1, i].set_ylim(0, 0.1)
+    axes[2, i].set_ylabel("loss")
+    axes[2, i].set_xlabel("Repetitions")
+    axes[2, i].set_xticks(these_n_reps)
     fig.suptitle(
         f"CCSD initial parameters {molecule_name} {basis} ({nelectron}e, {norb}o) R={bond_distance} Å"
     )
