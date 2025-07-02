@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 
 from lucj.params import LUCJParams
 from lucj.tasks.lucj_initial_params_task import LUCJInitialParamsTask
-from lucj.tasks.uccsd_initial_params_task import UCCSDInitialParamsTask
 from lucj.tasks.lucj_compressed_t2_task import LUCJCompressedT2Task
+from lucj.tasks.uccsd_initial_params_task import UCCSDInitialParamsTask
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))

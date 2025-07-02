@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 
 from lucj.params import LUCJParams
 from lucj.tasks.lucj_initial_params_task import LUCJInitialParamsTask
-from lucj.tasks.uccsd_initial_params_task import UCCSDInitialParamsTask
 from lucj.tasks.lucj_compressed_t2_task import LUCJCompressedT2Task
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
@@ -60,9 +59,6 @@ tasks_compressed_t2 = [
     for connectivity, n_reps in itertools.product(connectivities, n_reps_range)
 ]
 
-task_uccsd = UCCSDInitialParamsTask(
-    molecule_basename=molecule_basename, bond_distance=bond_distance
-)
 
 
 filepath = os.path.join(
@@ -88,10 +84,6 @@ for task in tasks_lucj:
     with open(filepath, "rb") as f:
         data_lucj[task] = pickle.load(f)
 
-data_uccsd = {}
-filepath = DATA_ROOT / "uccsd_initial_params" / task_uccsd.dirpath / "data.pickle"
-with open(filepath, "rb") as f:
-    data_uccsd = pickle.load(f)
 print("Done loading data.")
 
 markers = ["o", "s", "v", "D", "p", "*", "P", "X"]
@@ -100,21 +92,9 @@ colors = prop_cycle.by_key()["color"]
 alphas = [0.5, 1.0]
 linestyles = ["--", ":"]
 
-fig, axes = plt.subplots(2, len(connectivities), figsize=(12, 6), layout="constrained")
+fig, axes = plt.subplots(3, len(connectivities), figsize=(12, 6), layout="constrained")
 
 for i, connectivity in enumerate(connectivities):
-    axes[0, i].axhline(
-        data_uccsd["error"],
-        linestyle="--",
-        label="UCCSD init",
-        color=colors[0],
-    )
-    axes[1, i].axhline(
-        data_uccsd["spin_squared"],
-        linestyle="--",
-        label="UCCSD init",
-        color=colors[0],
-    )
 
     task_lucj = LUCJInitialParamsTask(
         molecule_basename=molecule_basename,
@@ -182,9 +162,16 @@ for i, connectivity in enumerate(connectivities):
         )
         for n_reps in these_n_reps
     ]
-
+    # for task in tasks_compressed_t2:
+    #     print(results_compressed_t2[task])
+    #     input()
     energies = [results_compressed_t2[task]['energy'] for task in tasks_compressed_t2]
     errors = [results_compressed_t2[task]["error"] for task in tasks_compressed_t2]
+    # init_loss = [results_compressed_t2[task]["init_loss"] for task in tasks_compressed_t2]
+    # final_loss = [results_compressed_t2[task]["final_loss"] for task in tasks_compressed_t2]
+
+    init_loss = [0 for i in range(12)]
+    final_loss = [0 for i in range(12)]
 
     axes[0, i].plot(
         these_n_reps,
@@ -201,6 +188,22 @@ for i, connectivity in enumerate(connectivities):
         color=colors[3],
     )
 
+    axes[2, i].plot(
+        these_n_reps,
+        init_loss,
+        f"{markers[0]}{linestyles[0]}",
+        label="LUCJ Compressed-t2 truncated",
+        color=colors[4],
+    )
+
+    axes[2, i].plot(
+        these_n_reps,
+        final_loss,
+        f"{markers[0]}{linestyles[0]}",
+        label="LUCJ Compressed-t2 truncated",
+        color=colors[3],
+    )
+
     axes[0, i].set_title(connectivity)
     axes[0, i].set_yscale("log")
     axes[0, i].axhline(1.6e-3, linestyle="--", color="gray")
@@ -212,6 +215,11 @@ for i, connectivity in enumerate(connectivities):
     axes[1, i].set_xlabel("Repetitions")
     axes[1, i].set_xticks(these_n_reps)
     axes[1, 0].legend()
+
+    # axes[1, i].set_ylim(0, 0.1)
+    axes[2, i].set_ylabel("loss")
+    axes[2, i].set_xlabel("Repetitions")
+    axes[2, i].set_xticks(these_n_reps)
     fig.suptitle(
         f"CCSD initial parameters {molecule_name} {basis} ({nelectron}e, {norb}o) R={bond_distance} Å"
     )
