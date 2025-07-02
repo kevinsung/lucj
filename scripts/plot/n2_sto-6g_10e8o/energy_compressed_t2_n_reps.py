@@ -209,7 +209,7 @@ for i, connectivity in enumerate(connectivities):
         these_n_reps,
         init_loss,
         f"{markers[0]}{linestyles[0]}",
-        label="LUCJ Compressed-t2 truncated",
+        label="init loss",
         color=colors[4],
     )
 
@@ -217,7 +217,7 @@ for i, connectivity in enumerate(connectivities):
         these_n_reps,
         final_loss,
         f"{markers[0]}{linestyles[0]}",
-        label="LUCJ Compressed-t2 truncated",
+        label="final loss",
         color=colors[3],
     )
 

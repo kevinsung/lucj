@@ -4,35 +4,58 @@ import ffsim.variational.util
 import ffsim
 import numpy as np
 from opt_einsum import contract
+import optax
 import scipy
 import jax
 import jax.numpy as jnp
 
+
 def _reshape_grad(
     grad_diag_coulomb_mats: jnp.ndarray,
     orbital_rotations_log_jax_tri: jnp.ndarray,
-    diag_coulomb_mat_mask: np.ndarray):
-    pass
+    diag_coulomb_mat_mask: np.ndarray,
+):
     _, norb, _ = orbital_rotations_log_jax_tri.shape
     # include the diagonal element
     # print(orbital_rotations_log_jax_tri[0])
     leaf_param_real_indices = np.triu_indices(norb, k=1)
+    # differ by minus for the imaginary part
+    # according to webiste https://docs.jax.dev/en/latest/notebooks/autodiff_cookbook.html#complex-numbers-and-differentiation
+    # We can use grad to optimize functions, like real-valued loss functions of complex parameters x, 
+    # by taking steps in the direction of the conjugate of grad(f)(x).
+
     leaf_params_real = np.real(
-        np.ravel([orbital_rotation[leaf_param_real_indices] for orbital_rotation in orbital_rotations_log_jax_tri]
-    ))
+        np.ravel(
+            [
+                orbital_rotation[leaf_param_real_indices]
+                for orbital_rotation in orbital_rotations_log_jax_tri
+            ]
+        )
+    )
     # add imag part
     leaf_param_imag_indices = np.triu_indices(norb)
-    leaf_params_imag = np.imag(
-        np.ravel([orbital_rotation[leaf_param_imag_indices] for orbital_rotation in orbital_rotations_log_jax_tri]
-    ))
+    leaf_params_imag = -np.imag(
+        np.ravel(
+            [
+                orbital_rotation[leaf_param_imag_indices]
+                for orbital_rotation in orbital_rotations_log_jax_tri
+            ]
+        )
+    )
     core_param_indices = np.nonzero(diag_coulomb_mat_mask)
-    core_params = np.real(np.ravel(
-        [diag_coulomb_mat[core_param_indices] for diag_coulomb_mat in grad_diag_coulomb_mats]
-    ))
+    core_params = np.real(
+        np.ravel(
+            [
+                diag_coulomb_mat[core_param_indices]
+                for diag_coulomb_mat in grad_diag_coulomb_mats
+            ]
+        )
+    )
     # print(leaf_params_real[: 20])
     # print(leaf_params_imag[: 20])
     # input()
     return np.concatenate([leaf_params_real, leaf_params_imag, core_params])
+
 
 def _df_tensors_to_params(
     diag_coulomb_mats: np.ndarray,
@@ -141,15 +164,41 @@ def double_factorized_t2_compress(
     def fun_jax(diag_coulomb_mats_tri, orbital_rotations_log_tri):
         orbital_rotations_log_real_tri = jnp.real(orbital_rotations_log_tri)
         orbital_rotations_log_imag_tri = jnp.imag(orbital_rotations_log_tri)
-        orbital_rotations_log_real =  orbital_rotations_log_real_tri - jnp.transpose(orbital_rotations_log_real_tri, (0, 2, 1))
-        diagonal_element = jnp.stack([jnp.diag(jnp.diag(orbital_rotation)) for orbital_rotation in orbital_rotations_log_imag_tri], axis=0)
-        orbital_rotations_log_imag = orbital_rotations_log_imag_tri + jnp.transpose(orbital_rotations_log_imag_tri, (0, 2, 1))
-        orbital_rotations_log = orbital_rotations_log_real + 1j * orbital_rotations_log_imag - 1j * diagonal_element
+        orbital_rotations_log_real = orbital_rotations_log_real_tri - jnp.transpose(
+            orbital_rotations_log_real_tri, (0, 2, 1)
+        )
+        diagonal_element = jnp.stack(
+            [
+                jnp.diag(jnp.diag(orbital_rotation))
+                for orbital_rotation in orbital_rotations_log_imag_tri
+            ],
+            axis=0,
+        )
+        orbital_rotations_log_imag = orbital_rotations_log_imag_tri + jnp.transpose(
+            orbital_rotations_log_imag_tri, (0, 2, 1)
+        )
+        orbital_rotations_log = (
+            orbital_rotations_log_real
+            + 1j * orbital_rotations_log_imag
+            - 1j * diagonal_element
+        )
         eigs, vecs = jnp.linalg.eigh(-1j * orbital_rotations_log)
 
-        diagonal_element = jnp.stack([jnp.diag(jnp.diag(diag_coulomb_mat)) for diag_coulomb_mat in diag_coulomb_mats_tri], axis=0)
-        diag_coulomb_mats = diag_coulomb_mats_tri + jnp.transpose(diag_coulomb_mats_tri, (0, 2, 1)) - diagonal_element
-        orbital_rotations = jnp.einsum("tij,tj,tkj->tik", vecs, jnp.exp(1j * eigs), vecs.conj())
+        diagonal_element = jnp.stack(
+            [
+                jnp.diag(jnp.diag(diag_coulomb_mat))
+                for diag_coulomb_mat in diag_coulomb_mats_tri
+            ],
+            axis=0,
+        )
+        diag_coulomb_mats = (
+            diag_coulomb_mats_tri
+            + jnp.transpose(diag_coulomb_mats_tri, (0, 2, 1))
+            - diagonal_element
+        )
+        orbital_rotations = jnp.einsum(
+            "tij,tj,tkj->tik", vecs, jnp.exp(1j * eigs), vecs.conj()
+        )
         reconstructed = (
             1j
             * contract(
@@ -189,7 +238,7 @@ def double_factorized_t2_compress(
 
     # value_and_grad_func = jax.value_and_grad(fun_jax, argnums=(0, 1), holomorphic=True)
     value_and_grad_func = jax.value_and_grad(fun_jax, argnums=(0, 1))
-    
+
     def fun_jac(x):
         diag_coulomb_mats, orbital_rotations = _params_to_df_tensors(
             x, n_tensors, norb, diag_coulomb_mask
@@ -201,12 +250,18 @@ def double_factorized_t2_compress(
         mask = jnp.triu(mask)
         orbital_rotations_log_jax_tri = orbital_rotations_log_jax * mask
 
-        val, (grad_diag_coulomb_mats, orbital_rotations_log_jax_tri) = value_and_grad_func(diag_coulomb_mats_tri_jax, orbital_rotations_log_jax_tri)
+        val, (grad_diag_coulomb_mats, orbital_rotations_log_jax_tri) = (
+            value_and_grad_func(
+                diag_coulomb_mats_tri_jax, orbital_rotations_log_jax_tri
+            )
+        )
         # print(grad_diag_coulomb_mats.shape)
         # print(grad_orbital_rotations_real.shape)
         # print(grad_orbital_rotations_imag.shape)
         # input()
-        reshaped_grad = _reshape_grad(grad_diag_coulomb_mats, orbital_rotations_log_jax_tri, diag_coulomb_mask)
+        reshaped_grad = _reshape_grad(
+            grad_diag_coulomb_mats, orbital_rotations_log_jax_tri, diag_coulomb_mask
+        )
         return val, reshaped_grad
 
     def callback(intermediate_result: scipy.optimize.OptimizeResult):
@@ -245,16 +300,43 @@ def double_factorized_t2_compress(
     diag_coulomb_mats_converted, orbital_rotations_converted = _params_to_df_tensors(
         x0, n_tensors, norb, diag_coulomb_mask
     )
+
     init_loss = fun(x0)
-    val, grad = fun_jac(x0)
-    # print(loss_fun)
-    # print(loss_fun_np)
-    # print(np.allclose(a, a_np))
-    # print(np.allclose(b, b_np))
-    # print(a[0])
-    # print()
-    # print(a_np[0])
-    # print(np.isclose(b, b_np))
+    
+    # print(np.max(np.abs(t2)))
+
+    grad = np.ones(x0.shape[0]) * 0.1
+    for _ in range(5):
+        x = x0 + grad
+        val, grad = fun_jac(x)
+
+        # numerical_gradient
+        h = 1e-8
+        grad_numerical = np.zeros_like(x, dtype=float)
+        for i in range(x.size):
+            x_plus = np.copy(x)
+            x_minus = np.copy(x)
+            x_plus[i] += h
+            x_minus[i] -= h
+            grad_numerical[i] = (fun(x_plus) - fun(x_minus)) / (2 * h)
+
+        print(f"Check gradient computation: {np.allclose(grad, grad_numerical)}")
+        if not np.allclose(grad, grad_numerical):
+            print(np.isclose(grad, grad_numerical))
+            print(grad[:10])
+            print(grad_numerical[:10])
+            # differ by minus for the imaginary part
+            # cost goes down more but not as good as the one without gradient
+            input()
+    return
+    print(loss_fun)
+    print(loss_fun_np)
+    print(np.allclose(a, a_np))
+    print(np.allclose(b, b_np))
+    print(a[0])
+    print()
+    print(a_np[0])
+    print(np.isclose(b, b_np))
 
     # print(val)
 
@@ -263,7 +345,7 @@ def double_factorized_t2_compress(
         x0,
         method=method,
         jac=False,
-        callback=callback,
+        # callback=callback,
         options=options,
         # fun, x0, method=method, jac=True, callback=callback, options=options
         # fun, x0, method=method
@@ -274,15 +356,35 @@ def double_factorized_t2_compress(
     result = scipy.optimize.minimize(
         fun_jac,
         x0,
+        # result.x,
         method=method,
         jac=True,
-        callback=callback,
+        # callback=callback,
         options=options,
         # fun, x0, method=method, jac=True, callback=callback, options=options
         # fun, x0, method=method
     )
     # print(all(result.x == x0))
     print(f"final loss with gradient: {fun(result.x)}")
+
+    
+    # for lr in [3e-2, 1e-2, 3e-3, 1e-3]:
+    #     optimizer = optax.adam(lr)
+    #     # Obtain the `opt_state` that contains statistics for the optimizer.
+    #     opt_state = optimizer.init(x0)
+    #     min_loss = 100
+    #     x = x0
+    #     for i in range(400):
+    #         val, grads = fun_jac(x)
+    #         updates, opt_state = optimizer.update(grads, opt_state)
+    #         min_loss = min(min_loss, val)
+    #         x = np.asarray(optax.apply_updates(x, updates))
+    #         # if val < stopping_point:
+    #         #     # Good enough for now
+    #         #     break
+    #     print(f"final loss with adom lr {lr}: {min_loss}")
+    
+
     diag_coulomb_mats, orbital_rotations = _params_to_df_tensors(
         result.x, n_tensors, norb, diag_coulomb_mask
     )
@@ -313,13 +415,15 @@ def from_t_amplitudes_compressed(
         t2, tol=tol
     )
     if optimize:
-        diag_coulomb_mats, orbital_rotations, init_loss, final_loss = double_factorized_t2_compress(
-            t2,
-            diag_coulomb_mats,
-            orbital_rotations,
-            n_reps=n_reps,
-            interaction_pairs=interaction_pairs,
-            nocc=nocc,
+        diag_coulomb_mats, orbital_rotations, init_loss, final_loss = (
+            double_factorized_t2_compress(
+                t2,
+                diag_coulomb_mats,
+                orbital_rotations,
+                n_reps=n_reps,
+                interaction_pairs=interaction_pairs,
+                nocc=nocc,
+            )
         )
     else:
         diag_coulomb_mats = diag_coulomb_mats.reshape(-1, norb, norb)[:n_reps]
@@ -357,53 +461,57 @@ def from_t_amplitudes_compressed(
             ffsim.variational.util.orbital_rotation_from_t1_amplitudes(t1)
         )
 
-    return ffsim.UCJOpSpinBalanced(
-        diag_coulomb_mats=diag_coulomb_mats,
-        orbital_rotations=orbital_rotations,
-        final_orbital_rotation=final_orbital_rotation,
-    ), init_loss, final_loss
-
+    return (
+        ffsim.UCJOpSpinBalanced(
+            diag_coulomb_mats=diag_coulomb_mats,
+            orbital_rotations=orbital_rotations,
+            final_orbital_rotation=final_orbital_rotation,
+        ),
+        init_loss,
+        final_loss,
+    )
 
 
 # Get molecular data and molecular Hamiltonian
 # Build N2 molecule
-mol = pyscf.gto.Mole()
-mol.build(
-    atom=[["N", (0, 0, 0)], ["N", (1.0, 0, 0)]],
-    basis="sto-6g",
-    symmetry="Dooh",
+molecule_name = "n2"
+basis = "6-31g"
+nelectron, norb = 10, 16
+molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
+
+bond_distance = 1.0
+
+from molecules_catalog.util import load_molecular_data
+from pathlib import Path
+import os
+from ffsim.variational.util import interaction_pairs_spin_balanced
+
+# Get molecular data and molecular Hamiltonian
+molecules_catalog_dir = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
+
+mol_data = load_molecular_data(
+    f"{molecule_basename}_d-{bond_distance:.5f}",
+    molecules_catalog_dir=molecules_catalog_dir,
 )
-
-# Define active space
-n_frozen = pyscf.data.elements.chemcore(mol)
-active_space = range(n_frozen, mol.nao_nr())
-
-# Get molecular data and Hamiltonian
-scf = pyscf.scf.RHF(mol).run()
-mol_data = ffsim.MolecularData.from_scf(scf, active_space=active_space)
-norb, nelec = mol_data.norb, mol_data.nelec
+norb = mol_data.norb
+nelec = mol_data.nelec
 mol_hamiltonian = mol_data.hamiltonian
-
-ccsd = pyscf.cc.CCSD(
-    scf, frozen=[i for i in range(mol.nao_nr()) if i not in active_space]
-).run()
 
 # Initialize Hamiltonian, initial state, and LUCJ parameters
 hamiltonian = ffsim.linear_operator(mol_hamiltonian, norb=norb, nelec=nelec)
 reference_state = ffsim.hartree_fock_state(norb, nelec)
-pairs_aa = [(p, p + 1) for p in range(norb - 1)]
-pairs_ab = [(p, p) for p in range(norb)]
-interaction_pairs = (pairs_aa, pairs_ab)
+pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
+    "square", norb
+)
 
 n_reps = 2
 # use CCSD to initialize parameters
 operator, init_loss, final_loss = from_t_amplitudes_compressed(
-    ccsd.t2,
+    mol_data.ccsd_t2,
     n_reps=n_reps,
-    t1=ccsd.t1,
+    t1=mol_data.ccsd_t1,
     interaction_pairs=(pairs_aa, pairs_ab),
     optimize=True,
 )
 # Compute final state
 final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
-

@@ -12,7 +12,6 @@ def _reshape_grad(
     grad_diag_coulomb_mats: jnp.ndarray,
     orbital_rotations_log_jax_tri: jnp.ndarray,
     diag_coulomb_mat_mask: np.ndarray):
-    pass
     _, norb, _ = orbital_rotations_log_jax_tri.shape
     # include the diagonal element
     leaf_param_real_indices = np.triu_indices(norb, k=1)
@@ -154,26 +153,6 @@ def double_factorized_t2_compress(
         diff = reconstructed - t2
         return 0.5 * jnp.sum(jnp.abs(diff) ** 2)
 
-    def fun(x):
-        diag_coulomb_mats, orbital_rotations = _params_to_df_tensors(
-            x, n_tensors, norb, diag_coulomb_mask
-        )
-        reconstructed = (
-            1j
-            * contract(
-                "mpq,map,mip,mbq,mjq->ijab",
-                diag_coulomb_mats,
-                orbital_rotations,
-                orbital_rotations.conj(),
-                orbital_rotations,
-                orbital_rotations.conj(),
-                # optimize="greedy"
-            )[:nocc, :nocc, nocc:, nocc:]
-        )
-        diff = reconstructed - t2
-
-        return 0.5 * np.sum(np.abs(diff) ** 2)
-
     value_and_grad_func = jax.value_and_grad(fun_jax, argnums=(0, 1))
     
     def fun_jac(x):
@@ -227,7 +206,7 @@ def double_factorized_t2_compress(
         x0,
         method=method,
         jac=True,
-        callback=callback,
+        # callback=callback,
         options=options,
         # fun, x0, method=method, jac=True, callback=callback, options=options
         # fun, x0, method=method
