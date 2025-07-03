@@ -9,6 +9,7 @@ import scipy
 import jax
 import jax.numpy as jnp
 
+# jax.config.update("jax_enable_x64", True)
 
 def _reshape_grad(
     grad_diag_coulomb_mats: jnp.ndarray,
@@ -152,7 +153,7 @@ def double_factorized_t2_compress(
     interaction_pairs: tuple[list[tuple[int, int]] | None, list[tuple[int, int]] | None]
     | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
-    _, _, norb, _ = orbital_rotations.shape
+    norb = orbital_rotations.shape[-1]
     # diag_coulomb_mats = diag_coulomb_mats.reshape(-1, norb, norb)
     diag_coulomb_mats = diag_coulomb_mats.reshape(-1, norb, norb)[:n_reps]
     # not dealing with stack for now
@@ -212,13 +213,51 @@ def double_factorized_t2_compress(
             )[:nocc, :nocc, nocc:, nocc:]
         )
         diff = reconstructed - t2
-        # print(reconstructed)
         return 0.5 * jnp.sum(jnp.abs(diff) ** 2)
 
-    def fun(x):
-        diag_coulomb_mats, orbital_rotations = _params_to_df_tensors(
-            x, n_tensors, norb, diag_coulomb_mask
+    def fun_jax_dagger(diag_coulomb_mats_tri, orbital_rotations_log_tri):
+        orbital_rotations_log_real_tri = jnp.real(orbital_rotations_log_tri)
+        orbital_rotations_log_imag_tri = jnp.imag(orbital_rotations_log_tri)
+        orbital_rotations_log_real = orbital_rotations_log_real_tri - jnp.transpose(
+            orbital_rotations_log_real_tri, (0, 2, 1)
         )
+        diagonal_element = jnp.stack(
+            [
+                jnp.diag(jnp.diag(orbital_rotation))
+                for orbital_rotation in orbital_rotations_log_imag_tri
+            ],
+            axis=0,
+        )
+        orbital_rotations_log_imag = orbital_rotations_log_imag_tri + jnp.transpose(
+            orbital_rotations_log_imag_tri, (0, 2, 1)
+        )
+        orbital_rotations_log = (
+            orbital_rotations_log_real
+            + 1j * orbital_rotations_log_imag
+            - 1j * diagonal_element
+        )
+        eigs, vecs = jnp.linalg.eigh(-1j * orbital_rotations_log)
+
+        diagonal_element = jnp.stack(
+            [
+                jnp.diag(jnp.diag(diag_coulomb_mat))
+                for diag_coulomb_mat in diag_coulomb_mats_tri
+            ],
+            axis=0,
+        )
+        diag_coulomb_mats = (
+            diag_coulomb_mats_tri
+            + jnp.transpose(diag_coulomb_mats_tri, (0, 2, 1))
+            - diagonal_element
+        )
+        orbital_rotations = jnp.einsum(
+            "tij,tj,tkj->tik", vecs, jnp.exp(1j * eigs), vecs.conj()
+        )
+
+        two_body_tensor = np.zeros((norb, norb, norb, norb))
+        two_body_tensor[nocc:, :nocc, nocc:, :nocc] = t2.transpose(2, 0, 3, 1)
+        two_body_tensor[:nocc, nocc:, :nocc, nocc:] = -t2.transpose(0, 2, 1, 3).conj()
+
         reconstructed = (
             1j
             * contract(
@@ -229,12 +268,10 @@ def double_factorized_t2_compress(
                 orbital_rotations,
                 orbital_rotations.conj(),
                 # optimize="greedy"
-            )[:nocc, :nocc, nocc:, nocc:]
+            )
         )
-        diff = reconstructed - t2
-        # print(reconstructed)
-
-        return 0.5 * np.sum(np.abs(diff) ** 2)
+        diff = reconstructed - two_body_tensor# try t-t_dagger
+        return 0.5 * jnp.sum(jnp.abs(diff) ** 2)
 
     # value_and_grad_func = jax.value_and_grad(fun_jax, argnums=(0, 1), holomorphic=True)
     value_and_grad_func = jax.value_and_grad(fun_jax, argnums=(0, 1))
@@ -249,7 +286,9 @@ def double_factorized_t2_compress(
         mask = jnp.ones((norb, norb), dtype=bool)
         mask = jnp.triu(mask)
         orbital_rotations_log_jax_tri = orbital_rotations_log_jax * mask
-
+        # print("jax type")
+        # print(diag_coulomb_mats_tri_jax[0][0][0].dtype)
+        # print(orbital_rotations_log_jax_tri[0][0][0].dtype)
         val, (grad_diag_coulomb_mats, orbital_rotations_log_jax_tri) = (
             value_and_grad_func(
                 diag_coulomb_mats_tri_jax, orbital_rotations_log_jax_tri
@@ -301,57 +340,61 @@ def double_factorized_t2_compress(
         x0, n_tensors, norb, diag_coulomb_mask
     )
 
-    init_loss = fun(x0)
-    
+    init_loss, _ = fun_jac(x0)
+    # print(type(x0[0]))
     # print(np.max(np.abs(t2)))
 
-    grad = np.ones(x0.shape[0]) * 0.1
-    for _ in range(5):
-        x = x0 + grad
-        val, grad = fun_jac(x)
+    # grad = np.ones(x0.shape[0]) * 0.001
+    # grad = np.zeros(x0.shape[0])
+    # x = x0
+    # for _ in range(5):
+    #     x = x + grad
+    #     val, grad = fun_jac(x)
 
-        # numerical_gradient
-        h = 1e-8
-        grad_numerical = np.zeros_like(x, dtype=float)
-        for i in range(x.size):
-            x_plus = np.copy(x)
-            x_minus = np.copy(x)
-            x_plus[i] += h
-            x_minus[i] -= h
-            grad_numerical[i] = (fun(x_plus) - fun(x_minus)) / (2 * h)
+    #     # numerical_gradient
+    #     h = np.ones(x0.shape[0]) * 1e-8
+    #     # print(np.sqrt(np.finfo(float).eps))
+    #     # h = np.array(x * np.sqrt(np.finfo(float).eps))
+    #     grad_numerical = np.zeros_like(x, dtype=float)
+    #     for i in range(x.size):
+    #         x_plus = np.copy(x)
+    #         x_minus = np.copy(x)
+    #         x_plus[i] += h[i]
+    #         x_minus[i] -= h[i]
+    #         grad_numerical[i] = (fun(x_plus) - fun(x_minus)) / (2 * h[i])
 
-        print(f"Check gradient computation: {np.allclose(grad, grad_numerical)}")
-        if not np.allclose(grad, grad_numerical):
-            print(np.isclose(grad, grad_numerical))
-            print(grad[:10])
-            print(grad_numerical[:10])
+    #     print(f"Check gradient computation: {np.allclose(grad, grad_numerical)}")
+    #     print(np.linalg.norm(grad_numerical))
+    #     print(np.linalg.norm(grad))
+        # if not np.allclose(grad, grad_numerical):
+            # print(np.isclose(grad, grad_numerical))
+            # print(np.linalg.grad_numerical(grad))
             # differ by minus for the imaginary part
             # cost goes down more but not as good as the one without gradient
-            input()
-    return
-    print(loss_fun)
-    print(loss_fun_np)
-    print(np.allclose(a, a_np))
-    print(np.allclose(b, b_np))
-    print(a[0])
-    print()
-    print(a_np[0])
-    print(np.isclose(b, b_np))
-
+            # input()
+    # return
+    # print(loss_fun)
+    # print(loss_fun_np)
+    # print(np.allclose(a, a_np))
+    # print(np.allclose(b, b_np))
+    # print(a[0])
+    # print()
+    # print(a_np[0])
+    # print(np.isclose(b, b_np))
     # print(val)
 
-    result = scipy.optimize.minimize(
-        fun,
-        x0,
-        method=method,
-        jac=False,
-        # callback=callback,
-        options=options,
-        # fun, x0, method=method, jac=True, callback=callback, options=options
-        # fun, x0, method=method
-    )
-    # print(all(result.x == x0))
-    print(f"final loss without gradient: {fun(result.x)}")
+    # result = scipy.optimize.minimize(
+    #     fun,
+    #     x0,
+    #     method=method,
+    #     jac=False,
+    #     # callback=callback,
+    #     options=options,
+    #     # fun, x0, method=method, jac=True, callback=callback, options=options
+    #     # fun, x0, method=method
+    # )
+    # # print(all(result.x == x0))
+    # print(f"final loss without gradient: {fun(result.x)}")
 
     result = scipy.optimize.minimize(
         fun_jac,
@@ -365,7 +408,7 @@ def double_factorized_t2_compress(
         # fun, x0, method=method
     )
     # print(all(result.x == x0))
-    print(f"final loss with gradient: {fun(result.x)}")
+    
 
     
     # for lr in [3e-2, 1e-2, 3e-3, 1e-3]:
@@ -388,7 +431,8 @@ def double_factorized_t2_compress(
     diag_coulomb_mats, orbital_rotations = _params_to_df_tensors(
         result.x, n_tensors, norb, diag_coulomb_mask
     )
-    final_loss = fun(result.x)
+    final_loss, _ = fun_jac(result.x)
+    print(f"final loss with gradient: {final_loss}")
     # stack here without dealing with interaction constraint for Jaa, Jab
     diag_coulomb_mats = np.stack([diag_coulomb_mats, diag_coulomb_mats], axis=1)
     return diag_coulomb_mats, orbital_rotations, init_loss, final_loss
@@ -415,16 +459,27 @@ def from_t_amplitudes_compressed(
         t2, tol=tol
     )
     if optimize:
-        diag_coulomb_mats, orbital_rotations, init_loss, final_loss = (
-            double_factorized_t2_compress(
-                t2,
-                diag_coulomb_mats,
-                orbital_rotations,
-                n_reps=n_reps,
-                interaction_pairs=interaction_pairs,
-                nocc=nocc,
+        for n in range(22, n_reps, -2):
+            diag_coulomb_mats, orbital_rotations, init_loss, final_loss = (
+                double_factorized_t2_compress(
+                    t2,
+                    diag_coulomb_mats,
+                    orbital_rotations,
+                    n_reps=n,
+                    interaction_pairs=interaction_pairs,
+                    nocc=nocc,
+                )
             )
-        )
+        diag_coulomb_mats, orbital_rotations, init_loss, final_loss = (
+                double_factorized_t2_compress(
+                    t2,
+                    diag_coulomb_mats,
+                    orbital_rotations,
+                    n_reps=n_reps,
+                    interaction_pairs=interaction_pairs,
+                    nocc=nocc,
+                )
+            )
     else:
         diag_coulomb_mats = diag_coulomb_mats.reshape(-1, norb, norb)[:n_reps]
         diag_coulomb_mats = np.stack([diag_coulomb_mats, diag_coulomb_mats], axis=1)
@@ -474,9 +529,15 @@ def from_t_amplitudes_compressed(
 
 # Get molecular data and molecular Hamiltonian
 # Build N2 molecule
+# molecule_name = "n2"
+# basis = "6-31g"
+# nelectron, norb = 10, 16
+
 molecule_name = "n2"
-basis = "6-31g"
-nelectron, norb = 10, 16
+basis = "sto-6g"
+nelectron, norb = 10, 8
+
+
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 bond_distance = 1.0
@@ -501,10 +562,10 @@ mol_hamiltonian = mol_data.hamiltonian
 hamiltonian = ffsim.linear_operator(mol_hamiltonian, norb=norb, nelec=nelec)
 reference_state = ffsim.hartree_fock_state(norb, nelec)
 pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
-    "square", norb
+    "all-to-all", norb
 )
 
-n_reps = 2
+n_reps = 4
 # use CCSD to initialize parameters
 operator, init_loss, final_loss = from_t_amplitudes_compressed(
     mol_data.ccsd_t2,
@@ -513,5 +574,27 @@ operator, init_loss, final_loss = from_t_amplitudes_compressed(
     interaction_pairs=(pairs_aa, pairs_ab),
     optimize=True,
 )
+
 # Compute final state
 final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
+
+# Compute energy and other properties of final state vector
+energy = np.vdot(final_state, hamiltonian @ final_state).real
+error = energy - mol_data.fci_energy
+
+data = {
+    "energy": energy,
+    "error": error,
+    "operator": operator,
+    "n_reps": operator.n_reps,
+    "init_loss": init_loss, 
+    "final_loss": final_loss
+}
+
+import pickle 
+
+with open(f"scratch/n2_sto-6g_10e8o_{n_reps}_gradient_multi_stage.pickle", "wb") as f:
+    pickle.dump(data, f)
+
+# Compute final state
+# final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
