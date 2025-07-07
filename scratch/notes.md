@@ -1,5 +1,10 @@
-1. Questions for param fitting
-2. t2-t2_dagger does not gives us better result
+July 7
+1. what is max_davidson?
+    - src/lucj/tasks/uccsd_sqd_initial_params_task.py line 111. Can't run this file
+
+July 3
+1. Questions for param fitting v
+2. t2-t2_dagger does not gives us better result v
 3. UCCSD for imaginary part
     def _apply_unitary_(
         self, vec: np.ndarray, norb: int, nelec: int | tuple[int, int], copy: bool
@@ -34,4 +39,3 @@
             )
 
         return vec
-4. we can trim diagonal coulumb matrix and exapnd it when computing einsum but that doesn't help with complexity. What we should do is to decompose tensor to multiple small part
