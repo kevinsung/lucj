@@ -1,18 +1,14 @@
 import logging
 import os
 import pickle
-from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
 import ffsim
 import numpy as np
 from molecules_catalog.util import load_molecular_data
-from qiskit_addon_sqd.counts import counts_to_arrays
-from qiskit_addon_sqd.fermion import (
-    solve_fermion,
-)
-from qiskit_addon_sqd.subsampling import postselect_and_subsample
+from qiskit.primitives import BitArray
+from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, solve_sci_batch
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +20,11 @@ class UCCSDSQDInitialParamsTask:
     shots: int
     samples_per_batch: int
     n_batches: int
-    max_davidson: int
+    energy_tol: float
+    occupancies_tol: float
+    carryover_threshold: float
+    max_iterations: int
+    symmetrize_spin: bool
     entropy: int | None
 
     @property
@@ -39,9 +39,14 @@ class UCCSDSQDInitialParamsTask:
             / f"shots-{self.shots}"
             / f"samples_per_batch-{self.samples_per_batch}"
             / f"n_batches-{self.n_batches}"
-            / f"max_davidson-{self.max_davidson}"
+            / f"energy_tol-{self.energy_tol}"
+            / f"occupancies_tol-{self.occupancies_tol}"
+            / f"carryover_threshold-{self.carryover_threshold}"
+            / f"max_iterations-{self.max_iterations}"
+            / f"symmetrize_spin-{self.symmetrize_spin}"
             / f"entropy-{self.entropy}"
         )
+
 
 
 def run_uccsd_sqd_initial_params_task(
@@ -64,6 +69,7 @@ def run_uccsd_sqd_initial_params_task(
         f"{task.molecule_basename}_d-{task.bond_distance:.5f}",
         molecules_catalog_dir=molecules_catalog_dir,
     )
+    mol_ham = mol_data.hamiltonian
     norb = mol_data.norb
     nelec = mol_data.nelec
 
@@ -85,38 +91,28 @@ def run_uccsd_sqd_initial_params_task(
         nelec=nelec,
         shots=task.shots,
         seed=rng,
+        bitstring_type=ffsim.BitstringType.INT,
     )
-    counts = Counter(samples)
-    bitstring_matrix_full, probs_arr_full = counts_to_arrays(counts)
-    n_alpha, n_beta = nelec
-    batches = postselect_and_subsample(
-        bitstring_matrix_full,
-        probs_arr_full,
-        hamming_right=n_alpha,
-        hamming_left=n_beta,
+    bit_array = BitArray.from_samples(samples, num_bits=2 * norb)
+    result = diagonalize_fermionic_hamiltonian(
+        mol_ham.one_body_tensor,
+        mol_ham.two_body_tensor,
+        bit_array,
         samples_per_batch=task.samples_per_batch,
+        norb=norb,
+        nelec=nelec,
         num_batches=task.n_batches,
-        rand_seed=rng,
+        energy_tol=task.energy_tol,
+        occupancies_tol=task.occupancies_tol,
+        max_iterations=task.max_iterations,
+        sci_solver=solve_sci_batch,
+        symmetrize_spin=task.symmetrize_spin,
+        carryover_threshold=task.carryover_threshold,
+        seed=rng,
     )
-    energies = np.zeros(task.n_batches)
-    spin_squareds = np.zeros(task.n_batches)
-    sci_states = []
-    for i, batch in enumerate(batches):
-        energy_sci, sci_state, avg_occs, spin = solve_fermion(
-            batch,
-            mol_data.one_body_integrals,
-            mol_data.two_body_integrals,
-            open_shell=False,
-            spin_sq=0,
-            max_davidson=task.max_davidson,
-        )
-        energies[i] = energy_sci + mol_data.core_energy
-        spin_squareds[i] = spin
-        sci_states.append(sci_state)
-    index = np.argmin(energies)
-    energy = energies[index]
-    spin_squared = spin_squareds[index]
-    sci_state = sci_states[index]
+    energy = result.energy + mol_data.core_energy
+    sci_state = result.sci_state
+    spin_squared = sci_state.spin_square()
     error = energy - mol_data.fci_energy
 
     # Save data
