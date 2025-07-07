@@ -34,13 +34,13 @@ basis = "sto-6g"
 nelectron, norb = 10, 8
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-bond_distance_range = [0.9, 1.2, 1.5, 1.8]
+bond_distance_range = [0.9, 1.0, 1.2, 1.5, 1.8, 2.0, 2.7]
 
 connectivities = [
     "square",
     "all-to-all",
 ]
-n_reps_range = [1, None]
+n_reps_range = list(range(2, 25, 2)) + [None]
 shots = 100_000
 samples_per_batch_range = [100]
 n_batches = 3
