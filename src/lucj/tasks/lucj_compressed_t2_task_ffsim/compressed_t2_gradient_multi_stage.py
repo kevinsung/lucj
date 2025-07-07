@@ -525,4 +525,3 @@ def from_t_amplitudes_compressed(
         init_loss,
         final_loss,
     )
-
