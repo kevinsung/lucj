@@ -227,44 +227,32 @@ def double_factorized_t2_compress(
             "tij,tj,tkj->tik", vecs, jnp.exp(1j * eigs), vecs.conj()
         )
         # reconstruct orbital_rotations and diagonal coulumn mats
-        orbital_rotations = jnp.zeros((n_reps, 2*norb, 2*norb), dtype=complex)
+        orbital_rotations = jnp.zeros((n_tensors, 2*norb, 2*norb), dtype=complex)
         orbital_rotations = orbital_rotations.at[:, :norb, :norb].set(orbital_rotations_compact)
         orbital_rotations = orbital_rotations.at[:, norb:, norb:].set(orbital_rotations_compact)
 
         list_partial_diag_coulomb_mat = []
-        
-        indices = np.arange(norb)
-        indices0 = np.ix_(indices, indices, indices, indices) 
 
-        indices = [[p,p,r,r] for p in range(norb) for r in range(norb)]
-        
-        for i in range(n_reps):
+        for i in range(n_tensors):
             D = np.zeros((2*norb, 2*norb, 2*norb, 2*norb), dtype=complex)
-            D[indices] = diag_coulomb_mats_compact[i]
-            for p in range(norb):
-                for r in range(norb):
-                    D[p,p,r,r] = diag_coulomb_mats_compact[i,p,r]
-                    D[p+norb,p+norb,r+norb,r+norb] = diag_coulomb_mats_compact[i,p+norb,r+norb]
-                    D[p,p,r+norb,r+norb] = diag_coulomb_mats_compact[i,p,r+norb]
-                    D[r,r,p+norb,p+norb] = diag_coulomb_mats_compact[i,r,p+norb]
-            D = 4*_project(D)
-            list_partial_diag_coulomb_mat.append(D)
-
-        complete_diag_coulomb_mats = jnp.concatenate(list_partial_diag_coulomb_mat)
+            indices = [[p,p,r,r] for p in range(norb) for r in range(2 * norb)]
+            tmp = diag_coulomb_mats_compact[i].ravel()
+            D[indices] = tmp
+            list_partial_diag_coulomb_mat.append(4*_project(D))
+        
+        diag_coulomb_mats = jnp.concatenate(list_partial_diag_coulomb_mat)
 
         reconstructed = (
             1j
-            * contract(
-                "mpq,map,mip,mbq,mjq->ijab",
-                diag_coulomb_mats,
-                orbital_rotations,
-                orbital_rotations.conj(),
-                orbital_rotations,
-                orbital_rotations.conj(),
-                # optimize="greedy"
-            )[:nocc, :nocc, nocc:, nocc:]
+            * contract("mPp,mQq,mSs,mRr,mprqs->PRQS",
+                            orbital_rotations,
+                            orbital_rotations,
+                            np.conj(orbital_rotations),
+                            np.conj(orbital_rotations),
+                            diag_coulomb_mats,
+                            optimize="greedy")
         )
-        diff = reconstructed - t2
+        diff = reconstructed - t2_so
         return 0.5 * jnp.sum(jnp.abs(diff) ** 2)
 
     # value_and_grad_func = jax.value_and_grad(fun_jax, argnums=(0, 1), holomorphic=True)
@@ -309,22 +297,31 @@ def double_factorized_t2_compress(
     pairs_aa, pairs_ab = interaction_pairs
 
     # Zero out diagonal coulomb matrix entries
-    pairs = []
-    if pairs_aa is not None:
-        pairs += pairs_aa
-    if pairs_ab is not None:
-        pairs += pairs_ab
-    if not pairs:
-        diag_coulomb_mask = np.ones((norb, norb), dtype=bool)
+    if pairs_aa is None and pairs_ab is None:
+        diag_coulomb_mask = np.ones((2*norb, 2*norb), dtype=bool)
     else:
-        diag_coulomb_mask = np.zeros((norb, norb), dtype=bool)
-        rows, cols = zip(*pairs)
-        diag_coulomb_mask[rows, cols] = True
-        diag_coulomb_mask[cols, rows] = True
+        diag_coulomb_mask = np.zeros((2*norb, 2*norb), dtype=bool)
+        if pairs_aa is not None:
+            rows, cols = zip(*pairs_aa)
+            diag_coulomb_mask[rows, cols] = True
+            diag_coulomb_mask[cols, rows] = True
+            diag_coulomb_mask[rows+norb, cols+norb] = True
+            diag_coulomb_mask[cols+norb, rows+norb] = True
+        if pairs_ab is not None:
+            rows, cols = zip(*pairs_ab)
+            diag_coulomb_mask[rows, cols+norb] = True
+            diag_coulomb_mask[cols, rows+norb] = True
+    
+    # reshape diag_coulomb_mats to be (2*norb, 2*norb)
+    tmp = np.zeros((n_tensors, 2*norb, 2*norb))
+    tmp[:,:norb,:norb] = diag_coulomb_mats
+    tmp[:,norb:,norb:] = diag_coulomb_mats
+    tmp[:,:norb,norb:] = diag_coulomb_mats
+    tmp[:,norb:,:norb] = diag_coulomb_mats
+    diag_coulomb_mats = tmp * diag_coulomb_mask
 
     # diag_coulomb_mask
     diag_coulomb_mask = np.triu(diag_coulomb_mask)
-
 
     x0 = _df_tensors_to_params(diag_coulomb_mats, orbital_rotations, diag_coulomb_mask)
     diag_coulomb_mats_converted, orbital_rotations_converted = _params_to_df_tensors(
