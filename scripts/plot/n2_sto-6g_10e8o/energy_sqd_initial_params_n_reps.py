@@ -36,8 +36,18 @@ n_reps_range = list(range(2, 25, 2)) + [None]
 shots = 100_000
 samples_per_batch_range = [1000, 2000]
 n_batches = 3
-max_davidson = 200
+n_reps_range = [1, None]
+shots = 100_000
+samples_per_batch_range = [100]
+n_batches = 3
+energy_tol = 1e-5
+occupancies_tol = 1e-3
+carryover_threshold = 1e-3
+max_iterations = 100
+symmetrize_spin = True
+# TODO set entropy and generate seeds properly
 entropy = None
+
 tasks_lucj = [
     LUCJSQDInitialParamsTask(
         molecule_basename=molecule_basename,

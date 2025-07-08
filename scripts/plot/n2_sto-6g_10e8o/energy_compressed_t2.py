@@ -41,7 +41,7 @@ max_iterations = 100
 symmetrize_spin = True
 cobyqa_maxiter = 100
 # TODO set entropy and generate seeds properly
-entropy = None
+entropy = 0
 
 tasks_compressed_t2 = [
     LUCJCompressedT2Task(

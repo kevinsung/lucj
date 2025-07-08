@@ -45,7 +45,7 @@ carryover_threshold = 1e-3
 max_iterations = 100
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
-entropy = None
+entropy = 0
 
 tasks = [
     UCCSDSQDInitialParamsTask(

@@ -37,7 +37,7 @@ shots = 100_000
 samples_per_batch_range = [1000, 2000]
 n_batches = 3
 max_davidson = 200
-entropy = None
+entropy = 0
 tasks_lucj = [
     LUCJSQDInitialParamsTask(
         molecule_basename=molecule_basename,

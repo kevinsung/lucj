@@ -27,7 +27,7 @@ os.makedirs(plots_dir, exist_ok=True)
 start = 0.9
 stop = 2.7
 step = 0.1
-bond_distance = 1.0
+bond_distance = 2.7
 
 connectivities = [
     "all-to-all",
@@ -312,7 +312,7 @@ for i, connectivity in enumerate(connectivities):
 
 
 filepath = os.path.join(
-    plots_dir, f"{os.path.splitext(os.path.basename(__file__))[0]}.pdf"
+    plots_dir, f"{os.path.splitext(os.path.basename(__file__))[0]}_{bond_distance}.pdf"
 )
 plt.savefig(filepath)
 plt.close()

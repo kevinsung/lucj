@@ -36,7 +36,7 @@ samples_per_batch = 5000
 n_batches = 3
 max_davidson = 200
 # TODO set entropy and generate seeds properly
-entropy = None
+entropy = 0
 
 tasks_ccsd = [
     LUCJSQDInitialParamsTask(

@@ -459,27 +459,16 @@ def from_t_amplitudes_compressed(
         t2, tol=tol
     )
     if optimize:
-        for n in range(22, n_reps, -2):
-            diag_coulomb_mats, orbital_rotations, init_loss, final_loss = (
-                double_factorized_t2_compress(
-                    t2,
-                    diag_coulomb_mats,
-                    orbital_rotations,
-                    n_reps=n,
-                    interaction_pairs=interaction_pairs,
-                    nocc=nocc,
-                )
-            )
         diag_coulomb_mats, orbital_rotations, init_loss, final_loss = (
-                double_factorized_t2_compress(
-                    t2,
-                    diag_coulomb_mats,
-                    orbital_rotations,
-                    n_reps=n_reps,
-                    interaction_pairs=interaction_pairs,
-                    nocc=nocc,
-                )
+            double_factorized_t2_compress(
+                t2,
+                diag_coulomb_mats,
+                orbital_rotations,
+                n_reps=n_reps,
+                interaction_pairs=interaction_pairs,
+                nocc=nocc,
             )
+        )
     else:
         diag_coulomb_mats = diag_coulomb_mats.reshape(-1, norb, norb)[:n_reps]
         diag_coulomb_mats = np.stack([diag_coulomb_mats, diag_coulomb_mats], axis=1)
