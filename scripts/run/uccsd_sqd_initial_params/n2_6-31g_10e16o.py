@@ -40,7 +40,7 @@ step = 0.1
 bond_distance_range = [0.9, 1.0, 1.2, 1.5, 1.8, 2.0, 2.7]
 
 shots = 100_000
-samples_per_batch_range = [1000, 2000]
+samples_per_batch_range = [1000, 2000, 5000]
 n_batches = 3
 energy_tol = 1e-5
 occupancies_tol = 1e-3
@@ -48,7 +48,7 @@ carryover_threshold = 1e-3
 max_iterations = 100
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
-entropy = None
+entropy = 0
 
 tasks = [
     UCCSDSQDInitialParamsTask(

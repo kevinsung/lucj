@@ -1,10 +1,8 @@
-import pyscf
 import ffsim.variational
 import ffsim.variational.util
 import ffsim
 import numpy as np
 from opt_einsum import contract
-import optax
 import scipy
 import jax
 import jax.numpy as jnp
@@ -42,18 +40,6 @@ def _reshape_grad(
             ]
         )
     )
-    # core_param_indices = np.nonzero(diag_coulomb_mat_mask)
-    # core_params = np.real(
-    #     np.ravel(
-    #         [
-    #             diag_coulomb_mat[core_param_indices]
-    #             for diag_coulomb_mat in grad_diag_coulomb_mats
-    #         ]
-    #     )
-    # )
-    # print(leaf_params_real[: 20])
-    # print(leaf_params_imag[: 20])
-    # input()
     core_coulomb_params = np.real(core_coulomb_params)
     return np.concatenate([leaf_params_real, leaf_params_imag, core_coulomb_params])
 
@@ -208,7 +194,6 @@ def double_factorized_t2_compress(
         param_indices = np.nonzero(diag_coulomb_mask)
         param_length = len(param_indices[0])
         list_diag_coulomb_mats = []
-        diag_coulomb_mats = jnp.zeros((n_tensors, norb, norb))
         for i in range(n_tensors):
             diag_coulomb_mat = jnp.zeros((norb, norb), complex)
             diag_coulomb_mat = diag_coulomb_mat.at[param_indices].set(
@@ -260,13 +245,13 @@ def double_factorized_t2_compress(
         n_leaf_params = n_tensors * (norb * (norb - 1) // 2 + norb * (norb + 1) // 2)
         core_coulomb_params = jnp.array(x[n_leaf_params:] + 0j)
 
-        val, (grad_diag_coulomb_params, orbital_rotations_log_jax_tri) = (
+        val, (grad_diag_coulomb_params, grad_orbital_rotations_log_jax_tri) = (
             value_and_grad_func(
                 core_coulomb_params, orbital_rotations_log_jax_tri
             )
         )
         reshaped_grad = _reshape_grad(
-            grad_diag_coulomb_params, orbital_rotations_log_jax_tri
+            grad_diag_coulomb_params, grad_orbital_rotations_log_jax_tri
         )
         return val, reshaped_grad
 

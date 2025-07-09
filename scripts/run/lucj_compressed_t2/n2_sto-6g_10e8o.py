@@ -42,7 +42,7 @@ bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) 
 
 connectivities = [
     "heavy-hex",
-    "hex",
+    # "hex",
     "square",
     "all-to-all",
 ]
