@@ -412,23 +412,23 @@ def double_factorized_t2_pre_compress(
     interaction_pairs: tuple[list[tuple[int, int]] | None, list[tuple[int, int]] | None]
     | None = None,
 ) -> tuple[np.ndarray, np.ndarray, float, float]:
-    for n in range(22, n_reps, -2):
+    for n in range(22, n_reps, -4):
         diag_coulomb_mats, orbital_rotations, init_loss, final_loss = (
             double_factorized_t2_compress_heuristic(
                 t2,
                 diag_coulomb_mats,
                 orbital_rotations,
                 n_reps=n,
-                interaction_pairs=interaction_pairs,
+                interaction_pairs=(None, None),
                 nocc=nocc,
             )
         )
-        diag_coulomb_mats, orbital_rotations = double_factorized_t2_compress_heuristic(t2,
-            diag_coulomb_mats,
-            orbital_rotations,
-            n_reps=n_reps,
-            interaction_pairs=interaction_pairs,
-            nocc=nocc,)
+    diag_coulomb_mats, orbital_rotations, init_loss, final_loss = double_factorized_t2_compress_heuristic(t2,
+        diag_coulomb_mats,
+        orbital_rotations,
+        n_reps=n_reps,
+        interaction_pairs=interaction_pairs,
+        nocc=nocc,)
     return diag_coulomb_mats, orbital_rotations, init_loss, final_loss
 
 def from_t_amplitudes_compressed(
@@ -452,7 +452,7 @@ def from_t_amplitudes_compressed(
         t2, tol=tol
     )
     if optimize:
-        diag_coulomb_mats, orbital_rotations = double_factorized_t2_pre_compress(
+        diag_coulomb_mats, orbital_rotations, init_loss, final_loss = double_factorized_t2_pre_compress(
                 t2,
                 diag_coulomb_mats,
                 orbital_rotations,
@@ -551,9 +551,9 @@ mol_hamiltonian = mol_data.hamiltonian
 # Initialize Hamiltonian, initial state, and LUCJ parameters
 hamiltonian = ffsim.linear_operator(mol_hamiltonian, norb=norb, nelec=nelec)
 reference_state = ffsim.hartree_fock_state(norb, nelec)
-pairs_aa, pairs_ab = interaction_pairs_spin_balanced("all-to-all", norb)
+pairs_aa, pairs_ab = interaction_pairs_spin_balanced("square", norb)
 
-n_reps = 30
+n_reps = 4
 # use CCSD to initialize parameters
 operator, init_loss, final_loss = from_t_amplitudes_compressed(
     mol_data.ccsd_t2,
@@ -578,11 +578,3 @@ data = {
     "init_loss": init_loss,
     "final_loss": final_loss,
 }
-
-import pickle
-
-with open(f"scratch/n2_sto-6g_10e8o_{n_reps}_gradient_multi_stage.pickle", "wb") as f:
-    pickle.dump(data, f)
-
-# Compute final state
-# final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)

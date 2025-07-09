@@ -517,7 +517,7 @@ hamiltonian = ffsim.linear_operator(mol_hamiltonian, norb=norb, nelec=nelec)
 reference_state = ffsim.hartree_fock_state(norb, nelec)
 pairs_aa, pairs_ab = interaction_pairs_spin_balanced("all-to-all", norb)
 
-n_reps = 30
+n_reps = 2
 # use CCSD to initialize parameters
 operator, init_loss, final_loss = from_t_amplitudes_compressed(
     mol_data.ccsd_t2,
@@ -542,11 +542,6 @@ data = {
     "init_loss": init_loss,
     "final_loss": final_loss,
 }
-
-import pickle
-
-with open(f"scratch/n2_sto-6g_10e8o_{n_reps}_gradient_multi_stage.pickle", "wb") as f:
-    pickle.dump(data, f)
 
 # Compute final state
 # final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)

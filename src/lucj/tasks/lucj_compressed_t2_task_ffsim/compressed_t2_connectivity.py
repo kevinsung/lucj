@@ -381,7 +381,7 @@ def double_factorized_t2_compress(
         # result.x,
         method=method,
         jac=True,
-        callback=callback,
+        # callback=callback,
         options=options,
     )
 

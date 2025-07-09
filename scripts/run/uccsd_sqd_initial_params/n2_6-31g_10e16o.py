@@ -25,7 +25,7 @@ logging.basicConfig(
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 96
+MAX_PROCESSES = 32
 OVERWRITE = True
 
 molecule_name = "n2"
@@ -33,12 +33,14 @@ basis = "6-31g"
 nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-start = 0.9
-stop = 2.7
-step = 0.1
-# bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) + 1)
 bond_distance_range = [0.9, 1.0, 1.2, 1.5, 1.8, 2.0, 2.7]
+# bond_distance_range = [1.0]
 
+connectivities = [
+    # "square",
+    "all-to-all",
+]
+n_reps_range = list(range(2, 25, 2)) + [None]
 shots = 100_000
 samples_per_batch_range = [1000, 2000, 5000]
 n_batches = 3
@@ -49,6 +51,7 @@ max_iterations = 100
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
+
 
 tasks = [
     UCCSDSQDInitialParamsTask(

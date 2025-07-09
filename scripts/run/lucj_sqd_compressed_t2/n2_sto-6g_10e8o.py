@@ -37,8 +37,9 @@ molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 bond_distance_range = [0.9, 1.0, 1.2, 1.5, 1.8, 2.0, 2.7]
 
 connectivities = [
-    "square",
-    "all-to-all",
+    # "square",
+    # "all-to-all",
+    "heavy-hex"
 ]
 n_reps_range = list(range(2, 25, 2)) + [None]
 shots = 100_000
