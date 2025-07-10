@@ -515,7 +515,7 @@ mol_hamiltonian = mol_data.hamiltonian
 # Initialize Hamiltonian, initial state, and LUCJ parameters
 hamiltonian = ffsim.linear_operator(mol_hamiltonian, norb=norb, nelec=nelec)
 reference_state = ffsim.hartree_fock_state(norb, nelec)
-pairs_aa, pairs_ab = interaction_pairs_spin_balanced("all-to-all", norb)
+pairs_aa, pairs_ab = interaction_pairs_spin_balanced("square", norb)
 
 n_reps = 2
 # use CCSD to initialize parameters
@@ -527,21 +527,23 @@ operator, init_loss, final_loss = from_t_amplitudes_compressed(
     optimize=True,
 )
 
-# Compute final state
-final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
+print(f"final loss: {final_loss}")
 
-# Compute energy and other properties of final state vector
-energy = np.vdot(final_state, hamiltonian @ final_state).real
-error = energy - mol_data.fci_energy
+# # Compute final state
+# final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
 
-data = {
-    "energy": energy,
-    "error": error,
-    "operator": operator,
-    "n_reps": operator.n_reps,
-    "init_loss": init_loss,
-    "final_loss": final_loss,
-}
+# # Compute energy and other properties of final state vector
+# energy = np.vdot(final_state, hamiltonian @ final_state).real
+# error = energy - mol_data.fci_energy
+
+# data = {
+#     "energy": energy,
+#     "error": error,
+#     "operator": operator,
+#     "n_reps": operator.n_reps,
+#     "init_loss": init_loss,
+#     "final_loss": final_loss,
+# }
 
 # Compute final state
 # final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)

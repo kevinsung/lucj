@@ -73,7 +73,7 @@ def initialize_parameters(t2, n_tensors=1, idx_aa=[], idx_ab=[]):
 
 def _params_to_df_tensors(x, n_tensors, idx_aa, idx_ab, norb):
     orbital_rotations = np.zeros((n_tensors, 2*norb, 2*norb), dtype=complex)
-    diag_coulomb_mats = np.zeros((n_tensors, 2*norb, 2*norb), dtype=complex)
+    diag_coulomb_mats = np.zeros((n_tensors, 2*norb, 2*norb, 2*norb, 2*norb), dtype=complex)
     n_re_K = norb * (norb - 1) // 2
     n_im_K = norb * (norb + 1) // 2
     n_J_aa = len(idx_aa)
@@ -96,34 +96,53 @@ def _params_to_df_tensors(x, n_tensors, idx_aa, idx_ab, norb):
       start += norb
       assert(np.abs(K+np.conj(K.T)).max()<1e-6)
       U = LA.expm(K)
-
-      eigs, vecs = np.linalg.eigh(-1j * K)
-      orbital_rotations_compact = np.einsum(
-        "ij,j,kj->ik", vecs, np.exp(1j * eigs), vecs.conj()
-      )
-    #   print(U)
-    #   print()
-    #   print(orbital_rotations_compact)
-    #   print(np.isclose(orbital_rotations_compact, U))
-    #   input()
       orbital_rotations[i, :norb, :norb] = U
       orbital_rotations[i, norb:, norb:] = U
-      D = np.zeros((2*norb, 2*norb))
-      D_tmp = np.zeros((norb, norb))
+      D = np.zeros((2*norb, 2*norb, 2*norb, 2*norb))
       for m,(p,r) in enumerate(idx_aa):
-        D[p,r] = x[start+m]
-        D[p+norb,r+norb] = x[start+m]
+        D[p,p,r,r] = x[start+m] * 0.5
+        D[r,r,p,p] = x[start+m] * 0.5
+        D[p+norb,p+norb,r+norb,r+norb] = x[start+m] * 0.5
+        D[r+norb,r+norb,p+norb,p+norb] = x[start+m] * 0.5
       start += n_J_aa
       for m,(p,r) in enumerate(idx_ab):
-        D[p,r+norb] = x[start+m]
-        D[r,p+norb] = x[start+m] 
-        D_tmp[p,r] = x[start+m]
-        D_tmp[r,p] = x[start+m]
+        D[p,p,r+norb,r+norb] = x[start+m] * 0.5
+        D[r+norb,r+norb,p,p] = x[start+m] * 0.5
+        D[r,r,p+norb,p+norb] = x[start+m] * 0.5 # Quesiton: use this line to have consistent definition for aa and ab?
+        D[p+norb,p+norb,r,r] = x[start+m] * 0.5 # Quesiton: use this line to have consistent definition for aa and ab?
       start += n_J_ab
-      diag_coulomb_mats[i, :, :] = D
-      print(orbital_rotations[i])
-      input()
-      
+      diag_coulomb_mats[i, :, :, :, :] = 4*project(1j*D) # T-dag(T) = exp(-K) iJ exp(K) so the i factor in that projector is to reproduce this relation.
+      # print(f"i: {i}")
+      # imag = np.imag(diag_coulomb_mats[i, :, :, :, :])
+      # print(f"sum of imag: {np.sum(np.abs(imag))}")
+      # real = np.real(diag_coulomb_mats[i, :, :, :, :])
+      # print(f"sum of real: {np.sum(np.abs(real))}")
+      # # print(f"complex diag_coulomb_mats: {np.any(np.iscomplex(diag_coulomb_mats[i, :, :, :, :]))}")
+      # print(f"close after projection: {np.allclose(diag_coulomb_mats[i, :, :, :, :], 4*1j*D)}")
+      # for try_projecting in range(1):
+      #   print(f"complex D: {np.any(np.iscomplex(D))}")
+      #   D_projected = project(1j * D)
+      #   print(f"complex D_projected: {np.any(np.iscomplex(D_projected))}")
+      #   print("|D|, |P(D)|, |D-P(D)| = ",oo_norm(D),oo_norm(D_projected),oo_distance(D,D_projected))
+      #   D = D_projected
+      # Jaa = np.zeros((n_tensors, 2*norb, 2*norb), dtype=complex)
+      # for m,(p,r) in enumerate(idx_aa):
+      #   Jaa[p,r] = D[p,p,r,r]
+      #   Jaa[r,p] = D[r,r,p,p]
+      # Jab = np.zeros((n_tensors, 2*norb, 2*norb), dtype=complex)
+      # for m,(p,r) in enumerate(idx_aa):
+      #   Jab[p,r] = D[p,p,r+norb,r+norb]
+      #   Jab[r,p] = D[r,r,p+norb,p+norb]
+      # imag = np.imag(Jaa)
+      # print(f"sum of imag Jaa: {np.sum(np.abs(imag))}")
+      # imag = np.imag(Jab)
+      # print(f"sum of imag Jab: {np.sum(np.abs(imag))}")
+      # real = np.real(Jaa)
+      # print(f"sum of real Jaa: {np.sum(np.abs(real))}")
+      # real = np.real(Jab)
+      # print(f"sum of real Jab: {np.sum(np.abs(real))}")
+      # print(f"complex Jaa: {np.any(np.iscomplex(Jaa))}")
+      # print(f"complex Jab: {np.any(np.iscomplex(Jab))}")
     return diag_coulomb_mats, orbital_rotations
 
 def _df_tensors_to_params(diag_coulomb_mats, orbital_rotations, n_tensors, idx_aa, idx_ab, norb):
@@ -147,23 +166,7 @@ def _df_tensors_to_params(diag_coulomb_mats, orbital_rotations, n_tensors, idx_a
     x, start = fill_vector(x, Jmat_ab, idx_ab, start)
   return x
 
-def lucj_operator(diag_coulomb_mats_compact, orbital_rotations):
-  n_tensors, norb_2x, _ = diag_coulomb_mats_compact.shape
-  norb = norb_2x // 2
-  diag_coulomb_mats = np.zeros((n_tensors, norb_2x, norb_2x, norb_2x, norb_2x), dtype=complex)
-  for i in range(n_tensors):
-    D = np.zeros((norb_2x, norb_2x, norb_2x, norb_2x), dtype=complex)
-    indices = [[p,p,r,r] for p in range(2 * norb) for r in range(2 * norb)]
-    indices = tuple(zip(*indices))
-    tmp = diag_coulomb_mats_compact[i].ravel()
-    D[indices] = tmp
-    # for p in range(norb):
-    #    for r in range(norb):
-    #       D[p,p,r,r] = diag_coulomb_mats_compact[i,p,r]
-    #       D[p+norb,p+norb,r+norb,r+norb] = diag_coulomb_mats_compact[i,p+norb,r+norb]
-    #       D[p,p,r+norb,r+norb] = diag_coulomb_mats_compact[i,p,r+norb]
-    #       D[r,r,p+norb,p+norb] = diag_coulomb_mats_compact[i,r,p+norb]
-    diag_coulomb_mats[i,:,:,:,:] = 4*project(1j*D)
+def lucj_operator(diag_coulomb_mats, orbital_rotations):
   return opt_einsum.contract("mPp,mQq,mSs,mRr,mprqs->PRQS",
                               orbital_rotations,
                               orbital_rotations,
@@ -239,6 +242,7 @@ print(res)
 
 
 '''
+
 molecule_name = "n2"
 basis = "sto-6g"
 nelectron, norb = 10, 8
@@ -268,12 +272,12 @@ t2_so = make_tau_operator(mol_data.ccsd_t2)
 
 diag_coulomb_mats, orbital_rotations = ffsim.linalg.double_factorized_decomposition.double_factorized_t2(mol_data.ccsd_t2)
 
-n_tensors = diag_coulomb_mats.shape[0] * diag_coulomb_mats.shape[1]
+n_tensors = 2
 norb = t2_so.shape[0]//2
-idx_aa = [(p,r) for p in range(norb) for r in range(norb) if p<=r]
-# idx_ab = [(p,r) for p in range(norb) for r in range(norb)]
-idx_ab = [(p,r) for p in range(norb) for r in range(norb) if p<=r]
 
+from ffsim.variational.util import interaction_pairs_spin_balanced
+
+idx_aa, idx_ab = interaction_pairs_spin_balanced("square", norb)
 # print(idx_aa)
 
 x0 = initialize_parameters(mol_data.ccsd_t2, n_tensors, idx_aa, idx_ab)
@@ -281,5 +285,19 @@ x0 = initialize_parameters(mol_data.ccsd_t2, n_tensors, idx_aa, idx_ab)
 diag_coulomb_mats, orbital_rotations = _params_to_df_tensors(x0, n_tensors, idx_aa, idx_ab, norb)
 
 diff = t2_so - lucj_operator(diag_coulomb_mats, orbital_rotations)
-F = 0.5*np.sum(np.abs(diff**2))
-print("Cost fun ",F)
+
+
+def fun(x):
+    diag_coulomb_mats, orbital_rotations = _params_to_df_tensors(
+        x, n_tensors, idx_aa, idx_ab, norb
+    )
+    diff = t2_so - lucj_operator(diag_coulomb_mats, orbital_rotations)
+    F = 0.5*np.sum(np.abs(diff**2))
+#   print(F)
+    return F
+
+res = OPT.minimize(fun,x0+1e-2*(np.random.random(len(x0))-0.5),method='L-BFGS-B', options = {"maxiter": 100})
+print(res)
+
+# F = 0.5*np.sum(np.abs(diff**2))
+# print("Cost fun ",F)
