@@ -43,9 +43,9 @@ step = 0.1
 bond_distance_range = [1.0]
 
 connectivities = [
-    # "heavy-hex",
-    "square",
-    "all-to-all",
+    "heavy-hex",
+    # "square",
+    # "all-to-all",
 ]
 n_reps_range = [1] + list(range(2, 25, 2)) + [None, 3]
 shots = 100_000

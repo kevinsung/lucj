@@ -37,8 +37,9 @@ bond_distance_range = [0.9, 1.0, 1.2, 1.5, 1.8, 2.0, 2.7]
 # bond_distance_range = [1.0]
 
 connectivities = [
-    # "square",
+    "square",
     "all-to-all",
+    "heavy",
 ]
 n_reps_range = list(range(2, 25, 2)) + [None]
 shots = 100_000

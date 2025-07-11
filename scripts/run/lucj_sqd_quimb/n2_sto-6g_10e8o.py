@@ -33,7 +33,7 @@ basis = "sto-6g"
 nelectron, norb = 10, 8
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-bond_distance_range = [0.9, 1.0, 1.2, 1.5, 1.8]
+bond_distance_range = [1.0]
 n_reps_range = list(range(2, 25, 2)) + [None]
 connectivities = [
     "square",

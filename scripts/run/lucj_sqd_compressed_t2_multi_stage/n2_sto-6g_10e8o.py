@@ -9,7 +9,7 @@ from pathlib import Path
 from tqdm import tqdm
 
 from lucj.params import LUCJParams
-from lucj.tasks.lucj_sqd_compressed_t2_task_multi_stage import (
+from lucj.tasks.lucj_sqd_compressed_t2_multi_stage_task import (
     LUCJSQDCompressedT2MultiStageTask,
     run_lucj_sqd_compressed_t2_multi_stage_task
 )
