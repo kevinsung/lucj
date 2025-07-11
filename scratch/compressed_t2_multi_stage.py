@@ -142,26 +142,30 @@ def _params_to_df_tensors(
 
 def double_factorized_t2_compress(
     t2: np.ndarray,
-    diag_coulomb_mats: np.ndarray,
-    orbital_rotations: np.ndarray,
     *,
     nocc: int,
     tol: float = 1e-8,
     n_reps: int | None = None,
     interaction_pairs: tuple[list[tuple[int, int]] | None, list[tuple[int, int]] | None]
     | None = None,
+    multi_stage_optimization: bool = True,
+    begin_reps: int | None,
+    step: int = 2
 ) -> tuple[np.ndarray, np.ndarray, float, float]:
-    norb = orbital_rotations.shape[-1]
-    # diag_coulomb_mats = diag_coulomb_mats.reshape(-1, norb, norb)
-    diag_coulomb_mats = diag_coulomb_mats.reshape(-1, norb, norb)[:n_reps]
+    diag_coulomb_mats, orbital_rotations = ffsim.linalg.double_factorized_t2(
+        t2, tol=tol
+    )
+    _, _, norb, _ = orbital_rotations.shape
+    orbital_rotations = orbital_rotations.reshape(-1, norb, norb)
+    n_reps_full, norb, _ = orbital_rotations.shape
+    diag_coulomb_mats = diag_coulomb_mats.reshape(-1, norb, norb)
     # not dealing with stack for now
-    # diag_coulomb_mats = np.stack([diag_coulomb_mats, diag_coulomb_mats], axis=1)
-    # orbital_rotations = orbital_rotations.reshape(-1, norb, norb)
-    orbital_rotations = orbital_rotations.reshape(-1, norb, norb)[:n_reps]
-    n_tensors, norb, _ = orbital_rotations.shape
+    if not multi_stage_optimization:
+        n_reps_full = n_reps
+    if begin_reps is None:
+        begin_reps = n_reps_full
 
     pairs_aa, pairs_ab = interaction_pairs
-
     # Zero out diagonal coulomb matrix entries
     pairs = []
     if pairs_aa is not None:
@@ -178,131 +182,135 @@ def double_factorized_t2_compress(
 
     # diag_coulomb_mask
     diag_coulomb_mask = np.triu(diag_coulomb_mask)
+    list_init_loss = []
+    list_final_loss = []
 
-    def fun_jax(core_coulomb_params, orbital_rotations_log_tri):
-        orbital_rotations_log_real_tri = jnp.real(orbital_rotations_log_tri)
-        orbital_rotations_log_imag_tri = jnp.imag(orbital_rotations_log_tri)
-        orbital_rotations_log_real = orbital_rotations_log_real_tri - jnp.transpose(
-            orbital_rotations_log_real_tri, (0, 2, 1)
-        )
-        diagonal_element = jnp.stack(
-            [
-                jnp.diag(jnp.diag(orbital_rotation))
-                for orbital_rotation in orbital_rotations_log_imag_tri
-            ],
-            axis=0,
-        )
-        orbital_rotations_log_imag = orbital_rotations_log_imag_tri + jnp.transpose(
-            orbital_rotations_log_imag_tri, (0, 2, 1)
-        )
-        orbital_rotations_log = (
-            orbital_rotations_log_real
-            + 1j * orbital_rotations_log_imag
-            - 1j * diagonal_element
-        )
-        eigs, vecs = jnp.linalg.eigh(-1j * orbital_rotations_log)
+    for n_tensors in range(begin_reps, n_reps - 1, -step):
+        diag_coulomb_mats = diag_coulomb_mats[:n_tensors]
+        orbital_rotations = orbital_rotations[:n_tensors]
 
-
-        param_indices = np.nonzero(diag_coulomb_mask)
-        param_length = len(param_indices[0])
-        list_diag_coulomb_mats = []
-        for i in range(n_tensors):
-            diag_coulomb_mat = jnp.zeros((norb, norb), complex)
-            diag_coulomb_mat = diag_coulomb_mat.at[param_indices].set(
-                core_coulomb_params[
-                    i * param_length : (i + 1) * param_length
-                ])
-            list_diag_coulomb_mats.append(diag_coulomb_mat)
-        diagonal_element = jnp.stack(
-            [
-                jnp.diag(jnp.diag(diag_coulomb_mat))
-                for diag_coulomb_mat in list_diag_coulomb_mats
-            ],
-            axis=0,
-        )
-
-        diag_coulomb_mats_tri = jnp.stack(list_diag_coulomb_mats, axis=0)
-        diag_coulomb_mats = (
-            diag_coulomb_mats_tri
-            + jnp.transpose(diag_coulomb_mats_tri, (0, 2, 1))
-            - diagonal_element
-        )
-        orbital_rotations = jnp.einsum(
-            "tij,tj,tkj->tik", vecs, jnp.exp(1j * eigs), vecs.conj()
-        )
-        reconstructed = (
-            1j
-            * contract(
-                "mpq,map,mip,mbq,mjq->ijab",
-                diag_coulomb_mats,
-                orbital_rotations,
-                orbital_rotations.conj(),
-                orbital_rotations,
-                orbital_rotations.conj(),
-                # optimize="greedy"
-            )[:nocc, :nocc, nocc:, nocc:]
-        )
-        diff = reconstructed - t2
-        return 0.5 * jnp.sum(jnp.abs(diff) ** 2)
-
-    # value_and_grad_func = jax.value_and_grad(fun_jax, argnums=(0, 1), holomorphic=True)
-    value_and_grad_func = jax.value_and_grad(fun_jax, argnums=(0, 1))
-
-    def fun_jac(x):
-        orbital_rotations_log = _params_to_leaf_logs(x, n_tensors, norb)
-        orbital_rotations_log_jax = jnp.array(orbital_rotations_log)
-        mask = jnp.ones((norb, norb), dtype=bool)
-        mask = jnp.triu(mask)
-        orbital_rotations_log_jax_tri = orbital_rotations_log_jax * mask
-        n_leaf_params = n_tensors * (norb * (norb - 1) // 2 + norb * (norb + 1) // 2)
-        core_coulomb_params = jnp.array(x[n_leaf_params:] + 0j)
-
-        val, (grad_diag_coulomb_params, grad_orbital_rotations_log_jax_tri) = (
-            value_and_grad_func(
-                core_coulomb_params, orbital_rotations_log_jax_tri
+        def fun_jax(core_coulomb_params, orbital_rotations_log_tri):
+            orbital_rotations_log_real_tri = jnp.real(orbital_rotations_log_tri)
+            orbital_rotations_log_imag_tri = jnp.imag(orbital_rotations_log_tri)
+            orbital_rotations_log_real = orbital_rotations_log_real_tri - jnp.transpose(
+                orbital_rotations_log_real_tri, (0, 2, 1)
             )
+            diagonal_element = jnp.stack(
+                [
+                    jnp.diag(jnp.diag(orbital_rotation))
+                    for orbital_rotation in orbital_rotations_log_imag_tri
+                ],
+                axis=0,
+            )
+            orbital_rotations_log_imag = orbital_rotations_log_imag_tri + jnp.transpose(
+                orbital_rotations_log_imag_tri, (0, 2, 1)
+            )
+            orbital_rotations_log = (
+                orbital_rotations_log_real
+                + 1j * orbital_rotations_log_imag
+                - 1j * diagonal_element
+            )
+            eigs, vecs = jnp.linalg.eigh(-1j * orbital_rotations_log)
+
+
+            param_indices = np.nonzero(diag_coulomb_mask)
+            param_length = len(param_indices[0])
+            list_diag_coulomb_mats = []
+            for i in range(n_tensors):
+                diag_coulomb_mat = jnp.zeros((norb, norb), complex)
+                diag_coulomb_mat = diag_coulomb_mat.at[param_indices].set(
+                    core_coulomb_params[
+                        i * param_length : (i + 1) * param_length
+                    ])
+                list_diag_coulomb_mats.append(diag_coulomb_mat)
+            diagonal_element = jnp.stack(
+                [
+                    jnp.diag(jnp.diag(diag_coulomb_mat))
+                    for diag_coulomb_mat in list_diag_coulomb_mats
+                ],
+                axis=0,
+            )
+
+            diag_coulomb_mats_tri = jnp.stack(list_diag_coulomb_mats, axis=0)
+            diag_coulomb_mats = (
+                diag_coulomb_mats_tri
+                + jnp.transpose(diag_coulomb_mats_tri, (0, 2, 1))
+                - diagonal_element
+            )
+            orbital_rotations = jnp.einsum(
+                "tij,tj,tkj->tik", vecs, jnp.exp(1j * eigs), vecs.conj()
+            )
+            reconstructed = (
+                1j
+                * contract(
+                    "mpq,map,mip,mbq,mjq->ijab",
+                    diag_coulomb_mats,
+                    orbital_rotations,
+                    orbital_rotations.conj(),
+                    orbital_rotations,
+                    orbital_rotations.conj(),
+                    # optimize="greedy"
+                )[:nocc, :nocc, nocc:, nocc:]
+            )
+            diff = reconstructed - t2
+            return 0.5 * jnp.sum(jnp.abs(diff) ** 2)
+
+        # value_and_grad_func = jax.value_and_grad(fun_jax, argnums=(0, 1), holomorphic=True)
+        value_and_grad_func = jax.value_and_grad(fun_jax, argnums=(0, 1))
+
+        def fun_jac(x):
+            orbital_rotations_log = _params_to_leaf_logs(x, n_tensors, norb)
+            orbital_rotations_log_jax = jnp.array(orbital_rotations_log)
+            mask = jnp.ones((norb, norb), dtype=bool)
+            mask = jnp.triu(mask)
+            orbital_rotations_log_jax_tri = orbital_rotations_log_jax * mask
+            n_leaf_params = n_tensors * (norb * (norb - 1) // 2 + norb * (norb + 1) // 2)
+            core_coulomb_params = jnp.array(x[n_leaf_params:] + 0j)
+
+            val, (grad_diag_coulomb_params, grad_orbital_rotations_log_jax_tri) = (
+                value_and_grad_func(
+                    core_coulomb_params, orbital_rotations_log_jax_tri
+                )
+            )
+            reshaped_grad = _reshape_grad(
+                grad_diag_coulomb_params, grad_orbital_rotations_log_jax_tri
+            )
+            return val, reshaped_grad
+
+        def callback(intermediate_result: scipy.optimize.OptimizeResult):
+            print(f"Intermediate result: loss {intermediate_result.fun:.8f}")
+
+        method = "L-BFGS-B"
+        # method = "trust-constr"
+        # method = "COBYQA"
+        # method = "COBYLA"
+        options = {"maxiter": 100}
+
+
+        x0 = _df_tensors_to_params(diag_coulomb_mats, orbital_rotations, diag_coulomb_mask)
+
+        init_loss, _ = fun_jac(x0)
+        list_init_loss.append(init_loss)
+        result = scipy.optimize.minimize(
+            fun_jac,
+            x0,
+            # result.x,
+            method=method,
+            jac=True,
+            # callback=callback,
+            options=options,
         )
-        reshaped_grad = _reshape_grad(
-            grad_diag_coulomb_params, grad_orbital_rotations_log_jax_tri
+
+        diag_coulomb_mats, orbital_rotations = _params_to_df_tensors(
+            result.x, n_tensors, norb, diag_coulomb_mask
         )
-        return val, reshaped_grad
-
-    def callback(intermediate_result: scipy.optimize.OptimizeResult):
-        print(f"Intermediate result: loss {intermediate_result.fun:.8f}")
-
-    method = "L-BFGS-B"
-    # method = "trust-constr"
-    # method = "COBYQA"
-    # method = "COBYLA"
-    options = {"maxiter": 100}
-
-    # print(orbital_rotations.shape)
-
-    x0 = _df_tensors_to_params(diag_coulomb_mats, orbital_rotations, diag_coulomb_mask)
-    diag_coulomb_mats_converted, orbital_rotations_converted = _params_to_df_tensors(
-        x0, n_tensors, norb, diag_coulomb_mask
-    )
-
-    init_loss, _ = fun_jac(x0)
-
-    result = scipy.optimize.minimize(
-        fun_jac,
-        x0,
-        # result.x,
-        method=method,
-        jac=True,
-        # callback=callback,
-        options=options,
-    )
-
-    diag_coulomb_mats, orbital_rotations = _params_to_df_tensors(
-        result.x, n_tensors, norb, diag_coulomb_mask
-    )
-    final_loss, _ = fun_jac(result.x)
-    # print(f"final loss with gradient: {final_loss}")
+        final_loss, _ = fun_jac(result.x)
+        print(f"final loss: {final_loss}")
+        list_final_loss.append(final_loss)
+    
     # stack here without dealing with interaction constraint for Jaa, Jab
     diag_coulomb_mats = np.stack([diag_coulomb_mats, diag_coulomb_mats], axis=1)
-    return diag_coulomb_mats, orbital_rotations, init_loss, final_loss
+    return diag_coulomb_mats, orbital_rotations, list_init_loss[0], list_final_loss[-1]
 
 
 def from_t_amplitudes_compressed(
@@ -313,7 +321,10 @@ def from_t_amplitudes_compressed(
     interaction_pairs: tuple[list[tuple[int, int]] | None, list[tuple[int, int]] | None]
     | None = None,
     tol: float = 1e-8,
-    optimize=False,
+    optimize: bool = False,
+    multi_stage_optimization: bool | None = True,
+    begin_reps: int | None = None,
+    step: int | None = 2
 ) -> ffsim.UCJOpSpinBalanced:
     if interaction_pairs is None:
         interaction_pairs = (None, None)
@@ -322,32 +333,22 @@ def from_t_amplitudes_compressed(
     nocc, _, nvrt, _ = t2.shape
     norb = nocc + nvrt
     init_loss, final_loss = 0, 0
-    diag_coulomb_mats, orbital_rotations = ffsim.linalg.double_factorized_t2(
-        t2, tol=tol
-    )
     if optimize:
-        for n in range(22, n_reps, -2):
-            diag_coulomb_mats, orbital_rotations, init_loss, final_loss = (
-                double_factorized_t2_compress(
-                    t2,
-                    diag_coulomb_mats,
-                    orbital_rotations,
-                    n_reps=n,
-                    interaction_pairs=interaction_pairs,
-                    nocc=nocc,
-                )
-            )
         diag_coulomb_mats, orbital_rotations, init_loss, final_loss = (
-                double_factorized_t2_compress(
-                    t2,
-                    diag_coulomb_mats,
-                    orbital_rotations,
-                    n_reps=n_reps,
-                    interaction_pairs=interaction_pairs,
-                    nocc=nocc,
-                )
+            double_factorized_t2_compress(
+                t2,
+                n_reps=n_reps,
+                interaction_pairs=interaction_pairs,
+                nocc=nocc,
+                multi_stage_optimization=multi_stage_optimization,
+                begin_reps=begin_reps,
+                step=step
             )
+        )
     else:
+        diag_coulomb_mats, orbital_rotations = ffsim.linalg.double_factorized_t2(
+            t2, tol=tol
+        )
         diag_coulomb_mats = diag_coulomb_mats.reshape(-1, norb, norb)[:n_reps]
         diag_coulomb_mats = np.stack([diag_coulomb_mats, diag_coulomb_mats], axis=1)
         orbital_rotations = orbital_rotations.reshape(-1, norb, norb)[:n_reps]
@@ -392,3 +393,47 @@ def from_t_amplitudes_compressed(
         init_loss,
         final_loss,
     )
+
+molecule_name = "n2"
+basis = "sto-6g"
+nelectron, norb = 10, 8
+
+
+molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
+
+bond_distance = 1.0
+
+from molecules_catalog.util import load_molecular_data
+from pathlib import Path
+import os
+from ffsim.variational.util import interaction_pairs_spin_balanced
+
+# Get molecular data and molecular Hamiltonian
+molecules_catalog_dir = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
+
+mol_data = load_molecular_data(
+    f"{molecule_basename}_d-{bond_distance:.5f}",
+    molecules_catalog_dir=molecules_catalog_dir,
+)
+norb = mol_data.norb
+nelec = mol_data.nelec
+mol_hamiltonian = mol_data.hamiltonian
+
+# Initialize Hamiltonian, initial state, and LUCJ parameters
+hamiltonian = ffsim.linear_operator(mol_hamiltonian, norb=norb, nelec=nelec)
+reference_state = ffsim.hartree_fock_state(norb, nelec)
+pairs_aa, pairs_ab = interaction_pairs_spin_balanced("square", norb)
+
+n_reps = 2
+# use CCSD to initialize parameters
+operator, init_loss, final_loss = from_t_amplitudes_compressed(
+    mol_data.ccsd_t2,
+    n_reps=n_reps,
+    t1=mol_data.ccsd_t1,
+    interaction_pairs=(pairs_aa, pairs_ab),
+    optimize=True,
+    multi_stage_optimization=False
+)
+
+print(f"init loss: {init_loss}")
+print(f"final loss: {final_loss}")

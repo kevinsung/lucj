@@ -18,7 +18,7 @@ from ffsim.variational.util import (
 from molecules_catalog.util import load_molecular_data
 from qiskit.primitives import BitArray
 from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, solve_sci_batch
-from lucj.tasks.lucj_compressed_t2_task_ffsim.compressed_t2_gradient_multi_stage import from_t_amplitudes_compressed, from_parameters
+from lucj.tasks.lucj_compressed_t2_task_ffsim.compressed_t2 import from_t_amplitudes_compressed, from_parameters
 from lucj.params import COBYQAParams, LUCJParams
 
 from qiskit.circuit import QuantumCircuit, QuantumRegister
@@ -120,10 +120,12 @@ def run_lucj_sqd_quimb_task(
     rng = np.random.default_rng(task.entropy)
 
     def fun(x: np.ndarray) -> float:
-        operator, _, _ = from_parameters(x, 
+        operator = ffsim.UCJOpSpinBalanced.from_parameters(
+            x,
+            norb=norb,
             n_reps=task.lucj_params.n_reps,
-            t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
             interaction_pairs=(pairs_aa, pairs_ab),
+            with_final_orbital_rotation=task.lucj_params.with_final_orbital_rotation,
         )
         # Construct Qiskit circuit
         qubits = QuantumRegister(2 * norb)

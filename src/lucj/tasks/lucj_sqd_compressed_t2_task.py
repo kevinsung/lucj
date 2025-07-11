@@ -10,8 +10,8 @@ from ffsim.variational.util import interaction_pairs_spin_balanced
 from molecules_catalog.util import load_molecular_data
 from qiskit.primitives import BitArray
 from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, solve_sci_batch
-from lucj.tasks.lucj_compressed_t2_task_ffsim.compressed_t2_gradient import from_t_amplitudes_compressed
-
+from lucj.tasks.lucj_compressed_t2_task_ffsim.compressed_t2 import from_t_amplitudes_compressed
+from functools import partial
 from lucj.params import LUCJParams
 
 logger = logging.getLogger(__name__)
@@ -91,6 +91,7 @@ def run_lucj_sqd_compressed_t2_task(
         t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
         interaction_pairs=(pairs_aa, pairs_ab),
         optimize=True,
+        multi_stage_optimization=False,
     )
 
     # Compute final state

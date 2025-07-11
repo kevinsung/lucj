@@ -6,17 +6,22 @@ from pathlib import Path
 
 import ffsim
 import numpy as np
+from ffsim.variational.util import interaction_pairs_spin_balanced
 from molecules_catalog.util import load_molecular_data
 from qiskit.primitives import BitArray
 from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, solve_sci_batch
+from lucj.tasks.lucj_compressed_t2_task_ffsim.compressed_t2 import from_t_amplitudes_compressed
 from functools import partial
+from lucj.params import LUCJParams
+
 logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, kw_only=True)
-class UCCSDSQDInitialParamsTask:
+class LUCJSQDCompressedT2MultiStageTask:
     molecule_basename: str
     bond_distance: float | None
+    lucj_params: LUCJParams
     shots: int
     samples_per_batch: int
     n_batches: int
@@ -36,6 +41,7 @@ class UCCSDSQDInitialParamsTask:
                 if self.bond_distance is None
                 else f"bond_distance-{self.bond_distance:.5f}"
             )
+            / self.lucj_params.dirpath
             / f"shots-{self.shots}"
             / f"samples_per_batch-{self.samples_per_batch}"
             / f"n_batches-{self.n_batches}"
@@ -48,14 +54,13 @@ class UCCSDSQDInitialParamsTask:
         )
 
 
-
-def run_uccsd_sqd_initial_params_task(
-    task: UCCSDSQDInitialParamsTask,
+def run_lucj_sqd_compressed_t2_multi_stage_task(
+    task: LUCJSQDCompressedT2MultiStageTask,
     *,
     data_dir: Path,
     molecules_catalog_dir: Path | None = None,
     overwrite: bool = True,
-) -> UCCSDSQDInitialParamsTask:
+) -> LUCJSQDCompressedT2MultiStageTask:
     logging.info(f"{task} Starting...\n")
     os.makedirs(data_dir / task.dirpath, exist_ok=True)
 
@@ -73,13 +78,24 @@ def run_uccsd_sqd_initial_params_task(
     norb = mol_data.norb
     nelec = mol_data.nelec
 
-    # Initialize initial state
+    # Initialize initial state and LUCJ parameters
     reference_state = ffsim.hartree_fock_state(norb, nelec)
+    pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
+        task.lucj_params.connectivity, norb
+    )
 
     # use CCSD to initialize parameters
-    operator = ffsim.UCCSDOpRestrictedReal(t1=mol_data.ccsd_t1, t2=mol_data.ccsd_t2)
+    operator, init_loss, final_loss = from_t_amplitudes_compressed(
+        mol_data.ccsd_t2,
+        n_reps=task.lucj_params.n_reps,
+        t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
+        interaction_pairs=(pairs_aa, pairs_ab),
+        optimize=True,
+        multi_stage_optimization=True
+    )
 
     # Compute final state
+    logging.info(f"{task} Computing state vector...\n")
     final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
 
     # Run SQD
@@ -122,6 +138,9 @@ def run_uccsd_sqd_initial_params_task(
         "error": error,
         "spin_squared": spin_squared,
         "sci_vec_shape": sci_state.amplitudes.shape,
+        "n_reps": operator.n_reps,
+        "init_loss": init_loss, 
+        "final_loss": final_loss
     }
 
     logging.info(f"{task} Saving data...\n")

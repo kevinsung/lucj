@@ -9,14 +9,13 @@ import numpy as np
 import scipy.stats
 from ffsim.variational.util import interaction_pairs_spin_balanced
 from molecules_catalog.util import load_molecular_data
-
+from lucj.tasks.lucj_compressed_t2_task_ffsim.compressed_t2_connectivity import from_t_amplitudes_compressed
 from lucj.params import LUCJParams
-from lucj.tasks.lucj_compressed_t2_task_ffsim.compressed_t2 import from_t_amplitudes_compressed
 
 logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True, kw_only=True)
-class LUCJCompressedT2Task:
+class LUCJCompressedT2ConnectivityTask:
     molecule_basename: str
     bond_distance: float | None
     lucj_params: LUCJParams
@@ -34,13 +33,13 @@ class LUCJCompressedT2Task:
         )
 
 
-def run_lucj_compressed_t2_task(
-    task: LUCJCompressedT2Task,
+def run_lucj_compressed_t2_connectivity_task(
+    task: LUCJCompressedT2ConnectivityTask,
     *,
     data_dir: Path,
     molecules_catalog_dir: Path | None = None,
     overwrite: bool = True,
-) -> LUCJCompressedT2Task:
+) -> LUCJCompressedT2ConnectivityTask:
     logging.info(f"{task} Starting...\n")
     os.makedirs(data_dir / task.dirpath, exist_ok=True)
 
@@ -72,7 +71,6 @@ def run_lucj_compressed_t2_task(
         t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
         interaction_pairs=(pairs_aa, pairs_ab),
         optimize=True,
-        multi_stage_optimization=False
     )
     # Compute final state
     final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
@@ -88,6 +86,7 @@ def run_lucj_compressed_t2_task(
     entropy = scipy.stats.entropy(probs)
 
     data = {
+        "operator": operator,
         "energy": energy,
         "error": error,
         "spin_squared": spin_squared,
@@ -100,8 +99,3 @@ def run_lucj_compressed_t2_task(
     logging.info(f"{task} Saving data...\n")
     with open(data_filename, "wb") as f:
         pickle.dump(data, f)
-
-
-
-
-

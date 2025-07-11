@@ -11,7 +11,7 @@ from molecules_catalog.util import load_molecular_data
 from qiskit.primitives import BitArray
 from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, solve_sci_batch
 from lucj.tasks.lucj_compressed_t2_task_ffsim.compressed_t2_connectivity import from_t_amplitudes_compressed
-
+from functools import partial
 from lucj.params import LUCJParams
 
 logger = logging.getLogger(__name__)
@@ -109,6 +109,7 @@ def run_lucj_sqd_compressed_t2_connectivity_task(
         bitstring_type=ffsim.BitstringType.INT,
     )
     bit_array = BitArray.from_samples(samples, num_bits=2 * norb)
+    sci_solver = partial(solve_sci_batch, spin_sq=0.0)
     result = diagonalize_fermionic_hamiltonian(
         mol_ham.one_body_tensor,
         mol_ham.two_body_tensor,
@@ -120,7 +121,7 @@ def run_lucj_sqd_compressed_t2_connectivity_task(
         energy_tol=task.energy_tol,
         occupancies_tol=task.occupancies_tol,
         max_iterations=task.max_iterations,
-        sci_solver=solve_sci_batch,
+        sci_solver=sci_solver,
         symmetrize_spin=task.symmetrize_spin,
         carryover_threshold=task.carryover_threshold,
         seed=rng,

@@ -6,31 +6,20 @@ from pathlib import Path
 
 import ffsim
 import numpy as np
+import scipy.stats
 from ffsim.variational.util import interaction_pairs_spin_balanced
 from molecules_catalog.util import load_molecular_data
-from qiskit.primitives import BitArray
-from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, solve_sci_batch
-from lucj.tasks.lucj_compressed_t2_task_ffsim.compressed_t2_gradient_multi_stage import from_t_amplitudes_compressed
 
 from lucj.params import LUCJParams
+from lucj.tasks.lucj_compressed_t2_task_ffsim.compressed_t2 import from_t_amplitudes_compressed
 
 logger = logging.getLogger(__name__)
 
-
 @dataclass(frozen=True, kw_only=True)
-class LUCJSQDCompressedT2MultiStageTask:
+class LUCJCompressedT2MultiStageTask:
     molecule_basename: str
     bond_distance: float | None
     lucj_params: LUCJParams
-    shots: int
-    samples_per_batch: int
-    n_batches: int
-    energy_tol: float
-    occupancies_tol: float
-    carryover_threshold: float
-    max_iterations: int
-    symmetrize_spin: bool
-    entropy: int | None
 
     @property
     def dirpath(self) -> Path:
@@ -42,25 +31,16 @@ class LUCJSQDCompressedT2MultiStageTask:
                 else f"bond_distance-{self.bond_distance:.5f}"
             )
             / self.lucj_params.dirpath
-            / f"shots-{self.shots}"
-            / f"samples_per_batch-{self.samples_per_batch}"
-            / f"n_batches-{self.n_batches}"
-            / f"energy_tol-{self.energy_tol}"
-            / f"occupancies_tol-{self.occupancies_tol}"
-            / f"carryover_threshold-{self.carryover_threshold}"
-            / f"max_iterations-{self.max_iterations}"
-            / f"symmetrize_spin-{self.symmetrize_spin}"
-            / f"entropy-{self.entropy}"
         )
 
 
-def run_lucj_sqd_compressed_t2_multi_stage_task(
-    task: LUCJSQDCompressedT2MultiStageTask,
+def run_lucj_compressed_t2_multi_stage_task(
+    task: LUCJCompressedT2MultiStageTask,
     *,
     data_dir: Path,
     molecules_catalog_dir: Path | None = None,
     overwrite: bool = True,
-) -> LUCJSQDCompressedT2MultiStageTask:
+) -> LUCJCompressedT2MultiStageTask:
     logging.info(f"{task} Starting...\n")
     os.makedirs(data_dir / task.dirpath, exist_ok=True)
 
@@ -74,11 +54,12 @@ def run_lucj_sqd_compressed_t2_multi_stage_task(
         f"{task.molecule_basename}_d-{task.bond_distance:.5f}",
         molecules_catalog_dir=molecules_catalog_dir,
     )
-    mol_ham = mol_data.hamiltonian
     norb = mol_data.norb
     nelec = mol_data.nelec
+    mol_hamiltonian = mol_data.hamiltonian
 
-    # Initialize initial state and LUCJ parameters
+    # Initialize Hamiltonian, initial state, and LUCJ parameters
+    hamiltonian = ffsim.linear_operator(mol_hamiltonian, norb=norb, nelec=nelec)
     reference_state = ffsim.hartree_fock_state(norb, nelec)
     pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
         task.lucj_params.connectivity, norb
@@ -91,56 +72,36 @@ def run_lucj_sqd_compressed_t2_multi_stage_task(
         t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
         interaction_pairs=(pairs_aa, pairs_ab),
         optimize=True,
+        multi_stage_optimization=True
     )
-
     # Compute final state
-    logging.info(f"{task} Computing state vector...\n")
     final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
 
-    # Run SQD
-    logging.info(f"{task} Running SQD...\n")
-    rng = np.random.default_rng(task.entropy)
-    samples = ffsim.sample_state_vector(
-        final_state,
-        norb=norb,
-        nelec=nelec,
-        shots=task.shots,
-        seed=rng,
-        bitstring_type=ffsim.BitstringType.INT,
-    )
-    bit_array = BitArray.from_samples(samples, num_bits=2 * norb)
-    result = diagonalize_fermionic_hamiltonian(
-        mol_ham.one_body_tensor,
-        mol_ham.two_body_tensor,
-        bit_array,
-        samples_per_batch=task.samples_per_batch,
-        norb=norb,
-        nelec=nelec,
-        num_batches=task.n_batches,
-        energy_tol=task.energy_tol,
-        occupancies_tol=task.occupancies_tol,
-        max_iterations=task.max_iterations,
-        sci_solver=solve_sci_batch,
-        symmetrize_spin=task.symmetrize_spin,
-        carryover_threshold=task.carryover_threshold,
-        seed=rng,
-    )
-    energy = result.energy + mol_data.core_energy
-    sci_state = result.sci_state
-    spin_squared = sci_state.spin_square()
+    # Compute energy and other properties of final state vector
+    logging.info(f"{task} Computing energy and other properties...\n")
+    energy = np.vdot(final_state, hamiltonian @ final_state).real
     error = energy - mol_data.fci_energy
+    spin_squared = ffsim.spin_square(
+        final_state, norb=mol_data.norb, nelec=mol_data.nelec
+    )
+    probs = np.abs(final_state) ** 2
+    entropy = scipy.stats.entropy(probs)
 
-    # Save data
     data = {
         "energy": energy,
         "error": error,
         "spin_squared": spin_squared,
-        "sci_vec_shape": sci_state.amplitudes.shape,
+        "entropy": entropy,
         "n_reps": operator.n_reps,
         "init_loss": init_loss, 
         "final_loss": final_loss
     }
-
+    
     logging.info(f"{task} Saving data...\n")
     with open(data_filename, "wb") as f:
         pickle.dump(data, f)
+
+
+
+
+

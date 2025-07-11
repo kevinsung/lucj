@@ -304,11 +304,10 @@ def double_factorized_t2_compress(
         )
         
         list_diag_coulomb_mat = []
-
+        indices = [[p, p, r, r] for p in range(2 * norb) for r in range(2 * norb)]
+        indices = tuple(zip(*indices))    
         for i in range(n_tensors):
             diag_coulomb_mat = jnp.zeros((2 * norb, 2 * norb, 2 * norb, 2 * norb), dtype=complex)
-            indices = [[p, p, r, r] for p in range(2 * norb) for r in range(2 * norb)]
-            indices = tuple(zip(*indices))
             tmp = list_partial_diag_coulomb_mat[i].ravel()
             diag_coulomb_mat = diag_coulomb_mat.at[indices].set(tmp)
             list_diag_coulomb_mat.append(4 * _project_jnp(diag_coulomb_mat * 1j))
@@ -372,7 +371,7 @@ def double_factorized_t2_compress(
     )
 
     init_loss, _ = fun_jac(x0)
-    print(f"init loss: {init_loss}")
+    # print(f"init loss: {init_loss}")
     # assert(init_loss < 1e-20)
 
     result = scipy.optimize.minimize(
@@ -395,7 +394,7 @@ def double_factorized_t2_compress(
         )
     )
     final_loss, _ = fun_jac(result.x)
-    print(f"final loss with gradient: {final_loss}")
+    # print(f"final loss with gradient: {final_loss}")
     # stack here without dealing with interaction constraint for Jaa, Jab
     diag_coulomb_mats = np.stack([diag_coulomb_mats_aa, diag_coulomb_mats_ab], axis=1)
     return diag_coulomb_mats, orbital_rotations, init_loss, final_loss

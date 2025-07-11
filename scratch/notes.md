@@ -39,3 +39,11 @@ July 3
             )
 
         return vec
+
+
+July 10
+1. modify code to save data
+2. run larger data
+3. set the limit for max dim to show we get high quality bit string
+4. contribute to ffsim
+4. Mario's code change to t rather than t dagger

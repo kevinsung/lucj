@@ -306,11 +306,10 @@ def double_factorized_t2_compress(
         )
         
         list_diag_coulomb_mat = []
-
+        indices = [[p, p, r, r] for p in range(2 * norb) for r in range(2 * norb)]
+        indices = tuple(zip(*indices))
         for i in range(n_tensors):
             diag_coulomb_mat = jnp.zeros((2 * norb, 2 * norb, 2 * norb, 2 * norb), dtype=complex)
-            indices = [[p, p, r, r] for p in range(2 * norb) for r in range(2 * norb)]
-            indices = tuple(zip(*indices))
             tmp = list_partial_diag_coulomb_mat[i].ravel()
             diag_coulomb_mat = diag_coulomb_mat.at[indices].set(tmp)
             list_diag_coulomb_mat.append(4 * _project_jnp(diag_coulomb_mat * 1j))

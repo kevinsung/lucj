@@ -9,14 +9,13 @@ import numpy as np
 import scipy.stats
 from ffsim.variational.util import interaction_pairs_spin_balanced
 from molecules_catalog.util import load_molecular_data
-
+from lucj.tasks.lucj_compressed_t2_task_ffsim.compressed_t2_connectivity_wo_dagger import from_t_amplitudes_compressed
 from lucj.params import LUCJParams
-from lucj.tasks.lucj_compressed_t2_task_ffsim.compressed_t2_gradient import from_t_amplitudes_compressed
 
 logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True, kw_only=True)
-class LUCJCompressedT2TaskGradient:
+class LUCJCompressedT2ConnectivityWoDaggerTask:
     molecule_basename: str
     bond_distance: float | None
     lucj_params: LUCJParams
@@ -34,13 +33,13 @@ class LUCJCompressedT2TaskGradient:
         )
 
 
-def run_lucj_compressed_t2_task_gradient(
-    task: LUCJCompressedT2TaskGradient,
+def run_lucj_compressed_t2_connectivity_wo_dagger_task(
+    task: LUCJCompressedT2ConnectivityWoDaggerTask,
     *,
     data_dir: Path,
     molecules_catalog_dir: Path | None = None,
     overwrite: bool = True,
-) -> LUCJCompressedT2TaskGradient:
+) -> LUCJCompressedT2ConnectivityWoDaggerTask:
     logging.info(f"{task} Starting...\n")
     os.makedirs(data_dir / task.dirpath, exist_ok=True)
 
@@ -87,6 +86,7 @@ def run_lucj_compressed_t2_task_gradient(
     entropy = scipy.stats.entropy(probs)
 
     data = {
+        "operator": operator,
         "energy": energy,
         "error": error,
         "spin_squared": spin_squared,
@@ -99,8 +99,3 @@ def run_lucj_compressed_t2_task_gradient(
     logging.info(f"{task} Saving data...\n")
     with open(data_filename, "wb") as f:
         pickle.dump(data, f)
-
-
-
-
-
