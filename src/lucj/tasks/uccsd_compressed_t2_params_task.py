@@ -89,6 +89,8 @@ def run_uccsd_compressed_t2_params_task(
             )
         np.savez(operator_filename, diag_coulomb_mats=diag_coulomb_mats, orbital_rotations=orbital_rotations)
     
+    diag_coulomb_mats = np.unstack(diag_coulomb_mats, axis=1)[0]
+    
     t2_reconstructed = (
                 1j
                 * contract(
