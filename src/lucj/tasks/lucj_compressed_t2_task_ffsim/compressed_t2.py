@@ -149,7 +149,7 @@ def double_factorized_t2_compress(
     interaction_pairs: tuple[list[tuple[int, int]] | None, list[tuple[int, int]] | None]
     | None = None,
     multi_stage_optimization: bool = True,
-    begin_reps: int | None,
+    begin_reps: int | None = None,
     step: int = 2
 ) -> tuple[np.ndarray, np.ndarray, float, float]:
     diag_coulomb_mats, orbital_rotations = ffsim.linalg.double_factorized_t2(
@@ -164,7 +164,7 @@ def double_factorized_t2_compress(
         n_reps_full = n_reps
     if begin_reps is None:
         begin_reps = n_reps_full
-
+    # print(begin_reps)
     pairs_aa, pairs_ab = interaction_pairs
     # Zero out diagonal coulomb matrix entries
     pairs = []
