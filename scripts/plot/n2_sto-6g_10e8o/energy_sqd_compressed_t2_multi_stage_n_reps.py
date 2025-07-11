@@ -312,6 +312,7 @@ for samples_per_batch in samples_per_batch_range:
         #     input()
         energies = [results_compressed_t2[task]['energy'] for task in tasks_compressed_t2]
         errors = [results_compressed_t2[task]["error"] for task in tasks_compressed_t2]
+        spin_squares = [results_compressed_t2[task]["spin_squared"] for task in tasks_compressed_t2]
         init_loss = [results_compressed_t2[task]["init_loss"] for task in tasks_compressed_t2]
         final_loss = [results_compressed_t2[task]["final_loss"] for task in tasks_compressed_t2]
 
@@ -370,6 +371,7 @@ for samples_per_batch in samples_per_batch_range:
 
         energies = [results_compressed_t2_multi_stage[task]['energy'] for task in tasks_compressed_t2_multi_stage]
         errors = [results_compressed_t2_multi_stage[task]["error"] for task in tasks_compressed_t2_multi_stage]
+        spin_squares = [results_compressed_t2_multi_stage[task]["spin_squared"] for task in tasks_compressed_t2_multi_stage]
         init_loss = [results_compressed_t2_multi_stage[task]["init_loss"] for task in tasks_compressed_t2_multi_stage]
         final_loss = [results_compressed_t2_multi_stage[task]["final_loss"] for task in tasks_compressed_t2_multi_stage]
 

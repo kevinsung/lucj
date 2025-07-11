@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 
 from lucj.params import LUCJParams
 from lucj.tasks.lucj_initial_params_task import LUCJInitialParamsTask
-from lucj.tasks.lucj_compressed_t2_task import LUCJCompressedT2Task
-from lucj.tasks.lucj_compressed_t2_task_gradient import LUCJCompressedT2TaskGradient
+from lucj.tasks.lucj_compressed_t2_task import LUCJCompressedT2TaskGradient
+from lucj.tasks.lucj_compressed_t2_multi_stage_task import LUCJCompressedT2MultiStageTask
 from lucj.tasks.uccsd_initial_params_task import UCCSDInitialParamsTask
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
@@ -34,7 +34,7 @@ connectivities = [
     "square",
     "heavy-hex",
 ]
-n_reps_range = list(range(2, 25, 2)) + [None]
+n_reps_range = list(range(2, 25, 2)) 
 tasks_lucj = [
     LUCJInitialParamsTask(
         molecule_basename=molecule_basename,
@@ -45,11 +45,11 @@ tasks_lucj = [
             with_final_orbital_rotation=True,
         ),
     )
-    for connectivity, n_reps in itertools.product(connectivities, n_reps_range)
+    for connectivity, n_reps in itertools.product(connectivities, n_reps_range + [None])
 ]
 
-tasks_compressed_t2 = [
-    LUCJCompressedT2Task(
+tasks_compressed_t2_multi_stage = [
+    LUCJCompressedT2MultiStageTask(
         molecule_basename=molecule_basename,
         bond_distance=bond_distance,
         lucj_params=LUCJParams(
@@ -89,12 +89,12 @@ mol_data = ffsim.MolecularData.from_json(filepath, compression="lzma")
 
 
 print("Loading data...")
-results_compressed_t2 = {}
-for task in tasks_compressed_t2:
-    filepath = DATA_ROOT / "lucj_compressed_t2" / task.dirpath / "data.pickle"
+results_compressed_t2_multi_stage = {}
+for task in tasks_compressed_t2_multi_stage:
+    filepath = DATA_ROOT / "lucj_compressed_t2_multi_stage" / task.dirpath / "data.pickle"
     with open(filepath, "rb") as f:
         result = pickle.load(f)
-        results_compressed_t2[task] = result
+        results_compressed_t2_multi_stage[task] = result
 
 results_compressed_t2_gradient = {}
 for task in tasks_compressed_t2_gradient:
@@ -121,7 +121,8 @@ colors = prop_cycle.by_key()["color"]
 alphas = [0.5, 1.0]
 linestyles = ["--", ":"]
 
-fig, axes = plt.subplots(3, len(connectivities), figsize=(12, 6), layout="constrained")
+# fig, axes = plt.subplots(2, len(connectivities), figsize=(12, 6), layout="constrained")
+fig, axes = plt.subplots(2, len(connectivities), figsize=(12, 6))
 
 for i, connectivity in enumerate(connectivities):
     axes[0, i].axhline(
@@ -130,12 +131,12 @@ for i, connectivity in enumerate(connectivities):
         label="UCCSD init",
         color=colors[0],
     )
-    axes[1, i].axhline(
-        data_uccsd["spin_squared"],
-        linestyle="--",
-        label="UCCSD init",
-        color=colors[0],
-    )
+    # axes[1, i].axhline(
+    #     data_uccsd["spin_squared"],
+    #     linestyle="--",
+    #     label="UCCSD init",
+    #     color=colors[0],
+    # )
 
     task_lucj = LUCJInitialParamsTask(
         molecule_basename=molecule_basename,
@@ -153,12 +154,12 @@ for i, connectivity in enumerate(connectivities):
         label=f"LUCJ full ({full_n_reps} reps)",
         color=colors[1],
     )
-    axes[1, i].axhline(
-        data_lucj[task_lucj]["spin_squared"],
-        linestyle="--",
-        label=f"LUCJ full ({full_n_reps} reps)",
-        color=colors[1],
-    )
+    # axes[1, i].axhline(
+    #     data_lucj[task_lucj]["spin_squared"],
+    #     linestyle="--",
+    #     label=f"LUCJ full ({full_n_reps} reps)",
+    #     color=colors[1],
+    # )
 
     these_n_reps = [n_reps for n_reps in n_reps_range if n_reps is not None]
     tasks_lucj = [
@@ -183,64 +184,13 @@ for i, connectivity in enumerate(connectivities):
         label="LUCJ truncated",
         color=colors[2],
     )
-    axes[1, i].plot(
-        these_n_reps,
-        spin_squares,
-        f"{markers[0]}{linestyles[0]}",
-        label="LUCJ truncated",
-        color=colors[2],
-    )
-
-    tasks_compressed_t2 = [
-        LUCJCompressedT2Task(
-            molecule_basename=molecule_basename,
-            bond_distance=bond_distance,
-            lucj_params=LUCJParams(
-                connectivity=connectivity,
-                n_reps=n_reps,
-                with_final_orbital_rotation=True,
-            ),
-        )
-        for n_reps in these_n_reps
-    ]
-    # for task in tasks_compressed_t2:
-    #     print(results_compressed_t2[task])
-    #     input()
-    energies = [results_compressed_t2[task]['energy'] for task in tasks_compressed_t2]
-    errors = [results_compressed_t2[task]["error"] for task in tasks_compressed_t2]
-    init_loss = [results_compressed_t2[task]["init_loss"] for task in tasks_compressed_t2]
-    final_loss = [results_compressed_t2[task]["final_loss"] for task in tasks_compressed_t2]
-
-    axes[0, i].plot(
-        these_n_reps,
-        errors,
-        f"{markers[0]}{linestyles[0]}",
-        label="LUCJ Compressed-t2 truncated",
-        color=colors[3],
-    )
-    axes[1, i].plot(
-        these_n_reps,
-        spin_squares,
-        f"{markers[0]}{linestyles[0]}",
-        label="LUCJ Compressed-t2 truncated",
-        color=colors[3],
-    )
-
-    axes[2, i].plot(
-        these_n_reps,
-        init_loss,
-        f"{markers[0]}{linestyles[0]}",
-        label="init loss",
-        color=colors[4],
-    )
-
-    axes[2, i].plot(
-        these_n_reps,
-        final_loss,
-        f"{markers[0]}{linestyles[0]}",
-        label="final loss",
-        color=colors[3],
-    )
+    # axes[1, i].plot(
+    #     these_n_reps,
+    #     spin_squares,
+    #     f"{markers[0]}{linestyles[0]}",
+    #     label="LUCJ truncated",
+    #     color=colors[2],
+    # )
 
     tasks_compressed_t2_gradient = [
         LUCJCompressedT2TaskGradient(
@@ -257,6 +207,7 @@ for i, connectivity in enumerate(connectivities):
 
     energies = [results_compressed_t2_gradient[task]['energy'] for task in tasks_compressed_t2_gradient]
     errors = [results_compressed_t2_gradient[task]["error"] for task in tasks_compressed_t2_gradient]
+    # spin_squares = [results_compressed_t2_gradient[task]["spin_squared"] for task in tasks_compressed_t2_gradient]
     init_loss = [results_compressed_t2_gradient[task]["init_loss"] for task in tasks_compressed_t2_gradient]
     final_loss = [results_compressed_t2_gradient[task]["final_loss"] for task in tasks_compressed_t2_gradient]
 
@@ -264,49 +215,103 @@ for i, connectivity in enumerate(connectivities):
         these_n_reps,
         errors,
         f"{markers[0]}{linestyles[0]}",
-        label="LUCJ Compressed-t2 truncated (gradient opt)",
-        color=colors[5],
+        label="LUCJ Compressed-t2",
+        color=colors[3],
     )
-    axes[1, i].plot(
-        these_n_reps,
-        spin_squares,
-        f"{markers[0]}{linestyles[0]}",
-        label="LUCJ Compressed-t2 truncated (gradient opt)",
-        color=colors[5],
-    )
+    # axes[1, i].plot(
+    #     these_n_reps,
+    #     spin_squares,
+    #     f"{markers[0]}{linestyles[0]}",
+    #     label="LUCJ Compressed-t2 truncated (gradient opt)",
+    #     color=colors[3],
+    # )
 
-    axes[2, i].plot(
+    axes[1, i].plot(
         these_n_reps,
         init_loss,
         f"{markers[0]}{linestyles[0]}",
-        label="init loss (gradient opt)",
-        color=colors[6],
+        # label="LUCJ Compressed-t2",
+        color=colors[4],
     )
 
-    axes[2, i].plot(
+    axes[1, i].plot(
         these_n_reps,
         final_loss,
         f"{markers[0]}{linestyles[0]}",
-        label="final loss (gradient opt)",
+        label="LUCJ Compressed-t2",
+        color=colors[3],
+    )
+    
+    tasks_compressed_t2_multi_stage = [
+        LUCJCompressedT2MultiStageTask(
+            molecule_basename=molecule_basename,
+            bond_distance=bond_distance,
+            lucj_params=LUCJParams(
+                connectivity=connectivity,
+                n_reps=n_reps,
+                with_final_orbital_rotation=True,
+            ),
+        )
+        for n_reps in these_n_reps
+    ]
+    # for task in tasks_compressed_t2:
+    #     print(results_compressed_t2[task])
+    #     input()
+    energies = [results_compressed_t2_multi_stage[task]['energy'] for task in tasks_compressed_t2_multi_stage]
+    errors = [results_compressed_t2_multi_stage[task]["error"] for task in tasks_compressed_t2_multi_stage]
+    # spin_squares = [results_compressed_t2_multi_stage[task]["spin_squared"] for task in tasks_compressed_t2_multi_stage]
+    init_loss = [results_compressed_t2_multi_stage[task]["init_loss"] for task in tasks_compressed_t2_multi_stage]
+    final_loss = [results_compressed_t2_multi_stage[task]["final_loss"] for task in tasks_compressed_t2_multi_stage]
+
+    axes[0, i].plot(
+        these_n_reps,
+        errors,
+        f"{markers[0]}{linestyles[0]}",
+        label="LUCJ Compressed-t2 multi-stage",
         color=colors[5],
     )
+    # axes[1, i].plot(
+    #     these_n_reps,
+    #     spin_squares,
+    #     f"{markers[0]}{linestyles[0]}",
+    #     label="LUCJ Compressed-t2 truncated",
+    #     color=colors[3],
+    # )
 
+    # axes[2, i].plot(
+    #     these_n_reps,
+    #     init_loss,
+    #     f"{markers[0]}{linestyles[0]}",
+    #     label="init loss",
+    #     color=colors[4],
+    # )
+
+    axes[1, i].plot(
+        these_n_reps,
+        final_loss,
+        f"{markers[0]}{linestyles[0]}",
+        label="LUCJ Compressed-t2 multi-stage",
+        color=colors[5],
+    )
+    
     axes[0, i].set_title(connectivity)
     axes[0, i].set_yscale("log")
     axes[0, i].axhline(1.6e-3, linestyle="--", color="gray")
     axes[0, i].set_ylabel("Energy error (Hartree)")
     axes[0, i].set_xlabel("Repetitions")
     axes[0, i].set_xticks(these_n_reps)
-    axes[1, i].set_ylim(0, 0.1)
-    axes[1, i].set_ylabel("Spin squared")
+    # axes[1, i].set_ylim(0, 0.1)
+    axes[1, i].set_ylabel("loss")
     axes[1, i].set_xlabel("Repetitions")
     axes[1, i].set_xticks(these_n_reps)
-    axes[1, 0].legend()
+    # axes[1, i].legend()
 
-    # axes[1, i].set_ylim(0, 0.1)
-    axes[2, i].set_ylabel("loss")
-    axes[2, i].set_xlabel("Repetitions")
-    axes[2, i].set_xticks(these_n_reps)
+    # axes[2, 0].legend(ncol=2, )
+    leg = axes[0, 0].legend(bbox_to_anchor=(1.7, -1.5), loc="upper center", ncol = 5)
+    leg.set_in_layout(False)
+    plt.tight_layout()
+    plt.subplots_adjust(bottom = 0.14)
+
     fig.suptitle(
         f"CCSD initial parameters {molecule_name} {basis} ({nelectron}e, {norb}o) R={bond_distance} Å"
     )
