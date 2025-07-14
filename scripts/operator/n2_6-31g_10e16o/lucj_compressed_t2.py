@@ -61,7 +61,7 @@ tasks = [
         compressed_t2_params=CompressedT2Params(
             multi_stage_optimization=True,
             begin_reps=20,
-            step=4
+            step=2
         )
     )
     for connectivity, n_reps in itertools.product(connectivities, n_reps_range)

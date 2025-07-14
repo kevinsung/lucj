@@ -40,12 +40,12 @@ start = 0.9
 stop = 2.7
 step = 0.1
 bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) + 1)
-bond_distance_range = [1.0, 2.4]
+bond_distance_range = [0.9, 2.4]
 
 connectivities = [
     "heavy-hex",
     "square",
-    "all-to-all",
+    # "all-to-all",
 ]
 n_reps_range = list(range(2, 25, 2)) + [None, 1, 3, 5, 7]
 

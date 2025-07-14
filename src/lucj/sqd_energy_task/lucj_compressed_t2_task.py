@@ -43,8 +43,10 @@ class SQDEnergyTask:
             compress_option = "random"
         elif self.connectivity_opt:
             compress_option = "connectivity_opt-True"
-        else:
+        elif self.compressed_t2_params is not None:
             compress_option = self.compressed_t2_params.dirpath
+        else:
+            compress_option = "truncated"
         return (
             Path(self.molecule_basename)
             / (
@@ -72,8 +74,10 @@ class SQDEnergyTask:
             compress_option = "random"
         elif self.connectivity_opt:
             compress_option = "connectivity_opt-True"
-        else:
+        elif self.compressed_t2_params is not None:
             compress_option = self.compressed_t2_params.dirpath
+        else:
+            compress_option = "truncated"
         return (
             Path(self.molecule_basename)
             / (
@@ -119,30 +123,38 @@ def run_sqd_energy_task(
     operator_filename = data_dir / task.operatorpath / "operator.npz"
     vqe_filename = data_dir / task.operatorpath / "data.pickle"
     sample_filename = data_dir / task.operatorpath / "sample.pickle"
+    state_vector_filename = data_dir / task.operatorpath / "state_vector.npy"
     
     if not os.path.exists(sample_filename):
-        if not os.path.exists(operator_filename):
-            logging.info(f"Operator for {task} does not exists.\n")
+        if os.path.exists(state_vector_filename):
+            with open(state_vector_filename, "rb") as f:
+                final_state = np.load(f)
+        else:
+            if not os.path.exists(operator_filename):
+                logging.info(f"Operator for {task} does not exists.\n")
 
-        operator = np.load(operator_filename)
-        diag_coulomb_mats = operator["diag_coulomb_mats"]
-        orbital_rotations = operator["orbital_rotations"]
+            operator = np.load(operator_filename)
+            diag_coulomb_mats = operator["diag_coulomb_mats"]
+            orbital_rotations = operator["orbital_rotations"]
+            
+            final_orbital_rotation = None
+            if mol_data.ccsd_t1 is not None:
+                final_orbital_rotation = (
+                    ffsim.variational.util.orbital_rotation_from_t1_amplitudes(mol_data.ccsd_t1)
+                )
+
+            operator = ffsim.UCJOpSpinBalanced(
+                    diag_coulomb_mats=diag_coulomb_mats,
+                    orbital_rotations=orbital_rotations,
+                    final_orbital_rotation=final_orbital_rotation,
+                )
+            
+            # Compute final state
+            if not os.path.exists(state_vector_filename):
+                final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
+                with open(state_vector_filename, "wb") as f:
+                    np.save(f, final_state)
         
-        final_orbital_rotation = None
-        if mol_data.ccsd_t1 is not None:
-            final_orbital_rotation = (
-                ffsim.variational.util.orbital_rotation_from_t1_amplitudes(mol_data.ccsd_t1)
-            )
-
-        operator = ffsim.UCJOpSpinBalanced(
-                diag_coulomb_mats=diag_coulomb_mats,
-                orbital_rotations=orbital_rotations,
-                final_orbital_rotation=final_orbital_rotation,
-            )
-        
-        # Compute final state
-        final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
-
         # record vqe energy
         energy = np.vdot(final_state, hamiltonian @ final_state).real
         error = energy - mol_data.fci_energy

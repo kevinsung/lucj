@@ -1313,7 +1313,7 @@ wheels = [
 [[package]]
 name = "molecules-catalog"
 version = "0.0.0"
-source = { editable = "../molecules-catalog" }
+source = { editable = "/disk1/WanHsuan.Lin/molecules-catalog" }
 dependencies = [
     { name = "ffsim" },
     { name = "matplotlib" },

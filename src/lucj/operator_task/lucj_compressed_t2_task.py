@@ -20,7 +20,7 @@ class LUCJCompressedT2Task:
     bond_distance: float | None
     lucj_params: LUCJParams
     compressed_t2_params: CompressedT2Params | None
-    connectivity_opt: bool | None = False
+    connectivity_opt: bool = False
     random_op: bool = False
 
     @property
@@ -29,8 +29,10 @@ class LUCJCompressedT2Task:
             compress_option = "random"
         elif self.connectivity_opt:
             compress_option = "connectivity_opt-True"
-        else:
+        elif self.compressed_t2_params is not None:
             compress_option = self.compressed_t2_params.dirpath
+        else:
+            compress_option = "truncated"
         return (
             Path(self.molecule_basename)
             / (
@@ -99,25 +101,34 @@ def run_lucj_compressed_t2_task(
             from lucj.operator_task.lucj_compressed_t2_task_ffsim.compressed_t2 import (
                 from_t_amplitudes_compressed,
             )
-            operator, init_loss, final_loss = from_t_amplitudes_compressed(
-                mol_data.ccsd_t2,
-                n_reps=task.lucj_params.n_reps,
-                t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
-                interaction_pairs=(pairs_aa, pairs_ab),
-                optimize=True,
-                multi_stage_optimization=task.compressed_t2_params.multi_stage_optimization,
-                step=task.compressed_t2_params.step,
-                begin_reps=task.compressed_t2_params.begin_reps,
-            )
-        data_filename = data_dir / task.dirpath / "opt_data.pickle"
-        data = {"init_loss": init_loss, "final_loss": final_loss}
+            if task.compressed_t2_params is not None:
+                operator, init_loss, final_loss = from_t_amplitudes_compressed(
+                    mol_data.ccsd_t2,
+                    n_reps=task.lucj_params.n_reps,
+                    t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
+                    interaction_pairs=(pairs_aa, pairs_ab),
+                    optimize=True,
+                    multi_stage_optimization=task.compressed_t2_params.multi_stage_optimization,
+                    step=task.compressed_t2_params.step,
+                    begin_reps=task.compressed_t2_params.begin_reps,
+                )
+            else:
+                operator, init_loss, final_loss = from_t_amplitudes_compressed(
+                    mol_data.ccsd_t2,
+                    n_reps=task.lucj_params.n_reps,
+                    t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
+                    interaction_pairs=(pairs_aa, pairs_ab),
+                    optimize=False,
+                )
+            data_filename = data_dir / task.dirpath / "opt_data.pickle"
+            data = {"init_loss": init_loss, "final_loss": final_loss}
 
-        with open(data_filename, "wb") as f:
-            pickle.dump(data, f)
+            with open(data_filename, "wb") as f:
+                pickle.dump(data, f)
 
     logging.info(f"{task} Saving data...\n")
 
-    np.savez(
+    np.savez_compressed(
         operator_filename,
         diag_coulomb_mats=operator.diag_coulomb_mats,
         orbital_rotations=operator.orbital_rotations,

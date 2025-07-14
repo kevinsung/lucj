@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 from tqdm import tqdm
 
-from lucj.params import LUCJParams, CompressedT2Params
+from lucj.params import LUCJParams
 from lucj.operator_task.lucj_compressed_t2_task import (
     LUCJCompressedT2Task,
     run_lucj_compressed_t2_task,
@@ -40,7 +40,7 @@ start = 0.9
 stop = 2.7
 step = 0.1
 bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) + 1)
-bond_distance_range = [1.0, 2.4]
+bond_distance_range = [0.9, 2.4]
 
 connectivities = [
     "heavy-hex",

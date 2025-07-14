@@ -35,7 +35,7 @@ step = 0.1
 bond_distance = 1.0
 
 connectivities = [
-    # "all-to-all",
+    "all-to-all",
     "square",
     "heavy-hex",
 ]
@@ -122,7 +122,7 @@ tasks_compressed_t2_connectivity = [
         entropy=entropy,
     )
     for connectivity, n_reps, samples_per_batch in itertools.product(
-        connectivities, n_reps_range, samples_per_batch_range
+        ["square","heavy-hex"], n_reps_range, samples_per_batch_range
     )
 ]
 
@@ -195,9 +195,18 @@ for task in tasks_compressed_t2_connectivity:
 results_random = {}
 for task in tasks_random:
     filepath = DATA_ROOT / "lucj_sqd_random" / task.dirpath / "data.pickle"
-    with open(filepath, "rb") as f:
-        result = pickle.load(f)
-        results_random[task] = result
+    if not os.path.exists(filepath):
+        results_random[task] = {
+            "energy": 0,
+            "error": 0,
+            "spin_squared": 0,
+            "sci_vec_shape": (0,0),
+            "n_reps": 0,
+        }
+    else:
+        with open(filepath, "rb") as f:
+            result = pickle.load(f)
+            results_random[task] = result
 
 
 data_lucj = {}
@@ -406,66 +415,66 @@ for samples_per_batch in samples_per_batch_range:
             label="LUCJ Compressed-t2 multi-stage",
             color=colors[5],
         )
+        if connectivity != "all-to-all":
+            tasks_compressed_t2_connectivity = [
+                LUCJSQDCompressedT2ConnectivityTask(
+                    molecule_basename=molecule_basename,
+                    bond_distance=bond_distance,
+                    lucj_params=LUCJParams(
+                        connectivity=connectivity,
+                        n_reps=n_reps,
+                        with_final_orbital_rotation=True,
+                    ),
+                    shots=shots,
+                    samples_per_batch=samples_per_batch,
+                    n_batches=n_batches,
+                    energy_tol=energy_tol,
+                    occupancies_tol=occupancies_tol,
+                    carryover_threshold=carryover_threshold,
+                    max_iterations=max_iterations,
+                    symmetrize_spin=symmetrize_spin,
+                    entropy=entropy,
+                )
+                for n_reps in these_n_reps
+            ]
 
-        tasks_compressed_t2_connectivity = [
-            LUCJSQDCompressedT2ConnectivityTask(
-                molecule_basename=molecule_basename,
-                bond_distance=bond_distance,
-                lucj_params=LUCJParams(
-                    connectivity=connectivity,
-                    n_reps=n_reps,
-                    with_final_orbital_rotation=True,
-                ),
-                shots=shots,
-                samples_per_batch=samples_per_batch,
-                n_batches=n_batches,
-                energy_tol=energy_tol,
-                occupancies_tol=occupancies_tol,
-                carryover_threshold=carryover_threshold,
-                max_iterations=max_iterations,
-                symmetrize_spin=symmetrize_spin,
-                entropy=entropy,
+            energies = [results_compressed_t2_connectivity[task]['energy'] for task in tasks_compressed_t2_connectivity]
+            errors = [results_compressed_t2_connectivity[task]["error"] for task in tasks_compressed_t2_connectivity]
+            # spin_squares = [results_compressed_t2_connectivity[task]["spin_squared"] for task in tasks_compressed_t2_connectivity]
+            init_loss = [results_compressed_t2_connectivity[task]["init_loss"] for task in tasks_compressed_t2_connectivity]
+            final_loss = [results_compressed_t2_connectivity[task]["final_loss"] for task in tasks_compressed_t2_connectivity]
+            sci_vec_shape = [results_compressed_t2_connectivity[task]["sci_vec_shape"][0] * results_compressed_t2_connectivity[task]["sci_vec_shape"][0] for task in tasks_compressed_t2_connectivity]
+
+            axes[0, i].plot(
+                these_n_reps,
+                errors,
+                f"{markers[0]}{linestyles[0]}",
+                label="LUCJ Compressed-t2 connectivity",
+                color=colors[6],
             )
-            for n_reps in these_n_reps
-        ]
+            axes[1, i].plot(
+                these_n_reps,
+                init_loss,
+                f"{markers[0]}{linestyles[1]}",
+                label="LUCJ Compressed-t2 connectivity",
+                color=colors[6],
+            )
 
-        energies = [results_compressed_t2_connectivity[task]['energy'] for task in tasks_compressed_t2_connectivity]
-        errors = [results_compressed_t2_connectivity[task]["error"] for task in tasks_compressed_t2_connectivity]
-        # spin_squares = [results_compressed_t2_connectivity[task]["spin_squared"] for task in tasks_compressed_t2_connectivity]
-        init_loss = [results_compressed_t2_connectivity[task]["init_loss"] for task in tasks_compressed_t2_connectivity]
-        final_loss = [results_compressed_t2_connectivity[task]["final_loss"] for task in tasks_compressed_t2_connectivity]
-        sci_vec_shape = [results_compressed_t2_connectivity[task]["sci_vec_shape"][0] * results_compressed_t2_connectivity[task]["sci_vec_shape"][0] for task in tasks_compressed_t2_connectivity]
+            axes[1, i].plot(
+                these_n_reps,
+                final_loss,
+                f"{markers[0]}{linestyles[0]}",
+                # label="final loss",
+                color=colors[6],
+            )
 
-        axes[0, i].plot(
-            these_n_reps,
-            errors,
-            f"{markers[0]}{linestyles[0]}",
-            label="LUCJ Compressed-t2 connectivity",
-            color=colors[6],
-        )
-        axes[1, i].plot(
-            these_n_reps,
-            init_loss,
-            f"{markers[0]}{linestyles[1]}",
-            label="LUCJ Compressed-t2 connectivity",
-            color=colors[6],
-        )
-
-        axes[1, i].plot(
-            these_n_reps,
-            final_loss,
-            f"{markers[0]}{linestyles[0]}",
-            # label="final loss",
-            color=colors[6],
-        )
-
-        axes[2, i].plot(
-            these_n_reps,
-            sci_vec_shape,
-            f"{markers[0]}{linestyles[0]}",
-            label="LUCJ Compressed-t2 connectivity",
-            color=colors[6],
-        )
+            axes[2, i].plot(
+                these_n_reps,
+                sci_vec_shape,
+                f"{markers[0]}{linestyles[0]}",
+                label="LUCJ Compressed-t2 connectivity",
+                color=colors[6],
+            )
 
         tasks_random = [
             LUCJSQDRandomTask(
@@ -499,7 +508,7 @@ for samples_per_batch in samples_per_batch_range:
             errors,
             f"{markers[0]}{linestyles[0]}",
             label="LUCJ Random",
-            color=colors[7],
+            color="mediumpurple",
         )
 
         axes[2, i].plot(
@@ -507,7 +516,7 @@ for samples_per_batch in samples_per_batch_range:
             sci_vec_shape,
             f"{markers[0]}{linestyles[0]}",
             label="LUCJ Random",
-            color=colors[7],
+            color="mediumpurple",
         )
 
         axes[0, i].set_title(connectivity)
@@ -530,10 +539,10 @@ for samples_per_batch in samples_per_batch_range:
         axes[2, i].set_xticks(these_n_reps)
 
         # axes[2, 0].legend(ncol=2, )
-        leg = axes[2, 0].legend(bbox_to_anchor=(1, -0.4), loc="upper center", ncol = 5)
+        leg = axes[2, 1].legend(bbox_to_anchor=(0.5, -0.4), loc="upper center", ncol = 3)
         leg.set_in_layout(False)
         plt.tight_layout()
-        plt.subplots_adjust(bottom = 0.14)
+        plt.subplots_adjust(bottom = 0.16)
         
 
         fig.suptitle(
