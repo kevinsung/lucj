@@ -184,8 +184,8 @@ def double_factorized_t2_compress(
     diag_coulomb_mask = np.triu(diag_coulomb_mask)
     list_init_loss = []
     list_final_loss = []
-
-    for n_tensors in range(begin_reps, n_reps - 1, -step):
+    list_reps = [i for i in range(begin_reps, n_reps, -step)] + [n_reps]
+    for n_tensors in list_reps:
         diag_coulomb_mats = diag_coulomb_mats[:n_tensors]
         orbital_rotations = orbital_rotations[:n_tensors]
 

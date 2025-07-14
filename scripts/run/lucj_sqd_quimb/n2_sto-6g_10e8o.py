@@ -54,10 +54,11 @@ cobyqa_maxiter = 100
 entropy = 0
 max_bond: int
 max_bonds = [
-    25,
-    50,
-    100,
-    200,
+    10,
+    # 25,
+    # 50,
+    # 100,
+    # 200,
     # None,
 ]
 cutoffs = [

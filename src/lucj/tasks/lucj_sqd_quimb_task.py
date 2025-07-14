@@ -18,7 +18,7 @@ from ffsim.variational.util import (
 from molecules_catalog.util import load_molecular_data
 from qiskit.primitives import BitArray
 from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, solve_sci_batch
-from lucj.tasks.lucj_compressed_t2_task_ffsim.compressed_t2 import from_t_amplitudes_compressed, from_parameters
+from lucj.tasks.lucj_compressed_t2_task_ffsim.compressed_t2 import from_t_amplitudes_compressed
 from lucj.params import COBYQAParams, LUCJParams
 
 from qiskit.circuit import QuantumCircuit, QuantumRegister

@@ -61,10 +61,12 @@ diag_coulomb_mats, orbital_rotations, _, _ = (
             nocc=nocc,
             n_reps=n_reps,
             interaction_pairs=(pairs_aa, pairs_ab),
-            multi_stage_optimization=True,
+            multi_stage_optimization=False,
         )
     )
 np.savez(operator_filename, diag_coulomb_mats=diag_coulomb_mats, orbital_rotations=orbital_rotations)
+
+diag_coulomb_mats = np.unstack(diag_coulomb_mats, axis=1)[0]
 
 t2_reconstructed = (
             1j
@@ -78,11 +80,11 @@ t2_reconstructed = (
                 # optimize="greedy"
             )[:nocc, :nocc, nocc:, nocc:]
         )
-logging.info("UCCSDOpRestricted\n")
+print("UCCSDOpRestricted\n")
 operator = ffsim.UCCSDOpRestricted(t1=mol_data.ccsd_t1, t2=t2_reconstructed)
 
 # Compute energy and other properties of final state vector
-logging.info("Compute final state\n")
+print("Compute final state\n")
 final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
 
 energy = np.vdot(final_state, hamiltonian @ final_state).real

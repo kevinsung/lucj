@@ -71,3 +71,10 @@ class StochasticReconfigurationParams(Params):
     variation: float
     optimize_regularization: bool
     optimize_variation: bool
+
+@dataclass(frozen=True, kw_only=True)
+class CompressedT2Params(Params):
+    multi_stage_optimization: bool
+    begin_reps: int
+    step: int
+    

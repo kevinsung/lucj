@@ -11,6 +11,7 @@ from lucj.tasks.lucj_sqd_initial_params_task import LUCJSQDInitialParamsTask
 from lucj.tasks.uccsd_sqd_initial_params_task import UCCSDSQDInitialParamsTask
 from lucj.tasks.lucj_sqd_compressed_t2_multi_stage_task import LUCJSQDCompressedT2MultiStageTask
 from lucj.tasks.lucj_sqd_compressed_t2_connectivity_task import LUCJSQDCompressedT2ConnectivityTask
+from lucj.tasks.lucj_sqd_random_task import LUCJSQDRandomTask
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
@@ -142,6 +143,30 @@ tasks_uccsd = [
     for samples_per_batch in samples_per_batch_range
 ]
 
+tasks_random = [
+    LUCJSQDRandomTask(
+        molecule_basename=molecule_basename,
+        bond_distance=bond_distance,
+        lucj_params=LUCJParams(
+            connectivity=connectivity,
+            n_reps=n_reps,
+            with_final_orbital_rotation=True,
+        ),
+        shots=shots,
+        samples_per_batch=samples_per_batch,
+        n_batches=n_batches,
+        energy_tol=energy_tol,
+        occupancies_tol=occupancies_tol,
+        carryover_threshold=carryover_threshold,
+        max_iterations=max_iterations,
+        symmetrize_spin=symmetrize_spin,
+        entropy=entropy,
+    )
+    for connectivity, n_reps, samples_per_batch in itertools.product(
+        connectivities, n_reps_range, samples_per_batch_range
+    )
+]
+
 
 filepath = os.path.join(
     MOLECULES_CATALOG_DIR,
@@ -166,6 +191,14 @@ for task in tasks_compressed_t2_connectivity:
     with open(filepath, "rb") as f:
         result = pickle.load(f)
         results_compressed_t2_connectivity[task] = result
+
+results_random = {}
+for task in tasks_random:
+    filepath = DATA_ROOT / "lucj_sqd_random" / task.dirpath / "data.pickle"
+    with open(filepath, "rb") as f:
+        result = pickle.load(f)
+        results_random[task] = result
+
 
 data_lucj = {}
 for task in tasks_lucj:
@@ -432,6 +465,49 @@ for samples_per_batch in samples_per_batch_range:
             f"{markers[0]}{linestyles[0]}",
             label="LUCJ Compressed-t2 connectivity",
             color=colors[6],
+        )
+
+        tasks_random = [
+            LUCJSQDRandomTask(
+                molecule_basename=molecule_basename,
+                bond_distance=bond_distance,
+                lucj_params=LUCJParams(
+                    connectivity=connectivity,
+                    n_reps=n_reps,
+                    with_final_orbital_rotation=True,
+                ),
+                shots=shots,
+                samples_per_batch=samples_per_batch,
+                n_batches=n_batches,
+                energy_tol=energy_tol,
+                occupancies_tol=occupancies_tol,
+                carryover_threshold=carryover_threshold,
+                max_iterations=max_iterations,
+                symmetrize_spin=symmetrize_spin,
+                entropy=entropy,
+            )
+            for n_reps in these_n_reps
+        ]
+
+        energies = [results_random[task]['energy'] for task in tasks_random]
+        errors = [results_random[task]["error"] for task in tasks_random]
+        sci_vec_shape = [results_random[task]["sci_vec_shape"][0] * results_random[task]["sci_vec_shape"][0] for task in tasks_random]
+
+        print(errors)
+        axes[0, i].plot(
+            these_n_reps,
+            errors,
+            f"{markers[0]}{linestyles[0]}",
+            label="LUCJ Random",
+            color=colors[7],
+        )
+
+        axes[2, i].plot(
+            these_n_reps,
+            sci_vec_shape,
+            f"{markers[0]}{linestyles[0]}",
+            label="LUCJ Random",
+            color=colors[7],
         )
 
         axes[0, i].set_title(connectivity)

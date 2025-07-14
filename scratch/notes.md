@@ -47,3 +47,16 @@ July 10
 3. set the limit for max dim to show we get high quality bit string
 4. contribute to ffsim
 4. Mario's code change to t rather than t dagger
+
+July 11
+sto-6g: minimal
+6.31g: pople
+cc-pvds: correlation-consistent(dunning)
+they are differ by different number of slater basis, more gausian
+
+
+1. Try bond length = 2.4
+2. Fe2S2
+3. add the max dimension
+4. reorder
+5. the magnitude of J of can related to the device noise

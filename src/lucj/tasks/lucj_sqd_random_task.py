@@ -136,8 +136,6 @@ def run_lucj_sqd_random_task(
         "spin_squared": spin_squared,
         "sci_vec_shape": sci_state.amplitudes.shape,
         "n_reps": operator.n_reps,
-        "init_loss": init_loss,
-        "final_loss": final_loss,
     }
 
     logging.info(f"{task} Saving data...\n")

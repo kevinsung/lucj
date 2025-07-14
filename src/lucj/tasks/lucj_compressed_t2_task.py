@@ -42,7 +42,7 @@ def run_lucj_compressed_t2_task(
     overwrite: bool = True,
 ) -> LUCJCompressedT2Task:
     logging.info(f"{task} Starting...\n")
-    os.makedirs(data_dir / task.dirpath, exist_ok=True)
+    os.makedirs(data_dir / task.dirpath , exist_ok=True)
 
     data_filename = data_dir / task.dirpath / "data.pickle"
     if (not overwrite) and os.path.exists(data_filename):
