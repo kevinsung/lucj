@@ -28,7 +28,7 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 16
+MAX_PROCESSES = 8
 OVERWRITE = False
 
 molecule_name = "n2"
@@ -47,7 +47,7 @@ connectivities = [
     "square",
     "all-to-all",
 ]
-n_reps_range = list(range(2, 25, 2)) + [None, 1, 3, 5, 7]
+n_reps_range = list(range(2, 25, 2))
 
 tasks = [
     LUCJCompressedT2Task(

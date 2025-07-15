@@ -292,7 +292,11 @@ nelectron, norb = 10, 8
 
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-bond_distance = 1.0
+molecule_name = "fe2s2"
+nelectron, norb = 30, 20
+molecule_basename = f"{molecule_name}_{nelectron}e{norb}o"
+
+# bond_distance = 1.0
 
 from molecules_catalog.util import load_molecular_data
 from pathlib import Path
@@ -303,9 +307,11 @@ from ffsim.variational.util import interaction_pairs_spin_balanced
 molecules_catalog_dir = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 
 mol_data = load_molecular_data(
-    f"{molecule_basename}_d-{bond_distance:.5f}",
+    # f"{molecule_basename}_d-{bond_distance:.5f}",
+    molecule_basename,
     molecules_catalog_dir=molecules_catalog_dir,
 )
+print(mol_data)
 norb = mol_data.norb
 nelec = mol_data.nelec
 mol_hamiltonian = mol_data.hamiltonian
@@ -343,7 +349,7 @@ data = {
     "final_loss": final_loss
 }
 
-import pickle 
+# import pickle 
 
-with open(f"scratch/n2_sto-6g_10e8o_{n_reps}.pickle", "wb") as f:
-    pickle.dump(data, f)
+# with open(f"scratch/n2_sto-6g_10e8o_{n_reps}.pickle", "wb") as f:
+#     pickle.dump(data, f)

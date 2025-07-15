@@ -54,7 +54,6 @@ entropy = 0
 max_dim_range = [None, 50_000, 100_000, 200_000]
 
 
-
 tasks = [
     RandomSQDEnergyTask(
         molecule_basename=molecule_basename,
