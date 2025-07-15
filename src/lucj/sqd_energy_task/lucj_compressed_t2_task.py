@@ -107,10 +107,17 @@ def run_sqd_energy_task(
     
 
     # Get molecular data and molecular Hamiltonian
-    mol_data = load_molecular_data(
-        f"{task.molecule_basename}_d-{task.bond_distance:.5f}",
-        molecules_catalog_dir=molecules_catalog_dir,
-    )
+    if task.molecule_basename == "fe2s2_30e20o":
+        mol_data = load_molecular_data(
+            task.molecule_basename,
+            molecules_catalog_dir=molecules_catalog_dir,
+        )
+    else:
+        mol_data = load_molecular_data(
+            f"{task.molecule_basename}_d-{task.bond_distance:.5f}",
+            molecules_catalog_dir=molecules_catalog_dir,
+        )
+    norb = mol_data.norb
     norb = mol_data.norb
     nelec = mol_data.nelec
     mol_hamiltonian = mol_data.hamiltonian
@@ -124,6 +131,8 @@ def run_sqd_energy_task(
     vqe_filename = data_dir / task.operatorpath / "data.pickle"
     sample_filename = data_dir / task.operatorpath / "sample.pickle"
     state_vector_filename = data_dir / task.operatorpath / "state_vector.npy"
+    
+    rng = np.random.default_rng(task.entropy)
     
     if not os.path.exists(sample_filename):
         if os.path.exists(state_vector_filename):
@@ -169,7 +178,6 @@ def run_sqd_energy_task(
             "error": error,
             "spin_squared": spin_squared,
             "entropy": entropy,
-            "n_reps": operator.n_reps,
         }
 
         logging.info(f"{task} Saving VQE data...\n")
@@ -178,12 +186,11 @@ def run_sqd_energy_task(
 
 
         logging.info(f"{task} Sampling...\n")
-        rng = np.random.default_rng(task.entropy)
         samples = ffsim.sample_state_vector(
             final_state,
             norb=norb,
             nelec=nelec,
-            shots=task.shots,
+            shots=1_000_000,
             seed=rng,
             bitstring_type=ffsim.BitstringType.INT,
         )
@@ -193,9 +200,17 @@ def run_sqd_energy_task(
             pickle.dump(bit_array_count, f)
     
     else:
+        logging.info(f"{task} load sample...\n")
         with open(sample_filename, "rb") as f:
             bit_array_count = pickle.load(f)
             bit_array = BitArray.from_counts(bit_array_count)
+    
+    array = bit_array.to_bool_array()
+
+    # Generate n unique random integers from the specified range
+    unique_integers = np.random.choice(np.arange(0, array.shape[0]), size=task.shots, replace=False)
+    array = array[unique_integers]
+    bit_array = BitArray.from_bool_array(array)
 
 
     # Run SQD
@@ -229,7 +244,6 @@ def run_sqd_energy_task(
         "error": error,
         "spin_squared": spin_squared,
         "sci_vec_shape": sci_state.amplitudes.shape,
-        "n_reps": operator.n_reps,
     }
     
     logging.info(f"{task} Saving SQD data...\n")

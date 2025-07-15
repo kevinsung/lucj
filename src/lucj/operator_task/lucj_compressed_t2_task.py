@@ -8,7 +8,7 @@ import numpy as np
 import ffsim
 from ffsim.variational.util import interaction_pairs_spin_balanced
 from molecules_catalog.util import load_molecular_data
-
+import pyscf
 from lucj.params import LUCJParams, CompressedT2Params
 
 logger = logging.getLogger(__name__)
@@ -64,10 +64,24 @@ def run_lucj_compressed_t2_task(
         return task
 
     # Get molecular data and molecular Hamiltonian
-    mol_data = load_molecular_data(
-        f"{task.molecule_basename}_d-{task.bond_distance:.5f}",
-        molecules_catalog_dir=molecules_catalog_dir,
-    )
+    if task.molecule_basename == "fe2s2_30e20o":
+        mol_data = load_molecular_data(
+            task.molecule_basename,
+            molecules_catalog_dir=molecules_catalog_dir,
+        )
+        c0, c1, c2 = pyscf.ci.cisd.cisdvec_to_amplitudes(
+            mol_data.cisd_vec, mol_data.norb, mol_data.nelec[0]
+        )
+        assert abs(c0) > 1e-8
+        t1 = c1 / c0
+        t2 = c2 / c0 - np.einsum("ia,jb->ijab", t1, t1)
+    else:
+        mol_data = load_molecular_data(
+            f"{task.molecule_basename}_d-{task.bond_distance:.5f}",
+            molecules_catalog_dir=molecules_catalog_dir,
+        )
+        t2 = mol_data.ccsd_t2
+        t1 = mol_data.ccsd_t1
     norb = mol_data.norb
 
     # Initialize Hamiltonian, initial state, and LUCJ parameters
@@ -76,8 +90,7 @@ def run_lucj_compressed_t2_task(
     )
 
     # use CCSD to initialize parameters
-    nocc, _, nvrt, _ = mol_data.ccsd_t2.shape
-    
+    logging.info(f"{task} Run optimization...\n")
     if task.random_op:
         operator = ffsim.random.random_ucj_op_spin_balanced(
         norb,
@@ -91,9 +104,9 @@ def run_lucj_compressed_t2_task(
                 from_t_amplitudes_compressed,
             )
             operator, init_loss, final_loss = from_t_amplitudes_compressed(
-                mol_data.ccsd_t2,
+                t2,
                 n_reps=task.lucj_params.n_reps,
-                t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
+                t1=t1 if task.lucj_params.with_final_orbital_rotation else None,
                 interaction_pairs=(pairs_aa, pairs_ab),
                 optimize=True,
             )
@@ -103,9 +116,9 @@ def run_lucj_compressed_t2_task(
             )
             if task.compressed_t2_params is not None:
                 operator, init_loss, final_loss = from_t_amplitudes_compressed(
-                    mol_data.ccsd_t2,
+                    t2,
                     n_reps=task.lucj_params.n_reps,
-                    t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
+                    t1=t1 if task.lucj_params.with_final_orbital_rotation else None,
                     interaction_pairs=(pairs_aa, pairs_ab),
                     optimize=True,
                     multi_stage_optimization=task.compressed_t2_params.multi_stage_optimization,
@@ -114,17 +127,17 @@ def run_lucj_compressed_t2_task(
                 )
             else:
                 operator, init_loss, final_loss = from_t_amplitudes_compressed(
-                    mol_data.ccsd_t2,
+                    t2,
                     n_reps=task.lucj_params.n_reps,
-                    t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
+                    t1=t1 if task.lucj_params.with_final_orbital_rotation else None,
                     interaction_pairs=(pairs_aa, pairs_ab),
                     optimize=False,
                 )
-            data_filename = data_dir / task.dirpath / "opt_data.pickle"
-            data = {"init_loss": init_loss, "final_loss": final_loss}
+        data_filename = data_dir / task.dirpath / "opt_data.pickle"
+        data = {"init_loss": init_loss, "final_loss": final_loss}
 
-            with open(data_filename, "wb") as f:
-                pickle.dump(data, f)
+        with open(data_filename, "wb") as f:
+            pickle.dump(data, f)
 
     logging.info(f"{task} Saving data...\n")
 

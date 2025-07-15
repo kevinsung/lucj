@@ -6,7 +6,6 @@ import os
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
-import numpy as np
 from tqdm import tqdm
 
 from lucj.params import LUCJParams
@@ -28,26 +27,19 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 16
-OVERWRITE = True
+MAX_PROCESSES = 8
+OVERWRITE = False
 
-molecule_name = "n2"
-basis = "6-31g"
-nelectron, norb = 10, 16
-molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
-
-start = 0.9
-stop = 2.7
-step = 0.1
-bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) + 1)
-bond_distance_range = [1.0, 2.4]
+molecule_name = "fe2s2"
+nelectron, norb = 30, 20
+molecule_basename = f"{molecule_name}_{nelectron}e{norb}o"
 
 connectivities = [
     "heavy-hex",
     "square",
     # "all-to-all",
 ]
-n_reps_range = list(range(2, 25, 2)) + [None, 1, 3, 5, 7]
+n_reps_range = list(range(2, 25, 2))
 shots = 100_000
 samples_per_batch_range = [1000, 2000, 5000]
 n_batches = 3
@@ -64,7 +56,7 @@ max_dim_range = [None, 50_000, 100_000, 200_000]
 tasks = [
     SQDEnergyTask(
         molecule_basename=molecule_basename,
-        bond_distance=d,
+        bond_distance=None,
         lucj_params=LUCJParams(
             connectivity=connectivity,
             n_reps=n_reps,
@@ -84,7 +76,6 @@ tasks = [
         max_dim=max_dim,
     )
     for connectivity, n_reps in itertools.product(connectivities, n_reps_range)
-    for d in bond_distance_range
     for samples_per_batch in samples_per_batch_range
     for max_dim in max_dim_range
 ]

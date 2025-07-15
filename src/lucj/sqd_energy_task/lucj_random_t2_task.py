@@ -33,11 +33,6 @@ class RandomSQDEnergyTask:
     def dirpath(self) -> Path:
         return (
             Path(self.molecule_basename)
-            / (
-                ""
-                if self.bond_distance is None
-                else f"bond_distance-{self.bond_distance:.5f}"
-            )
             / "random_sample"
             / f"shots-{self.shots}"
             / f"samples_per_batch-{self.samples_per_batch}"
@@ -69,10 +64,16 @@ def run_random_sqd_energy_task(
     
 
     # Get molecular data and molecular Hamiltonian
-    mol_data = load_molecular_data(
-        f"{task.molecule_basename}_d-{task.bond_distance:.5f}",
-        molecules_catalog_dir=molecules_catalog_dir,
-    )
+    if task.molecule_basename == "fe2s2_30e20o":
+        mol_data = load_molecular_data(
+            task.molecule_basename,
+            molecules_catalog_dir=molecules_catalog_dir,
+        )
+    else:
+        mol_data = load_molecular_data(
+            f"{task.molecule_basename}_d-{task.bond_distance:.5f}",
+            molecules_catalog_dir=molecules_catalog_dir,
+        )
     norb = mol_data.norb
     nelec = mol_data.nelec
     mol_hamiltonian = mol_data.hamiltonian
@@ -106,6 +107,7 @@ def run_random_sqd_energy_task(
         seed=rng,
         max_dim=task.max_dim
     )
+    logging.info(f"{task} Finish SQD\n")
     energy = result.energy + mol_data.core_energy
     sci_state = result.sci_state
     spin_squared = sci_state.spin_square()

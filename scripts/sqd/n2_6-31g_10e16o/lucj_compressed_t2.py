@@ -48,7 +48,7 @@ connectivities = [
     "all-to-all",
 ]
 n_reps_range = list(range(2, 25, 2)) + [None, 1, 3, 5, 7]
-shots = 1_000_000
+shots = 100_000
 samples_per_batch_range = [1000, 2000, 5000]
 n_batches = 3
 energy_tol = 1e-5
@@ -58,7 +58,7 @@ max_iterations = 100
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
-max_dim_range = [None, 5e3, 1e4, 1e5, 2e5]
+max_dim_range = [None, 50_000, 100_000, 200_000]
 
 
 tasks = [
@@ -73,7 +73,7 @@ tasks = [
         compressed_t2_params=CompressedT2Params(
             multi_stage_optimization=True,
             begin_reps=20,
-            step=4
+            step=2
         ),
         shots=shots,
         samples_per_batch=samples_per_batch,
