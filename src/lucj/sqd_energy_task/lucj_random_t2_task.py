@@ -33,6 +33,11 @@ class RandomSQDEnergyTask:
     def dirpath(self) -> Path:
         return (
             Path(self.molecule_basename)
+            / (
+                ""
+                if self.bond_distance is None
+                else f"bond_distance-{self.bond_distance:.5f}"
+            )
             / "random_sample"
             / f"shots-{self.shots}"
             / f"samples_per_batch-{self.samples_per_batch}"
@@ -111,7 +116,10 @@ def run_random_sqd_energy_task(
     energy = result.energy + mol_data.core_energy
     sci_state = result.sci_state
     spin_squared = sci_state.spin_square()
-    error = energy - mol_data.fci_energy
+    if mol_data.fci_energy is None:
+        error = energy - mol_data.sci_energy
+    else:
+        error = energy - mol_data.fci_energy
 
     # Save data
     data = {

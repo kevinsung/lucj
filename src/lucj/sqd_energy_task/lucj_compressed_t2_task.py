@@ -236,7 +236,12 @@ def run_sqd_energy_task(
     energy = result.energy + mol_data.core_energy
     sci_state = result.sci_state
     spin_squared = sci_state.spin_square()
-    error = energy - mol_data.fci_energy
+    if mol_data.fci_energy is not None:
+        error = energy - mol_data.fci_energy
+    elif mol_data.sci_energy is not None:
+        error = energy - mol_data.sci_energy
+    else:
+        error = -1
 
     # Save data
     data = {
