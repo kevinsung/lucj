@@ -107,7 +107,7 @@ def run_sqd_energy_task(
     
 
     # Get molecular data and molecular Hamiltonian
-    if task.molecule_basename == "fe2s2_30e20o" or task.molecule_basename == "cc-pvdz_10e26o":
+    if task.molecule_basename == "fe2s2_30e20o":
         mol_data = load_molecular_data(
             task.molecule_basename,
             molecules_catalog_dir=molecules_catalog_dir,
