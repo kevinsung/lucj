@@ -43,7 +43,7 @@ bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) 
 bond_distance_range = [1.0, 2.4]
 
 connectivities = [
-    "heavy-hex",
+    # "heavy-hex",
     "square",
     # "all-to-all",
 ]
@@ -58,7 +58,7 @@ max_iterations = 100
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
-max_dim_range = [None, 50_000, 100_000, 200_000]
+max_dim_range = [None, 250, 300, 450]
 
 
 tasks = [
@@ -83,10 +83,10 @@ tasks = [
         entropy=entropy,
         max_dim=max_dim,
     )
-    for connectivity, n_reps in itertools.product(connectivities, n_reps_range)
+    for max_dim, n_reps in itertools.product(max_dim_range, n_reps_range)
+    for connectivity in connectivities
     for d in bond_distance_range
     for samples_per_batch in samples_per_batch_range
-    for max_dim in max_dim_range
 ]
 
 if MAX_PROCESSES == 1:

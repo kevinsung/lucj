@@ -23,7 +23,7 @@ logging.basicConfig(
     filename=filename,
 )
 
-DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
+DATA_ROOT = "/media/storage/WanHsuan.Lin/fe2s2_30e20o/"
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
@@ -35,7 +35,7 @@ nelectron, norb = 30, 20
 molecule_basename = f"{molecule_name}_{nelectron}e{norb}o"
 
 connectivities = [
-    "heavy-hex",
+    # "heavy-hex",
     "square",
     "all-to-all",
 ]
@@ -50,7 +50,7 @@ max_iterations = 100
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
-# max_dim_range = [None, 5e3, 1e4, 1e5, 2e5]
+max_dim_range = [None, 250, 300, 450]
 max_dim_range = [None]
 
 

@@ -107,7 +107,7 @@ def run_sqd_energy_task(
     
 
     # Get molecular data and molecular Hamiltonian
-    if task.molecule_basename == "fe2s2_30e20o":
+    if task.molecule_basename == "fe2s2_30e20o" or task.molecule_basename == "cc-pvdz_10e26o":
         mol_data = load_molecular_data(
             task.molecule_basename,
             molecules_catalog_dir=molecules_catalog_dir,
@@ -117,7 +117,6 @@ def run_sqd_energy_task(
             f"{task.molecule_basename}_d-{task.bond_distance:.5f}",
             molecules_catalog_dir=molecules_catalog_dir,
         )
-    norb = mol_data.norb
     norb = mol_data.norb
     nelec = mol_data.nelec
     mol_hamiltonian = mol_data.hamiltonian
@@ -165,24 +164,26 @@ def run_sqd_energy_task(
                     np.save(f, final_state)
         
         # record vqe energy
-        energy = np.vdot(final_state, hamiltonian @ final_state).real
-        error = energy - mol_data.fci_energy
-        spin_squared = ffsim.spin_square(
-            final_state, norb=mol_data.norb, nelec=mol_data.nelec
-        )
-        probs = np.abs(final_state) ** 2
-        entropy = scipy.stats.entropy(probs)
+        if task.molecule_basename != "fe2s2_30e20o":
+            logging.info(f"{task} Computing VQE data...\n")
+            energy = np.vdot(final_state, hamiltonian @ final_state).real
+            error = energy - mol_data.fci_energy
+            spin_squared = ffsim.spin_square(
+                final_state, norb=mol_data.norb, nelec=mol_data.nelec
+            )
+            probs = np.abs(final_state) ** 2
+            entropy = scipy.stats.entropy(probs)
 
-        data = {
-            "energy": energy,
-            "error": error,
-            "spin_squared": spin_squared,
-            "entropy": entropy,
-        }
+            data = {
+                "energy": energy,
+                "error": error,
+                "spin_squared": spin_squared,
+                "entropy": entropy,
+            }
 
-        logging.info(f"{task} Saving VQE data...\n")
-        with open(vqe_filename, "wb") as f:
-            pickle.dump(data, f)
+            logging.info(f"{task} Saving VQE data...\n")
+            with open(vqe_filename, "wb") as f:
+                pickle.dump(data, f)
 
 
         logging.info(f"{task} Sampling...\n")
@@ -211,7 +212,7 @@ def run_sqd_energy_task(
     unique_integers = np.random.choice(np.arange(0, array.shape[0]), size=task.shots, replace=False)
     array = array[unique_integers]
     bit_array = BitArray.from_bool_array(array)
-
+    
 
     # Run SQD
     logging.info(f"{task} Running SQD...\n")

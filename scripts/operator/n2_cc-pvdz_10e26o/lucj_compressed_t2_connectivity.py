@@ -36,14 +36,10 @@ basis = "cc-pvdz"
 nelectron, norb = 10, 26
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-start = 0.9
-stop = 2.7
-step = 0.1
-bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) + 1)
 bond_distance_range = [0.9, 2.4]
 
 connectivities = [
-    "heavy-hex",
+    # "heavy-hex",
     "square",
     # "all-to-all",
 ]

@@ -14,7 +14,6 @@ from lucj.tasks.uccsd_sqd_initial_params_task import UCCSDSQDInitialParamsTask
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 
-
 molecule_name = "n2"
 basis = "6-31g"
 nelectron, norb = 10, 16
@@ -26,13 +25,13 @@ os.makedirs(plots_dir, exist_ok=True)
 bond_distance_range = [1.0, 2.4]
 
 connectivities = [
-    # "all-to-all",
-    # "square",
-    "heavy-hex",
+    "all-to-all",
+    "square",
+    # "heavy-hex",
 ]
 n_reps_range = list(range(2, 22, 2)) + [None]
 
-shots = 1_000_000
+shots = 100_000
 samples_per_batch_range = [1000, 2000, 5000]
 samples_per_batch_range = [1000]
 n_batches = 3
@@ -44,7 +43,7 @@ symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
 
-max_dim_range = [None, 5e3, 1e4, 1e5, 2e5]
+max_dim_range = [None, 50_000, 100_000, 200_000]
 
 
 def load_data(filepath):
@@ -85,7 +84,7 @@ tasks_random = [
 
 results_random = {}
 for task in tasks_random:
-    filepath = DATA_ROOT / task.dirpath / "data.pickle"
+    filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
     results_random[task] = load_data(filepath)
 
 print("Done loading data.")
@@ -114,7 +113,7 @@ for samples_per_batch, connectivity, bond_distance in itertools.product(
         task_uccsd = UCCSDSQDInitialParamsTask(
             molecule_basename=molecule_basename,
             bond_distance=bond_distance,
-            shots=100_000,
+            shots=shots,
             samples_per_batch=samples_per_batch,
             n_batches=n_batches,
             energy_tol=energy_tol,
@@ -159,7 +158,7 @@ for samples_per_batch, connectivity, bond_distance in itertools.product(
                     n_reps=n_reps,
                     with_final_orbital_rotation=True,
                 ),
-                shots=100_000,
+                shots=shots,
                 samples_per_batch=samples_per_batch,
                 n_batches=n_batches,
                 energy_tol=energy_tol,
@@ -173,7 +172,7 @@ for samples_per_batch, connectivity, bond_distance in itertools.product(
         ]
         data_lucj = {}
         for task in tasks_lucj:
-            filepath = DATA_ROOT / "lucj_initial_params" / task.dirpath / "data.pickle"
+            filepath = DATA_ROOT / "lucj_sqd_initial_params" / task.dirpath / "data.pickle"
             data_lucj[task] = load_data(filepath)
 
         task_lucj = tasks_lucj[-1]
@@ -208,7 +207,6 @@ for samples_per_batch, connectivity, bond_distance in itertools.product(
             data_lucj[task]["sci_vec_shape"][0] * data_lucj[task]["sci_vec_shape"][0]
             for task in tasks_lucj[:-1]
         ]
-
         axes[row_error, i].plot(
             these_n_reps,
             errors,
@@ -289,7 +287,6 @@ for samples_per_batch, connectivity, bond_distance in itertools.product(
             * results_compressed_t2[task]["sci_vec_shape"][0]
             for task in tasks_compressed_t2
         ]
-
         axes[row_error, i].plot(
             these_n_reps,
             errors,
@@ -460,19 +457,19 @@ for samples_per_batch, connectivity, bond_distance in itertools.product(
             results_random[task_random]["error"],
             linestyle="--",
             label="Random bitstr",
-            color="mediumpurple",
+            color="red",
         )
         axes[row_spin_square, i].axhline(
             results_random[task_random]["spin_squared"],
             linestyle="--",
             label="Random bitstr",
-            color="mediumpurple",
+            color="red",
         )
         axes[row_sci_vec_dim, i].axhline(
             results_random[task_random]["sci_vec_shape"][0],
             linestyle="--",
             label="Random bitstr",
-            color="mediumpurple",
+            color="red",
         )
 
         axes[row_error, i].set_title(f"max dim: {max_dim}")
@@ -490,7 +487,11 @@ for samples_per_batch, connectivity, bond_distance in itertools.product(
         # axes[row_loss, i].set_xlabel("Repetitions")
         # axes[row_loss, i].set_xticks(these_n_reps)
 
-        axes[row_sci_vec_dim, i].set_ylabel("sci_vec_shape")
+        axes[row_spin_square, i].set_ylabel("Spin square")
+        axes[row_spin_square, i].set_xlabel("Repetitions")
+        axes[row_spin_square, i].set_xticks(these_n_reps)
+
+        axes[row_sci_vec_dim, i].set_ylabel("SCI subspace")
         axes[row_sci_vec_dim, i].set_xlabel("Repetitions")
         axes[row_sci_vec_dim, i].set_xticks(these_n_reps)
 
