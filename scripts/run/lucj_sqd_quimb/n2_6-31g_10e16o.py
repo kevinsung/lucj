@@ -34,11 +34,11 @@ nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 bond_distance_range = [1.0]
-n_reps_range = list(range(2, 25, 2)) + [None]
+n_reps_range = list(range(2, 25, 2))
 connectivities = [
     "square",
     "all-to-all",
-    "heavy-hex"
+    # "heavy-hex"
 ]
 n_reps = 1
 shots = 100_000
@@ -49,7 +49,7 @@ occupancies_tol = 1e-3
 carryover_threshold = 1e-3
 max_iterations = 100
 symmetrize_spin = True
-cobyqa_maxiter = 100
+cobyqa_maxiter = 50
 # TODO set entropy and generate seeds properly
 entropy = 0
 max_bond: int
