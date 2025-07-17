@@ -64,11 +64,9 @@ for max_dim in max_dim_range:
                 n_reps=n_reps,
                 with_final_orbital_rotation=True,
             ),
-            compressed_t2_params=CompressedT2Params(
-                multi_stage_optimization=True,
-                begin_reps=20,
-                step=2
-            ),
+            compressed_t2_params=None,
+            connectivity_opt=False,
+            random_op =True,
             shots=shots,
             samples_per_batch=samples_per_batch,
             n_batches=n_batches,

@@ -8,24 +8,28 @@ import ffsim
 import numpy as np
 import scipy.stats
 from molecules_catalog.util import load_molecular_data
-
+from ffsim.variational.util import interaction_pairs_spin_balanced
 from lucj.params import LUCJParams, CompressedT2Params
 
 from qiskit.primitives import BitArray
 from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, solve_sci_batch
 from functools import partial
 
-from lucj.hardware_sqd_task.hardware_job.hardware_job import constrcut_lucj_circuit, run_on_hardware
+from lucj.hardware_sqd_task.hardware_job.hardware_job import (
+    constrcut_lucj_circuit,
+    run_on_hardware,
+)
 
 
 logger = logging.getLogger(__name__)
+
 
 @dataclass(frozen=True, kw_only=True)
 class HardwareSQDEnergyTask:
     molecule_basename: str
     bond_distance: float | None
     lucj_params: LUCJParams
-    compressed_t2_params: CompressedT2Params | None
+    compressed_t2_params: CompressedT2Params
     connectivity_opt: bool = False
     random_op: bool = False
     shots: int
@@ -92,6 +96,56 @@ class HardwareSQDEnergyTask:
         )
 
 
+def load_operator(task: HardwareSQDEnergyTask, data_dir: str, mol_data):
+    if task.random_op:
+        logging.info(f"Generate random operator for {task}.\n")
+        norb = mol_data.norb
+        pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
+            task.lucj_params.connectivity, norb
+        )
+        operator = ffsim.random.random_ucj_op_spin_balanced(
+            norb,
+            n_reps=task.lucj_params.n_reps,
+            interaction_pairs=(pairs_aa, pairs_ab),
+            with_final_orbital_rotation=True
+        )
+    elif task.connectivity_opt or task.compressed_t2_params is not None:
+        operator_filename = data_dir / task.operatorpath / "operator.npz"
+        if not os.path.exists(operator_filename):
+            logging.info(f"Operator for {task} does not exists.\n")
+            return None
+        logging.info(f"Load operator for {task}.\n")
+        operator = np.load(operator_filename)
+        diag_coulomb_mats = operator["diag_coulomb_mats"]
+        orbital_rotations = operator["orbital_rotations"]
+
+        final_orbital_rotation = None
+        if mol_data.ccsd_t1 is not None:
+            final_orbital_rotation = (
+                ffsim.variational.util.orbital_rotation_from_t1_amplitudes(mol_data.ccsd_t1)
+            )
+
+        operator = ffsim.UCJOpSpinBalanced(
+            diag_coulomb_mats=diag_coulomb_mats,
+            orbital_rotations=orbital_rotations,
+            final_orbital_rotation=final_orbital_rotation,
+        )
+    else:
+        logging.info(f"Generate truncated operator for {task}.\n")
+        norb = mol_data.norb
+        pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
+            task.lucj_params.connectivity, norb
+        )
+        operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
+            mol_data.ccsd_t2,
+            n_reps=task.lucj_params.n_reps,
+            t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
+            interaction_pairs=(pairs_aa, pairs_ab),
+        )
+
+    return operator
+
+
 def run_hardware_sqd_energy_task(
     task: HardwareSQDEnergyTask,
     *,
@@ -106,7 +160,7 @@ def run_hardware_sqd_energy_task(
     if (not overwrite) and os.path.exists(data_filename):
         logging.info(f"Data for {task} already exists. Skipping...\n")
         return task
-    
+
     # Get molecular data and molecular Hamiltonian
     if task.molecule_basename == "fe2s2_30e20o":
         mol_data = load_molecular_data(
@@ -123,51 +177,34 @@ def run_hardware_sqd_energy_task(
     mol_hamiltonian = mol_data.hamiltonian
 
     # use CCSD to initialize parameters
-    operator_filename = data_dir / task.operatorpath / "operator.npz"
     sample_filename = data_dir / task.operatorpath / "hardware_sample.pickle"
-    
+
     rng = np.random.default_rng(task.entropy)
-    
+
     if not os.path.exists(sample_filename):
-        if not os.path.exists(operator_filename):
-            logging.info(f"Operator for {task} does not exists.\n")
-
-        operator = np.load(operator_filename)
-        diag_coulomb_mats = operator["diag_coulomb_mats"]
-        orbital_rotations = operator["orbital_rotations"]
-        
-        final_orbital_rotation = None
-        if mol_data.ccsd_t1 is not None:
-            final_orbital_rotation = (
-                ffsim.variational.util.orbital_rotation_from_t1_amplitudes(mol_data.ccsd_t1)
-            )
-
-        operator = ffsim.UCJOpSpinBalanced(
-                diag_coulomb_mats=diag_coulomb_mats,
-                orbital_rotations=orbital_rotations,
-                final_orbital_rotation=final_orbital_rotation,
-            )
-        
+        operator = load_operator(task, data_dir, mol_data)
+        if operator is None:
+            return
         # construct lucj circuit
         circuit = constrcut_lucj_circuit(norb, nelec, operator)
-        
+
         # run on hardware and get the sample
         logging.info(f"{task} Sampling from real device...\n")
         samples = run_on_hardware(circuit, norb, 1_000_000)
-        
+
         with open(sample_filename, "wb") as f:
             pickle.dump(samples, f)
-    
+
     else:
         logging.info(f"{task} load sample...\n")
         with open(sample_filename, "rb") as f:
             samples = pickle.load(f)
-    
+
     logging.info(f"{task} Done sampling\n")
     # print(samples)
-    samples = samples[:task.shots]
+    samples = samples[: task.shots]
     # print(samples)
-    
+
     # Run SQD
     logging.info(f"{task} Running SQD...\n")
     sci_solver = partial(solve_sci_batch, spin_sq=0.0)
@@ -186,7 +223,7 @@ def run_hardware_sqd_energy_task(
         symmetrize_spin=task.symmetrize_spin,
         carryover_threshold=task.carryover_threshold,
         seed=rng,
-        max_dim=task.max_dim
+        max_dim=task.max_dim,
     )
     energy = result.energy + mol_data.core_energy
     sci_state = result.sci_state
@@ -205,12 +242,7 @@ def run_hardware_sqd_energy_task(
         "spin_squared": spin_squared,
         "sci_vec_shape": sci_state.amplitudes.shape,
     }
-    
+
     logging.info(f"{task} Saving SQD data...\n")
     with open(data_filename, "wb") as f:
         pickle.dump(data, f)
-
-
-
-
-

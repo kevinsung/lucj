@@ -139,7 +139,7 @@ def run_sqd_energy_task(
                 final_state = np.load(f)
         else:
             if not os.path.exists(operator_filename):
-                logging.info(f"Operator for {task} does not exists.\n")
+                logging.info(f"Operator for {task} does not exists. filename: {operator_filename}\n")
 
             operator = np.load(operator_filename)
             diag_coulomb_mats = operator["diag_coulomb_mats"]

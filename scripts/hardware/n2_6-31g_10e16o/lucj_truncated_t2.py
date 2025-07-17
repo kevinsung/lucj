@@ -8,7 +8,7 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from lucj.params import LUCJParams, CompressedT2Params
+from lucj.params import LUCJParams
 from lucj.hardware_sqd_task.lucj_compressed_t2_task import (
     HardwareSQDEnergyTask,
     run_hardware_sqd_energy_task,
@@ -64,11 +64,9 @@ for max_dim in max_dim_range:
                 n_reps=n_reps,
                 with_final_orbital_rotation=True,
             ),
-            compressed_t2_params=CompressedT2Params(
-                multi_stage_optimization=True,
-                begin_reps=20,
-                step=2
-            ),
+            compressed_t2_params=None,
+            connectivity_opt=False,
+            random_op =False,
             shots=shots,
             samples_per_batch=samples_per_batch,
             n_batches=n_batches,
