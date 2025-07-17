@@ -18,9 +18,10 @@ def constrcut_lucj_circuit(norb, nelec, operator):
 
 def run_on_hardware(circuit: QuantumCircuit, norb, shots):
     service = QiskitRuntimeService()
-    backend = service.least_busy(
-        operational=True, simulator=False, min_num_qubits=127
-    )
+    # backend = service.least_busy(
+    #     operational=True, simulator=False, min_num_qubits=127
+    # )
+    backend = service.backend("alt_pittsburgh")
 
     initial_layout, _ = get_zigzag_physical_layout(norb, backend=backend)
  

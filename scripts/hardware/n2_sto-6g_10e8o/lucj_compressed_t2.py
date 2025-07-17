@@ -9,9 +9,9 @@ from pathlib import Path
 from tqdm import tqdm
 
 from lucj.params import LUCJParams, CompressedT2Params
-from lucj.sqd_energy_task.lucj_compressed_t2_task import (
-    SQDEnergyTask,
-    run_sqd_energy_task,
+from lucj.hardware_sqd_task.lucj_compressed_t2_task import (
+    HardwareSQDEnergyTask,
+    run_hardware_sqd_energy_task,
 )
 
 filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}.log"
@@ -23,25 +23,28 @@ logging.basicConfig(
     filename=filename,
 )
 
-DATA_ROOT = "/media/storage/WanHsuan.Lin/fe2s2_30e20o/"
+DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 2
-OVERWRITE = False
+MAX_PROCESSES = 8
+OVERWRITE = True
 
-molecule_name = "fe2s2"
-nelectron, norb = 30, 20
-molecule_basename = f"{molecule_name}_{nelectron}e{norb}o"
+molecule_name = "n2"
+basis = "sto-6g"
+nelectron, norb = 10, 8
+molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
+
+# bond_distance_range = [1.2, 2.4]
+bond_distance_range = [1.2]
 
 connectivities = [
     "heavy-hex",
-    # "square",
-    "all-to-all",
 ]
-n_reps_range = list(range(2, 22, 2))
-shots = 100_000
-samples_per_batch = 1000
+n_reps_range = [1]
+
+shots = 5000
+samples_per_batch_range = [1000]
 n_batches = 3
 energy_tol = 1e-5
 occupancies_tol = 1e-3
@@ -50,13 +53,14 @@ max_iterations = 100
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
-max_dim_range = [500, 1000] # for large one
-
+# max_dim_range = [None, 50_000, 100_000, 200_000]
+# max_dim_range = [250, 500]
+max_dim_range = [250]
 
 tasks = [
-    SQDEnergyTask(
+    HardwareSQDEnergyTask(
         molecule_basename=molecule_basename,
-        bond_distance=None,
+        bond_distance=d,
         lucj_params=LUCJParams(
             connectivity=connectivity,
             n_reps=n_reps,
@@ -80,25 +84,34 @@ tasks = [
     )
     for max_dim, n_reps in itertools.product(max_dim_range, n_reps_range)
     for connectivity in connectivities
+    for d in bond_distance_range
+    for samples_per_batch in samples_per_batch_range
 ]
 
-if MAX_PROCESSES == 1:
-    for task in tqdm(tasks):
-        run_sqd_energy_task(
-            task,
+run_hardware_sqd_energy_task(
+            tasks[0],
             data_dir=DATA_DIR,
             molecules_catalog_dir=MOLECULES_CATALOG_DIR,
             overwrite=OVERWRITE,
         )
-else:
-    with tqdm(total=len(tasks)) as progress:
-        with ProcessPoolExecutor(MAX_PROCESSES) as executor:
-            for task in tasks:
-                future = executor.submit(
-                    run_sqd_energy_task,
-                    task,
-                    data_dir=DATA_DIR,
-                    molecules_catalog_dir=MOLECULES_CATALOG_DIR,
-                    overwrite=OVERWRITE,
-                )
-                future.add_done_callback(lambda _: progress.update())
+
+# if MAX_PROCESSES == 1:
+#     for task in tqdm(tasks):
+#         run_hardware_sqd_energy_task(
+#             task,
+#             data_dir=DATA_DIR,
+#             molecules_catalog_dir=MOLECULES_CATALOG_DIR,
+#             overwrite=OVERWRITE,
+#         )
+# else:
+#     with tqdm(total=len(tasks)) as progress:
+#         with ProcessPoolExecutor(MAX_PROCESSES) as executor:
+#             for task in tasks:
+#                 future = executor.submit(
+#                     run_hardware_sqd_energy_task,
+#                     task,
+#                     data_dir=DATA_DIR,
+#                     molecules_catalog_dir=MOLECULES_CATALOG_DIR,
+#                     overwrite=OVERWRITE,
+#                 )
+#                 future.add_done_callback(lambda _: progress.update())

@@ -152,9 +152,8 @@ def run_hardware_sqd_energy_task(
         circuit = constrcut_lucj_circuit(norb, nelec, operator)
         
         # run on hardware and get the sample
-        logging.info(f"{task} Sampling...\n")
-        samples = run_on_hardware(circuit, norb, 6000)
-        # samples = run_on_hardware(circuit, norb, 1_000_000)
+        logging.info(f"{task} Sampling from real device...\n")
+        samples = run_on_hardware(circuit, norb, 1_000_000)
         
         with open(sample_filename, "wb") as f:
             pickle.dump(samples, f)
@@ -164,7 +163,10 @@ def run_hardware_sqd_energy_task(
         with open(sample_filename, "rb") as f:
             samples = pickle.load(f)
     
+    logging.info(f"{task} Done sampling\n")
+    # print(samples)
     samples = samples[:task.shots]
+    # print(samples)
     
     # Run SQD
     logging.info(f"{task} Running SQD...\n")
