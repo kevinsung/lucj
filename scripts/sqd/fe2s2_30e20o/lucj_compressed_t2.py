@@ -50,8 +50,7 @@ max_iterations = 100
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
-max_dim_range = [None, 250, 300, 450]
-max_dim_range = [None]
+max_dim_range = [500, 1000] # for large one
 
 
 tasks = [

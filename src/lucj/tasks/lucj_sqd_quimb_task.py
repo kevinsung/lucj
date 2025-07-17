@@ -47,6 +47,7 @@ class LUCJSQDQuimbTask:
     perm_mps: bool
     cutoff: int
     seed: int
+    max_dim: int
     # TODO set limit on subspace dimension
 
     @property
@@ -69,6 +70,7 @@ class LUCJSQDQuimbTask:
             / f"max_iterations-{self.max_iterations}"
             / f"symmetrize_spin-{self.symmetrize_spin}"
             / f"entropy-{self.entropy}"
+            / f"max_dim-{self.max_dim}"
             / f"max_bond-{self.max_bond}"
             / f"cutoff-{self.cutoff}"
             / f"perm_mps-{self.perm_mps}"
@@ -132,6 +134,7 @@ def run_lucj_sqd_quimb_task(
         circuit = QuantumCircuit(qubits)
         circuit.append(ffsim.qiskit.PrepareHartreeFockJW(norb, nelec), qubits)
         circuit.append(ffsim.qiskit.UCJOpSpinBalancedJW(operator), qubits)
+        circuit.measure_all()
         # change to quimb
         # Sample using quimb
         decomposed = circuit.decompose(reps=2)
@@ -169,6 +172,7 @@ def run_lucj_sqd_quimb_task(
             symmetrize_spin=task.symmetrize_spin,
             carryover_threshold=task.carryover_threshold,
             seed=rng,
+            max_dim=task.max_dim
         )
         return result.energy + mol_data.core_energy
 

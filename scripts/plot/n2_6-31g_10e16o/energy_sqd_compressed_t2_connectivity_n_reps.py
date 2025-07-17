@@ -182,6 +182,8 @@ results_compressed_t2_multi_stage = {}
 for task in tasks_compressed_t2_multi_stage:
     filepath = DATA_ROOT / "lucj_sqd_compressed_t2_multi_stage" / task.dirpath / "data.pickle"
     with open(filepath, "rb") as f:
+        # print(filepath)
+        # input()
         result = pickle.load(f)
         results_compressed_t2_multi_stage[task] = result
 
@@ -384,6 +386,8 @@ for samples_per_batch in samples_per_batch_range:
             label="LUCJ Compressed-t2 multi-stage",
             color=colors[5],
         )
+        print(connectivity)
+        print(errors)
         # axes[1, i].plot(
         #     these_n_reps,
         #     spin_squares,
