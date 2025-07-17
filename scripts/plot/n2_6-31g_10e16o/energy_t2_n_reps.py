@@ -27,13 +27,12 @@ bond_distance_range = [1.0, 2.4]
 connectivities = [
     "all-to-all",
     "square",
-    # "heavy-hex",
+    "heavy-hex",
 ]
 n_reps_range = list(range(2, 22, 2)) + [None]
 
 shots = 100_000
 samples_per_batch_range = [1000, 2000, 5000]
-samples_per_batch_range = [1000]
 n_batches = 3
 energy_tol = 1e-5
 occupancies_tol = 1e-3
@@ -43,7 +42,7 @@ symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
 
-max_dim_range = [None, 50_000, 100_000, 200_000]
+max_dim_range = [None, 250, 300, 450]
 
 
 def load_data(filepath):
@@ -146,6 +145,43 @@ for samples_per_batch, connectivity, bond_distance in itertools.product(
             linestyle="--",
             label="UCCSD init",
             color=colors[0],
+        )
+
+        # random sqd sample
+        task_random = RandomSQDEnergyTask(
+                    molecule_basename=molecule_basename,
+                    bond_distance=bond_distance,
+                    shots=shots,
+                    samples_per_batch=samples_per_batch,
+                    n_batches=n_batches,
+                    energy_tol=energy_tol,
+                    occupancies_tol=occupancies_tol,
+                    carryover_threshold=carryover_threshold,
+                    max_iterations=max_iterations,
+                    symmetrize_spin=symmetrize_spin,
+                    entropy=entropy,
+                    max_dim=max_dim,
+                )
+        
+        print(results_random[task_random]["error"])
+
+        axes[row_error, i].axhline(
+            results_random[task_random]["error"],
+            linestyle="--",
+            label="Random bitstr",
+            color="red",
+        )
+        axes[row_spin_square, i].axhline(
+            results_random[task_random]["spin_squared"],
+            linestyle="--",
+            label="Random bitstr",
+            color="red",
+        )
+        axes[row_sci_vec_dim, i].axhline(
+            results_random[task_random]["sci_vec_shape"][0] * results_random[task_random]["sci_vec_shape"][1],
+            linestyle="--",
+            label="Random bitstr",
+            color="red",
         )
 
         # LUCJ data
@@ -302,7 +338,7 @@ for samples_per_batch, connectivity, bond_distance in itertools.product(
             label="LUCJ Compressed-t2",
             color=colors[5],
         )
-
+    
         # axes[row_loss, i].plot(
         #     these_n_reps,
         #     init_loss,
@@ -435,58 +471,17 @@ for samples_per_batch, connectivity, bond_distance in itertools.product(
                 color=colors[6],
             )
 
-        # random sqd sample
-        task_random = RandomSQDEnergyTask(
-                    molecule_basename=molecule_basename,
-                    bond_distance=bond_distance,
-                    shots=shots,
-                    samples_per_batch=samples_per_batch,
-                    n_batches=n_batches,
-                    energy_tol=energy_tol,
-                    occupancies_tol=occupancies_tol,
-                    carryover_threshold=carryover_threshold,
-                    max_iterations=max_iterations,
-                    symmetrize_spin=symmetrize_spin,
-                    entropy=entropy,
-                    max_dim=max_dim,
-                )
-        
-        print(results_random[task_random]["error"])
-
-        axes[row_error, i].axhline(
-            results_random[task_random]["error"],
-            linestyle="--",
-            label="Random bitstr",
-            color="red",
-        )
-        axes[row_spin_square, i].axhline(
-            results_random[task_random]["spin_squared"],
-            linestyle="--",
-            label="Random bitstr",
-            color="red",
-        )
-        axes[row_sci_vec_dim, i].axhline(
-            results_random[task_random]["sci_vec_shape"][0],
-            linestyle="--",
-            label="Random bitstr",
-            color="red",
-        )
-
         axes[row_error, i].set_title(f"max dim: {max_dim}")
         axes[row_error, i].set_yscale("log")
         axes[row_error, i].axhline(1.6e-3, linestyle="--", color="gray")
         axes[row_error, i].set_ylabel("Energy error (Hartree)")
         axes[row_error, i].set_xlabel("Repetitions")
         axes[row_error, i].set_xticks(these_n_reps)
-        # axes[row_loss, i].set_ylim(0, 0.1)
-        # axes[row_loss, i].set_ylabel("Spin squared")
-        # axes[row_loss, i].set_xlabel("Repetitions")
-        # axes[row_loss, i].set_xticks(these_n_reps)
-
         # axes[row_loss, i].set_ylabel("loss")
         # axes[row_loss, i].set_xlabel("Repetitions")
         # axes[row_loss, i].set_xticks(these_n_reps)
 
+        axes[row_spin_square, i].set_ylim(0, 0.1)
         axes[row_spin_square, i].set_ylabel("Spin square")
         axes[row_spin_square, i].set_xlabel("Repetitions")
         axes[row_spin_square, i].set_xticks(these_n_reps)
@@ -496,9 +491,12 @@ for samples_per_batch, connectivity, bond_distance in itertools.product(
         axes[row_sci_vec_dim, i].set_xticks(these_n_reps)
 
         # axes[row_sci_vec_dim, 0].legend(ncol=2, )
-        leg = axes[row_sci_vec_dim, 1].legend(
-            bbox_to_anchor=(0.5, -0.4), loc="upper center", ncol=3
+        leg = axes[row_sci_vec_dim, 2].legend(
+            bbox_to_anchor=(-0.3, -0.4), loc="upper center", ncol=3
         )
+        # leg = axes[row_sci_vec_dim, 1].legend(
+        #     bbox_to_anchor=(0.5, -0.4), loc="upper center", ncol=3
+        # )
         leg.set_in_layout(False)
         plt.tight_layout()
         plt.subplots_adjust(bottom=0.16)

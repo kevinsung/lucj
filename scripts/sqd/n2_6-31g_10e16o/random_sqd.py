@@ -40,9 +40,9 @@ step = 0.1
 bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) + 1)
 bond_distance_range = [1.0, 2.4]
 
-n_reps_range = list(range(2, 25, 2)) + [None, 1, 3, 5, 7]
+n_reps_range = list(range(2, 25, 2))
 shots = 100_000
-samples_per_batch_range = [1000, 2000, 5000]
+samples_per_batch_range = [1000]
 n_batches = 3
 energy_tol = 1e-5
 occupancies_tol = 1e-3
@@ -51,7 +51,7 @@ max_iterations = 100
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
-max_dim_range = [None, 250, 300, 450]
+max_dim_range = [250, 500]
 
 
 tasks = [

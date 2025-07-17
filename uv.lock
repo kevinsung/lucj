@@ -546,6 +546,7 @@ name = "ffsim"
 version = "0.0.58.dev0"
 source = { editable = "../ffsim" }
 dependencies = [
+    { name = "jax" },
     { name = "numpy" },
     { name = "opt-einsum" },
     { name = "orjson" },
@@ -559,6 +560,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "coverage", marker = "extra == 'dev'" },
+    { name = "jax" },
     { name = "maturin", marker = "extra == 'dev'" },
     { name = "mypy", marker = "extra == 'dev'" },
     { name = "myst-parser", marker = "extra == 'dev'" },

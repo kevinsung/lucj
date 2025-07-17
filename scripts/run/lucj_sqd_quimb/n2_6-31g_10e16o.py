@@ -33,12 +33,12 @@ basis = "6-31g"
 nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-bond_distance_range = [1.0]
-n_reps_range = list(range(2, 25, 2))
+bond_distance_range = [1.2]
+n_reps_range = [None, 1, 2, 3, 4, 6]
 connectivities = [
-    "square",
-    "all-to-all",
-    # "heavy-hex"
+    # "square",
+    # "all-to-all",
+    "heavy-hex"
 ]
 n_reps = 1
 shots = 100_000
@@ -68,6 +68,8 @@ cutoffs = [
 ]
 seed = 0
 perm_mps = False
+max_dim_range = [250, 500]
+max_dim_range = [250]
 # TODO set limit on subspace dimension
 
 tasks = [
@@ -92,11 +94,13 @@ tasks = [
         max_bond = max_bond,
         perm_mps = perm_mps,
         cutoff = cutoff,
-        seed = seed
+        seed = seed,
+        max_dim = max_dim,
     )
     for (connectivity, n_reps, max_bond, cutoff) in itertools.product(
         connectivities, n_reps_range, max_bonds, cutoffs
     )
+    for max_dim in max_dim_range
     for d in bond_distance_range
 ]
 
