@@ -41,16 +41,21 @@ step = 0.1
 bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) + 1)
 
 connectivities = [
-    "heavy-hex",
+    # "heavy-hex",
+    "square",
     "all-to-all",
 ]
-n_reps_range = [1, 26, None]
+n_reps_range = [1, 2, 5, 10, 15, 20, 25, None]
 shots = 100_000
 samples_per_batch_range = [5000]
 n_batches = 3
-max_davidson = 200
+energy_tol = 1e-5
+occupancies_tol = 1e-3
+carryover_threshold = 1e-3
+max_iterations = 100
+symmetrize_spin = True
 # TODO set entropy and generate seeds properly
-entropy = None
+entropy = 0
 
 tasks = [
     LUCJSQDInitialParamsTask(
@@ -64,7 +69,11 @@ tasks = [
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
-        max_davidson=max_davidson,
+        energy_tol=energy_tol,
+        occupancies_tol=occupancies_tol,
+        carryover_threshold=carryover_threshold,
+        max_iterations=max_iterations,
+        symmetrize_spin=symmetrize_spin,
         entropy=entropy,
     )
     for connectivity, n_reps in itertools.product(connectivities, n_reps_range)

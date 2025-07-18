@@ -25,7 +25,7 @@ logging.basicConfig(
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 4
+MAX_PROCESSES = 16
 OVERWRITE = False
 
 molecule_name = "n2"
@@ -33,8 +33,8 @@ basis = "6-31g"
 nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-bond_distance_range = [1.2]
-n_reps_range = [None, 1, 2, 3, 4, 6]
+bond_distance_range = [1.2, 2.4]
+n_reps_range = [1, 2, 3, 4, 6]
 connectivities = [
     # "square",
     # "all-to-all",
@@ -49,7 +49,7 @@ occupancies_tol = 1e-3
 carryover_threshold = 1e-3
 max_iterations = 100
 symmetrize_spin = True
-cobyqa_maxiter = 100
+cobyqa_maxiter = 50
 # TODO set entropy and generate seeds properly
 entropy = 0
 max_bond: int
@@ -69,7 +69,7 @@ cutoffs = [
 seed = 0
 perm_mps = False
 max_dim_range = [250, 500]
-max_dim_range = [250]
+max_dim_range = [500]
 # TODO set limit on subspace dimension
 
 tasks = [

@@ -24,7 +24,7 @@ logging.basicConfig(
     filename=filename,
 )
 
-DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
+DATA_ROOT = "/media/storage/WanHsuan.Lin/"
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
@@ -37,7 +37,7 @@ molecule_basename = f"{molecule_name}_{nelectron}e{norb}o"
 
 connectivities = [
     "heavy-hex",
-    "square",
+    # "square",
     "all-to-all",
 ]
 n_reps_range = list(range(2, 25, 2)) + [None, 1, 3, 5, 7]

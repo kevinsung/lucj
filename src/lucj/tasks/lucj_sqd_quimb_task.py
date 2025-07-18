@@ -134,7 +134,6 @@ def run_lucj_sqd_quimb_task(
         circuit = QuantumCircuit(qubits)
         circuit.append(ffsim.qiskit.PrepareHartreeFockJW(norb, nelec), qubits)
         circuit.append(ffsim.qiskit.UCJOpSpinBalancedJW(operator), qubits)
-        circuit.measure_all()
         # change to quimb
         # Sample using quimb
         decomposed = circuit.decompose(reps=2)
