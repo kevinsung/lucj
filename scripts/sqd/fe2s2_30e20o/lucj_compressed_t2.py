@@ -27,7 +27,7 @@ DATA_ROOT = "/media/storage/WanHsuan.Lin/"
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 4
+MAX_PROCESSES = 1
 OVERWRITE = False
 
 molecule_name = "fe2s2"
@@ -39,7 +39,7 @@ connectivities = [
     # "square",
     "all-to-all",
 ]
-n_reps_range = list(range(2, 22, 2))
+n_reps_range = [1] + list(range(2, 12, 2))
 shots = 100_000
 samples_per_batch = 1000
 n_batches = 3
@@ -82,23 +82,30 @@ tasks = [
     for connectivity in connectivities
 ]
 
-if MAX_PROCESSES == 1:
-    for task in tqdm(tasks):
-        run_sqd_energy_task(
-            task,
+run_sqd_energy_task(
+            tasks[0],
             data_dir=DATA_DIR,
             molecules_catalog_dir=MOLECULES_CATALOG_DIR,
             overwrite=OVERWRITE,
         )
-else:
-    with tqdm(total=len(tasks)) as progress:
-        with ProcessPoolExecutor(MAX_PROCESSES) as executor:
-            for task in tasks:
-                future = executor.submit(
-                    run_sqd_energy_task,
-                    task,
-                    data_dir=DATA_DIR,
-                    molecules_catalog_dir=MOLECULES_CATALOG_DIR,
-                    overwrite=OVERWRITE,
-                )
-                future.add_done_callback(lambda _: progress.update())
+
+# if MAX_PROCESSES == 1:
+#     for task in tqdm(tasks):
+#         run_sqd_energy_task(
+#             task,
+#             data_dir=DATA_DIR,
+#             molecules_catalog_dir=MOLECULES_CATALOG_DIR,
+#             overwrite=OVERWRITE,
+#         )
+# else:
+#     with tqdm(total=len(tasks)) as progress:
+#         with ProcessPoolExecutor(MAX_PROCESSES) as executor:
+#             for task in tasks:
+#                 future = executor.submit(
+#                     run_sqd_energy_task,
+#                     task,
+#                     data_dir=DATA_DIR,
+#                     molecules_catalog_dir=MOLECULES_CATALOG_DIR,
+#                     overwrite=OVERWRITE,
+#                 )
+#                 future.add_done_callback(lambda _: progress.update())

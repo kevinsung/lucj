@@ -381,7 +381,7 @@ for i, bond_distance in enumerate(bond_distance_range):
 
 filepath = os.path.join(
     plots_dir,
-    f"{os.path.splitext(os.path.basename(__file__))[0]}_hardware.pdf",
+    f"{os.path.splitext(os.path.basename(__file__))[0]}.pdf",
 )
 plt.savefig(filepath)
 plt.close()

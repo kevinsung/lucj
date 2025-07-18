@@ -25,7 +25,7 @@ DATA_ROOT = "/media/storage/WanHsuan.Lin/"
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 4
+MAX_PROCESSES = 1
 OVERWRITE = False
 
 molecule_name = "fe2s2"

@@ -36,9 +36,9 @@ molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 bond_distance_range = [1.0, 2.4]
 
 connectivities = [
-    # "heavy-hex",
+    "heavy-hex",
     # "square",
-    "all-to-all",
+    # "all-to-all",
 ]
 n_reps_range = list(range(2, 20, 2))
 
@@ -52,7 +52,7 @@ for connectivity in connectivities:
     fig, axes = plt.subplots(
         4,
         len(bond_distance_range),
-        figsize=(12, 6),  # , layout="constrained"
+        figsize=(8, 6),  # , layout="constrained"
     )
     for i, d in enumerate(bond_distance_range):
         list_average_norm_reference_diagonal_coulumb = []
@@ -195,7 +195,7 @@ for connectivity in connectivities:
             list_average_norm_reference_diagonal_coulumb,
             f"{markers[0]}{linestyles[2]}",
             label="LUCJ truncated",
-            color=colors[0],
+            color=colors[2],
         )
 
         axes[0, i].plot(
@@ -203,7 +203,7 @@ for connectivity in connectivities:
             list_average_norm_compressed_diagonal_coulumb,
             f"{markers[0]}{linestyles[0]}",
             label="LUCJ compressed",
-            color=colors[1],
+            color=colors[5],
         )
 
         if connectivity != "all-to-all":
@@ -212,7 +212,7 @@ for connectivity in connectivities:
                 list_average_norm_compressed_connectivity_diagonal_coulumb,
                 f"{markers[0]}{linestyles[0]}",
                 label="LUCJ compressed-c",
-                color=colors[2],
+                color=colors[6],
             )
         # diag coulumn norm diff
         axes[1, i].plot(
@@ -220,7 +220,7 @@ for connectivity in connectivities:
             list_average_diff_norm_compressed_diagonal_coulumb,
             f"{markers[0]}{linestyles[0]}",
             label="LUCJ compressed",
-            color=colors[1],
+            color=colors[5],
         )
 
         if connectivity != "all-to-all":
@@ -229,7 +229,7 @@ for connectivity in connectivities:
                 list_average_diff_norm_compressed_connectivity_diagonal_coulumb,
                 f"{markers[0]}{linestyles[0]}",
                 label="LUCJ compressed-c",
-                color=colors[2],
+                color=colors[6],
             )
 
         # orb rot norm
@@ -238,7 +238,7 @@ for connectivity in connectivities:
             list_average_norm_reference_orbital_rotation,
             f"{markers[0]}{linestyles[2]}",
             label="LUCJ truncated",
-            color=colors[0],
+            color=colors[2],
         )
 
         axes[2, i].plot(
@@ -246,7 +246,7 @@ for connectivity in connectivities:
             list_average_norm_compressed_orbital_rotation,
             f"{markers[0]}{linestyles[0]}",
             label="LUCJ compressed",
-            color=colors[1],
+            color=colors[5],
         )
 
         if connectivity != "all-to-all":
@@ -255,7 +255,7 @@ for connectivity in connectivities:
                 list_average_norm_compressed_connectivity_orbital_rotation,
                 f"{markers[0]}{linestyles[0]}",
                 label="LUCJ compressed-c",
-                color=colors[2],
+                color=colors[6],
             )
         # diag coulumn norm diff
         axes[3, i].plot(
@@ -263,7 +263,7 @@ for connectivity in connectivities:
             list_average_diff_norm_compressed_orbital_rotation,
             f"{markers[0]}{linestyles[0]}",
             label="LUCJ compressed",
-            color=colors[1],
+            color=colors[5],
         )
         if connectivity != "all-to-all":
             axes[3, i].plot(
@@ -271,7 +271,7 @@ for connectivity in connectivities:
                 list_average_diff_norm_compressed_connectivity_orbital_rotation,
                 f"{markers[0]}{linestyles[0]}",
                 label="LUCJ compressed-c",
-                color=colors[2],
+                color=colors[6],
             )
 
         axes[3, i].plot(
@@ -279,7 +279,7 @@ for connectivity in connectivities:
             [],
             f"{markers[0]}{linestyles[2]}",
             label="LUCJ truncated",
-            color=colors[0],
+            color=colors[2],
         )
 
         axes[0, i].set_title(f"R={d} Å")
@@ -307,7 +307,7 @@ for connectivity in connectivities:
     plt.tight_layout()
     plt.subplots_adjust(top=0.9,left=0.05,bottom=0.15)
     
-    fig.supylabel('norm')
+    # fig.supylabel('norm')
     fig.suptitle(
         f"Operator norm comparison: {molecule_name} {basis} ({nelectron}e, {norb}o) / {connectivity}"
     )
