@@ -3,7 +3,7 @@ import os
 import pickle
 from dataclasses import dataclass
 from pathlib import Path
-
+import pyscf
 import ffsim
 import numpy as np
 import scipy.stats
@@ -133,15 +133,32 @@ def load_operator(task: HardwareSQDEnergyTask, data_dir: str, mol_data):
     else:
         logging.info(f"Generate truncated operator for {task}.\n")
         norb = mol_data.norb
+        nelec = mol_data.nelec
         pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
             task.lucj_params.connectivity, norb
         )
-        operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
-            mol_data.ccsd_t2,
-            n_reps=task.lucj_params.n_reps,
-            t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
-            interaction_pairs=(pairs_aa, pairs_ab),
-        )
+        if mol_data.ccsd_t2 is None:
+            c0, c1, c2 = pyscf.ci.cisd.cisdvec_to_amplitudes(
+                mol_data.cisd_vec, norb, nelec[0]
+            )
+            assert abs(c0) > 1e-8
+            t1 = c1 / c0
+            t2 = c2 / c0 - np.einsum("ia,jb->ijab", t1, t1)
+            operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
+                t2,
+                t1=t1,
+                n_reps=task.lucj_params.n_reps,
+                interaction_pairs=interaction_pairs_spin_balanced(
+                    connectivity=task.lucj_params.connectivity, norb=norb
+                ),
+            ) 
+        else:
+            operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
+                mol_data.ccsd_t2,
+                n_reps=task.lucj_params.n_reps,
+                t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
+                interaction_pairs=(pairs_aa, pairs_ab),
+            )
 
     return operator
 
