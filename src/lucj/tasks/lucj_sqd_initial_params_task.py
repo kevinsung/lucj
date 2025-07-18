@@ -30,6 +30,7 @@ class LUCJSQDInitialParamsTask:
     max_iterations: int
     symmetrize_spin: bool
     entropy: int | None
+    max_dim: int | None
 
     @property
     def dirpath(self) -> Path:
@@ -50,6 +51,7 @@ class LUCJSQDInitialParamsTask:
             / f"max_iterations-{self.max_iterations}"
             / f"symmetrize_spin-{self.symmetrize_spin}"
             / f"entropy-{self.entropy}"
+            / f"max_dim-{self.max_dim}"
         )
 
 
@@ -123,6 +125,7 @@ def run_lucj_sqd_initial_params_task(
         symmetrize_spin=task.symmetrize_spin,
         carryover_threshold=task.carryover_threshold,
         seed=rng,
+        max_dim=task.max_dim
     )
     energy = result.energy + mol_data.core_energy
     sci_state = result.sci_state

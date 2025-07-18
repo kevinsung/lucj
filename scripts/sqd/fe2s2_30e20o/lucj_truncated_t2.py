@@ -37,7 +37,7 @@ molecule_basename = f"{molecule_name}_{nelectron}e{norb}o"
 connectivities = [
     "heavy-hex",
     # "square",
-    # "all-to-all",
+    "all-to-all",
 ]
 n_reps_range = [1] + list(range(2, 12, 2))
 shots = 100_000
@@ -52,6 +52,7 @@ symmetrize_spin = True
 entropy = 0
 max_dim_range = [500, 1000] # for large one
 
+
 tasks = [
     SQDEnergyTask(
         molecule_basename=molecule_basename,
@@ -62,7 +63,8 @@ tasks = [
             with_final_orbital_rotation=True,
         ),
         compressed_t2_params=None,
-        connectivity_opt=True,
+        connectivity_opt=False,
+        random_op =False,
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
@@ -74,9 +76,10 @@ tasks = [
         entropy=entropy,
         max_dim=max_dim,
     )
-    for connectivity, n_reps in itertools.product(connectivities, n_reps_range)
-    for max_dim in max_dim_range
+    for max_dim, n_reps in itertools.product(max_dim_range, n_reps_range)
+    for connectivity in connectivities
 ]
+
 
 if MAX_PROCESSES == 1:
     for task in tqdm(tasks):

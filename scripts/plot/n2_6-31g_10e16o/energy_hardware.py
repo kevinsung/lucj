@@ -207,10 +207,7 @@ for i, bond_distance in enumerate(bond_distance_range):
 
     errors = [results_random[task]['error'] for task in tasks_random]
     spin_squares = [results_random[task]["spin_squared"] for task in tasks_random]
-    sci_vec_shape = [
-        results_random[task]["sci_vec_shape"][0] * results_random[task]["sci_vec_shape"][0]
-        for task in tasks_random
-    ]
+    sci_vec_shape = [results_random[task]["sci_vec_shape"][0] for task in tasks_random]
 
     axes[row_error, i].bar(
         x_max_dim_range,
@@ -263,10 +260,7 @@ for i, bond_distance in enumerate(bond_distance_range):
     
     errors = [results_truncated_t2[task]["error"] for task in tasks_truncated_t2]
     spin_squares = [results_truncated_t2[task]["spin_squared"] for task in tasks_truncated_t2]
-    sci_vec_shape = [
-        results_truncated_t2[task]["sci_vec_shape"][0] * results_truncated_t2[task]["sci_vec_shape"][0]
-        for task in tasks_truncated_t2
-    ]
+    sci_vec_shape = [ results_truncated_t2[task]["sci_vec_shape"][0] for task in tasks_truncated_t2]
 
     axes[row_error, i].bar(
         x_max_dim_range + width,
@@ -322,10 +316,7 @@ for i, bond_distance in enumerate(bond_distance_range):
     
     errors = [results_compressed_t2[task]["error"] for task in tasks_compressed_t2]
     spin_squares = [results_compressed_t2[task]["spin_squared"] for task in tasks_compressed_t2]
-    sci_vec_shape = [
-        results_compressed_t2[task]["sci_vec_shape"][0] * results_compressed_t2[task]["sci_vec_shape"][0]
-        for task in tasks_compressed_t2
-    ]
+    sci_vec_shape = [results_compressed_t2[task]["sci_vec_shape"][0] for task in tasks_compressed_t2]
 
     axes[row_error, i].bar(
         x_max_dim_range + 2 * width,

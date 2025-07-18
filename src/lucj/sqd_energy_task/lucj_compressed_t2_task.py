@@ -8,7 +8,7 @@ import ffsim
 import numpy as np
 import scipy.stats
 from molecules_catalog.util import load_molecular_data
-
+from ffsim.variational.util import interaction_pairs_spin_balanced
 from lucj.params import LUCJParams, CompressedT2Params
 
 from qiskit.primitives import BitArray
@@ -90,6 +90,54 @@ class SQDEnergyTask:
         )
 
 
+def load_operator(task: SQDEnergyTask, data_dir: str, mol_data):
+    if task.random_op:
+        logging.info(f"Generate random operator for {task}.\n")
+        norb = mol_data.norb
+        pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
+            task.lucj_params.connectivity, norb
+        )
+        operator = ffsim.random.random_ucj_op_spin_balanced(
+            norb,
+            n_reps=task.lucj_params.n_reps,
+            interaction_pairs=(pairs_aa, pairs_ab),
+            with_final_orbital_rotation=True
+        )
+    elif task.connectivity_opt or task.compressed_t2_params is not None:
+        operator_filename = data_dir / task.operatorpath / "operator.npz"
+        if not os.path.exists(operator_filename):
+            logging.info(f"Operator for {task} does not exists.\n")
+            return None
+        logging.info(f"Load operator for {task}.\n")
+        operator = np.load(operator_filename)
+        diag_coulomb_mats = operator["diag_coulomb_mats"]
+        orbital_rotations = operator["orbital_rotations"]
+
+        final_orbital_rotation = None
+        if mol_data.ccsd_t1 is not None:
+            final_orbital_rotation = (
+                ffsim.variational.util.orbital_rotation_from_t1_amplitudes(mol_data.ccsd_t1)
+            )
+
+        operator = ffsim.UCJOpSpinBalanced(
+            diag_coulomb_mats=diag_coulomb_mats,
+            orbital_rotations=orbital_rotations,
+            final_orbital_rotation=final_orbital_rotation,
+        )
+    else:
+        logging.info(f"Generate truncated operator for {task}.\n")
+        norb = mol_data.norb
+        pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
+            task.lucj_params.connectivity, norb
+        )
+        operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
+            mol_data.ccsd_t2,
+            n_reps=task.lucj_params.n_reps,
+            t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
+            interaction_pairs=(pairs_aa, pairs_ab),
+        )
+    return operator
+
 def run_sqd_energy_task(
     task: SQDEnergyTask,
     *,
@@ -126,7 +174,6 @@ def run_sqd_energy_task(
     reference_state = ffsim.hartree_fock_state(norb, nelec)
 
     # use CCSD to initialize parameters
-    operator_filename = data_dir / task.operatorpath / "operator.npz"
     vqe_filename = data_dir / task.operatorpath / "data.pickle"
     sample_filename = data_dir / task.operatorpath / "sample.pickle"
     state_vector_filename = data_dir / task.operatorpath / "state_vector.npy"
@@ -138,24 +185,9 @@ def run_sqd_energy_task(
             with open(state_vector_filename, "rb") as f:
                 final_state = np.load(f)
         else:
-            if not os.path.exists(operator_filename):
-                logging.info(f"Operator for {task} does not exists. filename: {operator_filename}\n")
-
-            operator = np.load(operator_filename)
-            diag_coulomb_mats = operator["diag_coulomb_mats"]
-            orbital_rotations = operator["orbital_rotations"]
-            
-            final_orbital_rotation = None
-            if mol_data.ccsd_t1 is not None:
-                final_orbital_rotation = (
-                    ffsim.variational.util.orbital_rotation_from_t1_amplitudes(mol_data.ccsd_t1)
-                )
-
-            operator = ffsim.UCJOpSpinBalanced(
-                    diag_coulomb_mats=diag_coulomb_mats,
-                    orbital_rotations=orbital_rotations,
-                    final_orbital_rotation=final_orbital_rotation,
-                )
+            operator = load_operator(task, data_dir, mol_data)
+            if operator is None:
+                return
             
             # Compute final state
             if not os.path.exists(state_vector_filename):

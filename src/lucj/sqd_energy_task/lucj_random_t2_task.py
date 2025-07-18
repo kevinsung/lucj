@@ -9,7 +9,8 @@ from molecules_catalog.util import load_molecular_data
 
 from qiskit.primitives import BitArray
 from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, solve_sci_batch
-from functools import partial
+from qiskit_addon_dice_solver import solve_sci_batch
+# from functools import partial
 
 
 logger = logging.getLogger(__name__)
@@ -94,7 +95,7 @@ def run_random_sqd_energy_task(
 
     # Run SQD
     logging.info(f"{task} Running SQD...\n")
-    sci_solver = partial(solve_sci_batch, spin_sq=0.0)
+    # sci_solver = partial(solve_sci_batch, spin_sq=0.0)
     result = diagonalize_fermionic_hamiltonian(
         mol_hamiltonian.one_body_tensor,
         mol_hamiltonian.two_body_tensor,
@@ -106,7 +107,7 @@ def run_random_sqd_energy_task(
         energy_tol=task.energy_tol,
         occupancies_tol=task.occupancies_tol,
         max_iterations=task.max_iterations,
-        sci_solver=sci_solver,
+        sci_solver=solve_sci_batch,
         symmetrize_spin=task.symmetrize_spin,
         carryover_threshold=task.carryover_threshold,
         seed=rng,

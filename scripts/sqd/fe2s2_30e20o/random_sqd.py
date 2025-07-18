@@ -5,10 +5,6 @@ import os
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
-<<<<<<< HEAD
-import numpy as np
-=======
->>>>>>> 3749045068534c721371f8a0d2d8536d6888413a
 from tqdm import tqdm
 
 from lucj.sqd_energy_task.lucj_random_t2_task import (
@@ -37,11 +33,7 @@ nelectron, norb = 30, 20
 molecule_basename = f"{molecule_name}_{nelectron}e{norb}o"
 
 shots = 100_000
-<<<<<<< HEAD
-samples_per_batch_range = [1000]
-=======
 samples_per_batch = 1000
->>>>>>> 3749045068534c721371f8a0d2d8536d6888413a
 n_batches = 3
 energy_tol = 1e-5
 occupancies_tol = 1e-3
@@ -68,10 +60,6 @@ tasks = [
         entropy=entropy,
         max_dim=max_dim,
     )
-<<<<<<< HEAD
-    for samples_per_batch in samples_per_batch_range
-=======
->>>>>>> 3749045068534c721371f8a0d2d8536d6888413a
     for max_dim in max_dim_range
 ]
 
