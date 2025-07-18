@@ -274,12 +274,9 @@ for i, connectivity in enumerate(connectivities):
         for max_dim, n_reps in itertools.product(max_dim_range, n_reps_range)
         for n_reps in these_n_reps]
 
-        energies = [results_compressed_t2_multi_stage[task]['energy'] for task in tasks_compressed_t2_multi_stage]
-        errors = [results_compressed_t2_multi_stage[task]["error"] for task in tasks_compressed_t2_multi_stage]
-        init_loss = [results_compressed_t2_multi_stage[task]["init_loss"] for task in tasks_compressed_t2_multi_stage]
-        # spin_squares = [results_compressed_t2_multi_stage[task]["spin_squared"] for task in tasks_compressed_t2_multi_stage]
-        final_loss = [results_compressed_t2_multi_stage[task]["final_loss"] for task in tasks_compressed_t2_multi_stage]
-        sci_vec_shape = [results_compressed_t2_multi_stage[task]["sci_vec_shape"][0] * results_compressed_t2_multi_stage[task]["sci_vec_shape"][0] for task in tasks_compressed_t2_multi_stage]
+        energies = [results_compressed_t2[task]['energy'] for task in tasks_compressed_t2]
+        errors = [results_compressed_t2[task]["error"] for task in tasks_compressed_t2]
+        sci_vec_shape = [results_compressed_t2[task]["sci_vec_shape"][0] for task in tasks_compressed_t2]
 
         axes[0, i].plot(
             these_n_reps,
@@ -298,22 +295,6 @@ for i, connectivity in enumerate(connectivities):
         #     color=colors[5],
         # )
 
-        axes[1, i].plot(
-            these_n_reps,
-            init_loss,
-            f"{markers[0]}{linestyles[1]}",
-            label="LUCJ Compressed-t2 multi-stage",
-            color=colors[5],
-        )
-
-        axes[1, i].plot(
-            these_n_reps,
-            final_loss,
-            f"{markers[0]}{linestyles[0]}",
-            label="LUCJ Compressed-t2 multi-stage",
-            color=colors[5],
-        )
-
         axes[2, i].plot(
             these_n_reps,
             sci_vec_shape,
@@ -325,7 +306,7 @@ for i, connectivity in enumerate(connectivities):
             tasks_compressed_t2_connectivity = [
                 LUCJSQDCompressedT2ConnectivityTask(
                     molecule_basename=molecule_basename,
-                    bond_distance=bond_distance,
+                    bond_distance=None,
                     lucj_params=LUCJParams(
                         connectivity=connectivity,
                         n_reps=n_reps,
@@ -385,7 +366,7 @@ for i, connectivity in enumerate(connectivities):
         tasks_random = [
             LUCJSQDRandomTask(
                 molecule_basename=molecule_basename,
-                bond_distance=bond_distance,
+                bond_distance=None,
                 lucj_params=LUCJParams(
                     connectivity=connectivity,
                     n_reps=n_reps,
@@ -452,12 +433,16 @@ for i, connectivity in enumerate(connectivities):
         
 
         fig.suptitle(
-            f"CCSD initial parameters {molecule_name} {basis} ({nelectron}e, {norb}o) R={bond_distance} Å"
+            f"CCSD initial parameters {molecule_name} ({nelectron}e, {norb}o)"
         )
 
 
     filepath = os.path.join(
-        plots_dir, f"{os.path.splitext(os.path.basename(__file__))[0]}_{bond_distance}_{samples_per_batch}.pdf"
+        plots_dir, f"{os.path.splitext(os.path.basename(__file__))[0]}.pdf"
     )
     plt.savefig(filepath)
     plt.close()
+
+
+
+## working not done yet
