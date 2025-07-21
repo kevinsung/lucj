@@ -47,7 +47,7 @@ n_reps_range = list(range(2, 14, 2))
 markers = ["o", "s", "v", "D", "p", "*", "P", "X"]
 prop_cycle = plt.rcParams["axes.prop_cycle"]
 colors = prop_cycle.by_key()["color"]
-alphas = [0.5, 1.0]
+alphas = [0.6, 0.7, 0.8, 1.0]
 linestyles = ["--", ":", "-"]
 
 def loss(diag_coulomb_mats, orbital_rotations, t2):
@@ -376,25 +376,28 @@ for connectivity in connectivities:
         axes[0, i].plot(
             n_reps_range,
             list_average_norm_compressed_diagonal_coulumb_reg0,
-            f"{markers[0]}{linestyles[0]}",
+            f"{markers[1]}{linestyles[0]}",
             label="LUCJ compressed-reg0",
-            color=colors[0],
+            color=colors[5],
+            alpha=alphas[0],
         )
 
         axes[0, i].plot(
             n_reps_range,
             list_average_norm_compressed_diagonal_coulumb_reg1,
-            f"{markers[0]}{linestyles[0]}",
+            f"{markers[2]}{linestyles[0]}",
             label="LUCJ compressed-reg1",
-            color=colors[1],
+            color=colors[5],
+            alpha=alphas[1],
         )
 
         axes[0, i].plot(
             n_reps_range,
             list_average_norm_compressed_diagonal_coulumb_reg2,
-            f"{markers[0]}{linestyles[0]}",
+            f"{markers[3]}{linestyles[0]}",
             label="LUCJ compressed-reg2",
-            color=colors[3],
+            color=colors[5],
+            alpha=alphas[2],
         )
 
         if connectivity != "all-to-all":
@@ -426,25 +429,28 @@ for connectivity in connectivities:
         axes[1, i].plot(
             n_reps_range,
             list_average_diff_norm_compressed_diagonal_coulumb_reg0,
-            f"{markers[0]}{linestyles[0]}",
+            f"{markers[1]}{linestyles[0]}",
             label="LUCJ compressed-reg0",
-            color=colors[0],
+            color=colors[5],
+            alpha=alphas[0],
         )
 
         axes[1, i].plot(
             n_reps_range,
             list_average_diff_norm_compressed_diagonal_coulumb_reg1,
-            f"{markers[0]}{linestyles[0]}",
+            f"{markers[2]}{linestyles[0]}",
             label="LUCJ compressed-reg1",
-            color=colors[1],
+            color=colors[5],
+            alpha=alphas[1],
         )
 
         axes[1, i].plot(
             n_reps_range,
             list_average_diff_norm_compressed_diagonal_coulumb_reg2,
-            f"{markers[0]}{linestyles[0]}",
+            f"{markers[3]}{linestyles[0]}",
             label="LUCJ compressed-reg2",
-            color=colors[3],
+            color=colors[5],
+            alpha=alphas[2],
         )
 
         # orb rot norm
@@ -476,25 +482,28 @@ for connectivity in connectivities:
         axes[2, i].plot(
             n_reps_range,
             list_average_norm_compressed_orbital_rotation_reg0,
-            f"{markers[0]}{linestyles[0]}",
+            f"{markers[1]}{linestyles[0]}",
             label="LUCJ compressed-reg0",
-            color=colors[0],
+            color=colors[5],
+            alpha=alphas[0],
         )
 
         axes[2, i].plot(
             n_reps_range,
             list_average_norm_compressed_orbital_rotation_reg1,
-            f"{markers[0]}{linestyles[0]}",
+            f"{markers[2]}{linestyles[0]}",
             label="LUCJ compressed-reg1",
-            color=colors[1],
+            color=colors[5],
+            alpha=alphas[1],
         )
 
         axes[2, i].plot(
             n_reps_range,
             list_average_norm_compressed_orbital_rotation_reg2,
-            f"{markers[0]}{linestyles[0]}",
+            f"{markers[3]}{linestyles[0]}",
             label="LUCJ compressed-reg2",
-            color=colors[3],
+            color=colors[5],
+            alpha=alphas[2],
         )
 
         # diag coulumn norm diff
@@ -517,25 +526,28 @@ for connectivity in connectivities:
         axes[3, i].plot(
             n_reps_range,
             list_average_diff_norm_compressed_orbital_rotation_reg0,
-            f"{markers[0]}{linestyles[0]}",
+            f"{markers[1]}{linestyles[0]}",
             label="LUCJ compressed-reg0",
-            color=colors[0],
+            color=colors[5],
+            alpha=alphas[0],
         )
 
         axes[3, i].plot(
             n_reps_range,
             list_average_diff_norm_compressed_orbital_rotation_reg1,
-            f"{markers[0]}{linestyles[0]}",
+            f"{markers[2]}{linestyles[0]}",
             label="LUCJ compressed-reg1",
-            color=colors[1],
+            color=colors[5],
+            alpha=alphas[1],
         )
 
         axes[3, i].plot(
             n_reps_range,
             list_average_diff_norm_compressed_orbital_rotation_reg2,
-            f"{markers[0]}{linestyles[0]}",
+            f"{markers[3]}{linestyles[0]}",
             label="LUCJ compressed-reg2",
-            color=colors[3],
+            color=colors[5],
+            alpha=alphas[2],
         )
 
         # loss 
@@ -561,9 +573,10 @@ for connectivity in connectivities:
         axes[4, i].plot(
             n_reps_range,
             list_loss_compression_reg0,
-            f"{markers[0]}{linestyles[0]}",
+            f"{markers[1]}{linestyles[0]}",
             label="LUCJ compressed-reg0",
-            color=colors[0],
+            color=colors[5],
+            alpha=alphas[0],
         )
 
         print("list_loss_compression_reg1")
@@ -572,9 +585,10 @@ for connectivity in connectivities:
         axes[4, i].plot(
             n_reps_range,
             list_loss_compression_reg1,
-            f"{markers[0]}{linestyles[0]}",
+            f"{markers[2]}{linestyles[0]}",
             label="LUCJ compressed-reg1",
-            color=colors[1],
+            color=colors[5],
+            alpha=alphas[1],
         )
 
         print("list_loss_compression_reg2")
@@ -583,9 +597,10 @@ for connectivity in connectivities:
         axes[4, i].plot(
             n_reps_range,
             list_loss_compression_reg2,
-            f"{markers[0]}{linestyles[0]}",
+            f"{markers[3]}{linestyles[0]}",
             label="LUCJ compressed-reg2",
-            color=colors[3],
+            color=colors[5],
+            alpha=alphas[2],
         )
 
         axes[4, i].plot(
@@ -619,11 +634,11 @@ for connectivity in connectivities:
 
     # axes[row_sci_vec_dim, 0].legend(ncol=2, )
     leg = axes[4, 0].legend(
-        bbox_to_anchor=(0.3, -0.8), loc="upper left", ncol=3
+        bbox_to_anchor=(0.24, -0.8), loc="upper left", ncol=3
     )
     leg.set_in_layout(False)
     plt.tight_layout()
-    plt.subplots_adjust(top=0.9,left=0.03,bottom=0.15)
+    plt.subplots_adjust(top=0.9,left=0.06,bottom=0.15)
     
     # fig.supylabel('norm')
     fig.suptitle(

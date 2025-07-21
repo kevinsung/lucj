@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 from lucj.params import LUCJParams, CompressedT2Params
 from lucj.sqd_energy_task.lucj_compressed_t2_task import SQDEnergyTask
 from lucj.sqd_energy_task.lucj_random_t2_task import RandomSQDEnergyTask
-from lucj.tasks.lucj_initial_params_task import LUCJInitialParamsTask
-from lucj.tasks.uccsd_initial_params_task import UCCSDInitialParamsTask
+from lucj.tasks.lucj_sqd_initial_params_task import LUCJSQDInitialParamsTask
+from lucj.tasks.uccsd_sqd_initial_params_task import UCCSDSQDInitialParamsTask
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
@@ -42,6 +42,9 @@ symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
 
+max_dim_range = [250, 500]
+
+
 def load_data(filepath):
     if not os.path.exists(filepath):
         result = {
@@ -56,7 +59,6 @@ def load_data(filepath):
             result = pickle.load(f)
     return result
 
-max_dim = 500
 
 print("Loading data from random sample")
 tasks_random = [
@@ -74,8 +76,8 @@ tasks_random = [
         entropy=entropy,
         max_dim=max_dim,
     )
-    for samples_per_batch, bond_distance in itertools.product(
-        samples_per_batch_range, bond_distance_range
+    for samples_per_batch, max_dim, bond_distance in itertools.product(
+        samples_per_batch_range, max_dim_range, bond_distance_range
     )
 ]
 
@@ -95,23 +97,34 @@ linestyles = ["--", ":"]
 row_error = 0
 row_spin_square = 1
 # row_loss = 2
+row_sci_vec_dim = 2
 
-for samples_per_batch, connectivity in itertools.product(
-    samples_per_batch_range, connectivities
+for samples_per_batch, connectivity, bond_distance in itertools.product(
+    samples_per_batch_range, connectivities, bond_distance_range
 ):
     fig, axes = plt.subplots(
-        2,
-        len(bond_distance_range),
-        figsize=(10, 6),  # , layout="constrained"
+        3,
+        len(max_dim_range),
+        figsize=(12, 6),  # , layout="constrained"
     )
-    for i, bond_distance in enumerate(bond_distance_range):
+    for i, max_dim in enumerate(max_dim_range):
         # UCCSD data
-        task_uccsd = UCCSDInitialParamsTask(
-            molecule_basename=molecule_basename, bond_distance=bond_distance
+        task_uccsd = UCCSDSQDInitialParamsTask(
+            molecule_basename=molecule_basename,
+            bond_distance=bond_distance,
+            shots=shots,
+            samples_per_batch=samples_per_batch,
+            n_batches=n_batches,
+            energy_tol=energy_tol,
+            occupancies_tol=occupancies_tol,
+            carryover_threshold=carryover_threshold,
+            max_iterations=max_iterations,
+            symmetrize_spin=symmetrize_spin,
+            entropy=entropy,
         )
 
         filepath = (
-            DATA_ROOT / "uccsd_initial_params" / task_uccsd.dirpath / "data.pickle"
+            DATA_ROOT / "uccsd_sqd_initial_params" / task_uccsd.dirpath / "data.pickle"
         )
         data_uccsd = load_data(filepath)
 
@@ -127,23 +140,77 @@ for samples_per_batch, connectivity in itertools.product(
             label="UCCSD init",
             color=colors[0],
         )
+        axes[row_sci_vec_dim, i].axhline(
+            data_uccsd["sci_vec_shape"][0],
+            linestyle="--",
+            label="UCCSD init",
+            color=colors[0],
+        )
+
+        # random sqd sample
+        task_random = RandomSQDEnergyTask(
+            molecule_basename=molecule_basename,
+            bond_distance=bond_distance,
+            shots=shots,
+            samples_per_batch=samples_per_batch,
+            n_batches=n_batches,
+            energy_tol=energy_tol,
+            occupancies_tol=occupancies_tol,
+            carryover_threshold=carryover_threshold,
+            max_iterations=max_iterations,
+            symmetrize_spin=symmetrize_spin,
+            entropy=entropy,
+            max_dim=max_dim,
+        )
+
+        print(results_random[task_random]["error"])
+
+        axes[row_error, i].axhline(
+            results_random[task_random]["error"],
+            linestyle="--",
+            label="Random bitstr",
+            color="red",
+        )
+        axes[row_spin_square, i].axhline(
+            results_random[task_random]["spin_squared"],
+            linestyle="--",
+            label="Random bitstr",
+            color="red",
+        )
+        axes[row_sci_vec_dim, i].axhline(
+            results_random[task_random]["sci_vec_shape"][0],
+            linestyle="--",
+            label="Random bitstr",
+            color="red",
+        )
 
         # LUCJ data
         tasks_lucj = [
-            LUCJInitialParamsTask(
+            LUCJSQDInitialParamsTask(
                 molecule_basename=molecule_basename,
                 bond_distance=bond_distance,
                 lucj_params=LUCJParams(
                     connectivity=connectivity,
                     n_reps=n_reps,
                     with_final_orbital_rotation=True,
-                ))
+                ),
+                shots=shots,
+                samples_per_batch=samples_per_batch,
+                n_batches=n_batches,
+                energy_tol=energy_tol,
+                occupancies_tol=occupancies_tol,
+                carryover_threshold=carryover_threshold,
+                max_iterations=max_iterations,
+                symmetrize_spin=symmetrize_spin,
+                entropy=entropy,
+                max_dim=max_dim
+            )
             for n_reps in n_reps_range
         ]
         data_lucj = {}
         for task in tasks_lucj:
             filepath = (
-                DATA_ROOT / "lucj_initial_params" / task.dirpath / "data.pickle"
+                DATA_ROOT / "lucj_sqd_initial_params" / task.dirpath / "data.pickle"
             )
             data_lucj[task] = load_data(filepath)
 
@@ -152,6 +219,12 @@ for samples_per_batch, connectivity in itertools.product(
         full_n_reps = data_lucj[task_lucj]["n_reps"]
         axes[row_error, i].axhline(
             data_lucj[task_lucj]["error"],
+            linestyle="--",
+            label=f"LUCJ full ({full_n_reps} reps)",
+            color=colors[1],
+        )
+        axes[row_sci_vec_dim, i].axhline(
+            data_lucj[task_lucj]["sci_vec_shape"][0],
             linestyle="--",
             label=f"LUCJ full ({full_n_reps} reps)",
             color=colors[1],
@@ -168,6 +241,10 @@ for samples_per_batch, connectivity in itertools.product(
         energies = [data_lucj[task]["energy"] for task in tasks_lucj[:-1]]
         errors = [data_lucj[task]["error"] for task in tasks_lucj[:-1]]
         spin_squares = [data_lucj[task]["spin_squared"] for task in tasks_lucj[:-1]]
+        sci_vec_shape = [
+            data_lucj[task]["sci_vec_shape"][0]
+            for task in tasks_lucj[:-1]
+        ]
         axes[row_error, i].plot(
             these_n_reps,
             errors,
@@ -178,6 +255,13 @@ for samples_per_batch, connectivity in itertools.product(
         axes[row_spin_square, i].plot(
             these_n_reps,
             spin_squares,
+            f"{markers[0]}{linestyles[0]}",
+            label="LUCJ truncated",
+            color=colors[2],
+        )
+        axes[row_sci_vec_dim, i].plot(
+            these_n_reps,
+            sci_vec_shape,
             f"{markers[0]}{linestyles[0]}",
             label="LUCJ truncated",
             color=colors[2],
@@ -213,7 +297,7 @@ for samples_per_batch, connectivity in itertools.product(
 
         results_compressed_t2 = {}
         for task in tasks_compressed_t2:
-            filepath = DATA_ROOT / task.operatorpath / "data.pickle"
+            filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
             results_compressed_t2[task] = load_data(filepath)
             # print(filepath)
             # print(results_compressed_t2[task])
@@ -230,6 +314,10 @@ for samples_per_batch, connectivity in itertools.product(
         spin_squares = [
             results_compressed_t2[task]["spin_squared"] for task in tasks_compressed_t2
         ]
+        sci_vec_shape = [
+            results_compressed_t2[task]["sci_vec_shape"][0]
+            for task in tasks_compressed_t2
+        ]
         axes[row_error, i].plot(
             these_n_reps,
             errors,
@@ -241,6 +329,14 @@ for samples_per_batch, connectivity in itertools.product(
         axes[row_spin_square, i].plot(
             these_n_reps,
             spin_squares,
+            f"{markers[0]}{linestyles[0]}",
+            label="LUCJ Compressed-t2",
+            color=colors[5],
+        )
+
+        axes[row_sci_vec_dim, i].plot(
+            these_n_reps,
+            sci_vec_shape,
             f"{markers[0]}{linestyles[0]}",
             label="LUCJ Compressed-t2",
             color=colors[5],
@@ -276,7 +372,7 @@ for samples_per_batch, connectivity in itertools.product(
         ]
         results_compressed_t2_reg0 = {}
         for task in tasks_compressed_t2_reg0:
-            filepath = DATA_ROOT / task.dirpath / "data.pickle"
+            filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
             results_compressed_t2_reg0[task] = load_data(filepath)
 
         energies = [
@@ -291,6 +387,10 @@ for samples_per_batch, connectivity in itertools.product(
             results_compressed_t2_reg0[task]["spin_squared"]
             for task in results_compressed_t2_reg0
         ]
+        sci_vec_shape = [
+            results_compressed_t2_reg0[task]["sci_vec_shape"][0]
+            for task in tasks_compressed_t2_reg0
+        ]
         axes[row_error, i].plot(
             these_n_reps,
             errors,
@@ -303,6 +403,15 @@ for samples_per_batch, connectivity in itertools.product(
         axes[row_spin_square, i].plot(
             these_n_reps,
             spin_squares,
+            f"{markers[1]}{linestyles[0]}",
+            label="LUCJ Compressed-t2-reg0",
+            color=colors[5],
+            alpha=alphas[0],
+        )
+
+        axes[row_sci_vec_dim, i].plot(
+            these_n_reps,
+            sci_vec_shape,
             f"{markers[1]}{linestyles[0]}",
             label="LUCJ Compressed-t2-reg0",
             color=colors[5],
@@ -339,7 +448,7 @@ for samples_per_batch, connectivity in itertools.product(
         ]
         results_compressed_t2_reg1 = {}
         for task in tasks_compressed_t2_reg1:
-            filepath = DATA_ROOT / task.operatorpath / "data.pickle"
+            filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
             results_compressed_t2_reg1[task] = load_data(filepath)
 
         energies = [
@@ -354,6 +463,10 @@ for samples_per_batch, connectivity in itertools.product(
             results_compressed_t2_reg1[task]["spin_squared"]
             for task in results_compressed_t2_reg1
         ]
+        sci_vec_shape = [
+            results_compressed_t2_reg1[task]["sci_vec_shape"][0]
+            for task in tasks_compressed_t2_reg1
+        ]
         axes[row_error, i].plot(
             these_n_reps,
             errors,
@@ -366,6 +479,15 @@ for samples_per_batch, connectivity in itertools.product(
         axes[row_spin_square, i].plot(
             these_n_reps,
             spin_squares,
+            f"{markers[2]}{linestyles[0]}",
+            label="LUCJ Compressed-t2-reg1",
+            color=colors[5],
+            alpha=alphas[1],
+        )
+
+        axes[row_sci_vec_dim, i].plot(
+            these_n_reps,
+            sci_vec_shape,
             f"{markers[2]}{linestyles[0]}",
             label="LUCJ Compressed-t2-reg1",
             color=colors[5],
@@ -402,7 +524,7 @@ for samples_per_batch, connectivity in itertools.product(
         ]
         results_compressed_t2_reg2 = {}
         for task in tasks_compressed_t2_reg2:
-            filepath = DATA_ROOT / task.operatorpath / "data.pickle"
+            filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
             results_compressed_t2_reg2[task] = load_data(filepath)
 
         energies = [
@@ -417,6 +539,10 @@ for samples_per_batch, connectivity in itertools.product(
             results_compressed_t2_reg2[task]["spin_squared"]
             for task in results_compressed_t2_reg2
         ]
+        sci_vec_shape = [
+            results_compressed_t2_reg2[task]["sci_vec_shape"][0]
+            for task in tasks_compressed_t2_reg2
+        ]
         axes[row_error, i].plot(
             these_n_reps,
             errors,
@@ -429,6 +555,15 @@ for samples_per_batch, connectivity in itertools.product(
         axes[row_spin_square, i].plot(
             these_n_reps,
             spin_squares,
+            f"{markers[3]}{linestyles[0]}",
+            label="LUCJ Compressed-t2-reg2",
+            color=colors[5],
+            alpha=alphas[2],
+        )
+
+        axes[row_sci_vec_dim, i].plot(
+            these_n_reps,
+            sci_vec_shape,
             f"{markers[3]}{linestyles[0]}",
             label="LUCJ Compressed-t2-reg2",
             color=colors[5],
@@ -463,7 +598,7 @@ for samples_per_batch, connectivity in itertools.product(
 
             results_compressed_t2_connectivity = {}
             for task in tasks_compressed_t2_connectivity:
-                filepath = DATA_ROOT / task.operatorpath / "data.pickle"
+                filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
                 results_compressed_t2_connectivity[task] = load_data(filepath)
                 # print(filepath)
                 # input()
@@ -487,6 +622,18 @@ for samples_per_batch, connectivity in itertools.product(
                 results_compressed_t2_connectivity[task]["spin_squared"]
                 for task in tasks_compressed_t2_connectivity
             ]
+            # init_loss = [
+            #     results_compressed_t2_connectivity[task]["init_loss"]
+            #     for task in tasks_compressed_t2_connectivity
+            # ]
+            # final_loss = [
+            #     results_compressed_t2_connectivity[task]["final_loss"]
+            #     for task in tasks_compressed_t2_connectivity
+            # ]
+            sci_vec_shape = [
+                results_compressed_t2_connectivity[task]["sci_vec_shape"][0]
+                for task in tasks_compressed_t2_connectivity
+            ]
 
             axes[row_error, i].plot(
                 these_n_reps,
@@ -504,7 +651,31 @@ for samples_per_batch, connectivity in itertools.product(
                 color=colors[6],
             )
 
-        axes[row_error, i].set_title(f"R={bond_distance} Å")
+            # axes[row_loss, i].plot(
+            #     these_n_reps,
+            #     init_loss,
+            #     f"{markers[0]}{linestyles[1]}",
+            #     label="LUCJ Compressed-t2 connectivity",
+            #     color=colors[6],
+            # )
+
+            # axes[row_loss, i].plot(
+            #     these_n_reps,
+            #     final_loss,
+            #     f"{markers[0]}{linestyles[0]}",
+            #     # label="final loss",
+            #     color=colors[6],
+            # )
+
+            axes[row_sci_vec_dim, i].plot(
+                these_n_reps,
+                sci_vec_shape,
+                f"{markers[0]}{linestyles[0]}",
+                label="LUCJ Compressed-t2 connectivity",
+                color=colors[6],
+            )
+
+        axes[row_error, i].set_title(f"max dim: {max_dim}")
         axes[row_error, i].set_yscale("log")
         axes[row_error, i].axhline(1.6e-3, linestyle="--", color="gray")
         axes[row_error, i].set_ylabel("Energy error (Hartree)")
@@ -519,9 +690,13 @@ for samples_per_batch, connectivity in itertools.product(
         axes[row_spin_square, i].set_xlabel("Repetitions")
         axes[row_spin_square, i].set_xticks(these_n_reps)
 
+        axes[row_sci_vec_dim, i].set_ylabel("SCI subspace")
+        axes[row_sci_vec_dim, i].set_xlabel("Repetitions")
+        axes[row_sci_vec_dim, i].set_xticks(these_n_reps)
+
         # axes[row_sci_vec_dim, 0].legend(ncol=2, )
-        leg = axes[row_spin_square, 1].legend(
-            bbox_to_anchor=(-0.3, -0.25), loc="upper center", ncol=3
+        leg = axes[row_sci_vec_dim, 1].legend(
+            bbox_to_anchor=(-0.3, -0.4), loc="upper center", ncol=3
         )
         # leg = axes[row_sci_vec_dim, 1].legend(
         #     bbox_to_anchor=(0.5, -0.4), loc="upper center", ncol=3
@@ -531,12 +706,12 @@ for samples_per_batch, connectivity in itertools.product(
         plt.subplots_adjust(bottom=0.2)
 
         fig.suptitle(
-            f"CCSD initial parameters {molecule_name} {basis} ({nelectron}e, {norb}o) / {connectivity}"
+            f"CCSD initial parameters {molecule_name} {basis} ({nelectron}e, {norb}o) R={bond_distance} Å / {connectivity}"
         )
 
     filepath = os.path.join(
         plots_dir,
-        f"{os.path.splitext(os.path.basename(__file__))[0]}_{connectivity}.pdf",
+        f"{os.path.splitext(os.path.basename(__file__))[0]}_{bond_distance}_{samples_per_batch}_{connectivity}.pdf",
     )
     plt.savefig(filepath)
     plt.close()
