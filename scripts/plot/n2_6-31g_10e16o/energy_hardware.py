@@ -6,10 +6,7 @@ import matplotlib.pyplot as plt
 
 from lucj.params import LUCJParams, CompressedT2Params
 from lucj.hardware_sqd_task.lucj_compressed_t2_task import HardwareSQDEnergyTask
-# from lucj.sqd_energy_task.lucj_compressed_t2_task import SQDEnergyTask
-# from lucj.sqd_energy_task.lucj_random_t2_task import RandomSQDEnergyTask
-# from lucj.tasks.lucj_sqd_initial_params_task import LUCJSQDInitialParamsTask
-# from lucj.tasks.uccsd_sqd_initial_params_task import UCCSDSQDInitialParamsTask
+from lucj.sqd_energy_task.lucj_random_t2_task import RandomSQDEnergyTask
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
@@ -38,7 +35,7 @@ symmetrize_spin = True
 entropy = 0
 # max_dim_range = [None, 50_000, 100_000, 200_000]
 # max_dim_range = [250, 500]
-max_dim_range = [250, 500]
+max_dim_range = [250, 500, 1000]
 
 tasks_compressed_t2 = [
     HardwareSQDEnergyTask(
@@ -124,6 +121,26 @@ tasks_truncated_t2 = [
         for d in bond_distance_range
         for max_dim in max_dim_range]
 
+
+tasks_random_bit_string = [
+    RandomSQDEnergyTask(
+        molecule_basename=molecule_basename,
+        bond_distance=d,
+        shots=shots,
+        samples_per_batch=samples_per_batch,
+        n_batches=n_batches,
+        energy_tol=energy_tol,
+        occupancies_tol=occupancies_tol,
+        carryover_threshold=carryover_threshold,
+        max_iterations=max_iterations,
+        symmetrize_spin=symmetrize_spin,
+        entropy=entropy,
+        max_dim=max_dim,
+    )
+    for max_dim in max_dim_range
+    for d in bond_distance_range
+]
+
 def load_data(filepath):
     if not os.path.exists(filepath):
         result = {
@@ -155,10 +172,20 @@ for task in tasks_compressed_t2:
     filepath = DATA_ROOT / task.dirpath / "hardware_sqd_data.pickle"
     results_compressed_t2[task] = load_data(filepath)
 
+results_random_bit_string = {}
+for task in tasks_random_bit_string:
+    filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
+    results_random_bit_string[task] = load_data(filepath)
+    # print(filepath)
+    # print(results_random_bit_string[task])
+    # input()
+
+
 
 print("Done loading data.")
 
-width = 0.25
+
+width = 0.2
 prop_cycle = plt.rcParams["axes.prop_cycle"]
 colors = prop_cycle.by_key()["color"]
 alphas = [0.5, 1.0]
@@ -178,6 +205,51 @@ fig, axes = plt.subplots(
 x_max_dim_range = np.arange(len(max_dim_range))
 
 for i, bond_distance in enumerate(bond_distance_range):
+    # random bitstring
+
+    tasks_random_bit_string = [
+        RandomSQDEnergyTask(
+                molecule_basename=molecule_basename,
+                bond_distance=bond_distance,
+                shots=shots,
+                samples_per_batch=samples_per_batch,
+                n_batches=n_batches,
+                energy_tol=energy_tol,
+                occupancies_tol=occupancies_tol,
+                carryover_threshold=carryover_threshold,
+                max_iterations=max_iterations,
+                symmetrize_spin=symmetrize_spin,
+                entropy=entropy,
+                max_dim=max_dim,
+            )
+            for max_dim in max_dim_range
+    ]
+
+    errors = [results_random_bit_string[task]['error'] for task in tasks_random_bit_string]
+    spin_squares = [results_random_bit_string[task]['spin_squared'] for task in tasks_random_bit_string]
+    sci_vec_shape = [results_random_bit_string[task]['sci_vec_shape'][0] for task in tasks_random_bit_string]
+    axes[row_error, i].bar(
+        x_max_dim_range,
+        errors,
+        width=width,
+        label="Rand bitstr",
+        color='red',
+    )
+    axes[row_spin_square, i].bar(
+        x_max_dim_range,
+        spin_squares,
+        width=width,
+        label="Rand bitstr",
+        color='red',
+    )
+    axes[row_sci_vec_dim, i].bar(
+        x_max_dim_range,
+        sci_vec_shape,
+        width=width,
+        label="Rand bitstr",
+        color='red',
+    )
+
     # random lucj
     tasks_random = [
         HardwareSQDEnergyTask(
@@ -210,21 +282,21 @@ for i, bond_distance in enumerate(bond_distance_range):
     sci_vec_shape = [results_random[task]["sci_vec_shape"][0] for task in tasks_random]
 
     axes[row_error, i].bar(
-        x_max_dim_range,
+        x_max_dim_range + width,
         errors,
         width=width,
         label="LUCJ random",
         color=colors[0],
     )
     axes[row_spin_square, i].bar(
-        x_max_dim_range,
+        x_max_dim_range + width,
         spin_squares,
         width=width,
         label="LUCJ random",
         color=colors[0],
     )
     axes[row_sci_vec_dim, i].bar(
-        x_max_dim_range,
+        x_max_dim_range + width,
         sci_vec_shape,
         width=width,
         label="LUCJ random",
@@ -263,21 +335,21 @@ for i, bond_distance in enumerate(bond_distance_range):
     sci_vec_shape = [ results_truncated_t2[task]["sci_vec_shape"][0] for task in tasks_truncated_t2]
 
     axes[row_error, i].bar(
-        x_max_dim_range + width,
+        x_max_dim_range + 2* width,
         errors,
         width=width,
         label="LUCJ truncated",
         color=colors[2],
     )
     axes[row_spin_square, i].bar(
-        x_max_dim_range + width,
+        x_max_dim_range + 2* width,
         spin_squares,
         width=width,
         label="LUCJ truncated",
         color=colors[2],
     )
     axes[row_sci_vec_dim, i].bar(
-        x_max_dim_range + width,
+        x_max_dim_range + 2* width,
         sci_vec_shape,
         width=width,
         label="LUCJ truncated",
@@ -319,21 +391,21 @@ for i, bond_distance in enumerate(bond_distance_range):
     sci_vec_shape = [results_compressed_t2[task]["sci_vec_shape"][0] for task in tasks_compressed_t2]
 
     axes[row_error, i].bar(
-        x_max_dim_range + 2 * width,
+        x_max_dim_range + 3 * width,
         errors,
         width=width,
         label="LUCJ compressed",
         color=colors[5],
     )
     axes[row_spin_square, i].bar(
-        x_max_dim_range + 2 * width,
+        x_max_dim_range + 3 * width,
         spin_squares,
         width=width,
         label="LUCJ compressed",
         color=colors[5],
     )
     axes[row_sci_vec_dim, i].bar(
-        x_max_dim_range + 2 * width,
+        x_max_dim_range + 3 * width,
         sci_vec_shape,
         width=width,
         label="LUCJ compressed",

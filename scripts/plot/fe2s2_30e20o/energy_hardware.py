@@ -33,7 +33,7 @@ symmetrize_spin = True
 entropy = 0
 # max_dim_range = [None, 50_000, 100_000, 200_000]
 # max_dim_range = [250, 500]
-max_dim_range = [500, 1000]
+max_dim_range = [250, 500, 1000]
 
 tasks_compressed_t2 = [
     HardwareSQDEnergyTask(
@@ -201,25 +201,25 @@ spin_squares = [results_random_bit_string[task]['spin_squared'] for task in task
 sci_vec_shape = [results_random_bit_string[task]['sci_vec_shape'][0] for task in tasks_random_bit_string]
 
 axes[row_error].bar(
-    x_max_dim_range,
-    errors,
-    width=width,
-    label="Rand bitstr",
-    color=colors[0],
-)
+        x_max_dim_range,
+        errors,
+        width=width,
+        label="Rand bitstr",
+        color='red',
+    )
 axes[row_spin_square].bar(
     x_max_dim_range,
     spin_squares,
     width=width,
     label="Rand bitstr",
-    color=colors[0],
+    color='red',
 )
 axes[row_sci_vec_dim].bar(
     x_max_dim_range,
     sci_vec_shape,
     width=width,
     label="Rand bitstr",
-    color=colors[0],
+    color='red',
 )
 
 # random lucj
@@ -254,25 +254,25 @@ spin_squares = [results_random[task]["spin_squared"] for task in tasks_random]
 sci_vec_shape = [results_random[task]["sci_vec_shape"][0] for task in tasks_random]
 
 axes[row_error].bar(
-    x_max_dim_range,
+    x_max_dim_range + width,
     errors,
     width=width,
     label="LUCJ random",
-    color=colors[1],
+    color=colors[0],
 )
 axes[row_spin_square].bar(
-    x_max_dim_range,
+    x_max_dim_range + width,
     spin_squares,
     width=width,
     label="LUCJ random",
-    color=colors[1],
+    color=colors[0],
 )
 axes[row_sci_vec_dim].bar(
-    x_max_dim_range,
+    x_max_dim_range + width,
     sci_vec_shape,
     width=width,
     label="LUCJ random",
-    color=colors[1],
+    color=colors[0],
 )
 
 # LUCJ data
@@ -307,21 +307,21 @@ spin_squares = [results_truncated_t2[task]["spin_squared"] for task in tasks_tru
 sci_vec_shape = [ results_truncated_t2[task]["sci_vec_shape"][0] for task in tasks_truncated_t2]
 
 axes[row_error].bar(
-    x_max_dim_range + width,
+    x_max_dim_range + 2 * width,
     errors,
     width=width,
     label="LUCJ truncated",
     color=colors[2],
 )
 axes[row_spin_square].bar(
-    x_max_dim_range + width,
+    x_max_dim_range + 2 * width,
     spin_squares,
     width=width,
     label="LUCJ truncated",
     color=colors[2],
 )
 axes[row_sci_vec_dim].bar(
-    x_max_dim_range + width,
+    x_max_dim_range + 2 * width,
     sci_vec_shape,
     width=width,
     label="LUCJ truncated",
@@ -363,21 +363,21 @@ spin_squares = [results_compressed_t2[task]["spin_squared"] for task in tasks_co
 sci_vec_shape = [results_compressed_t2[task]["sci_vec_shape"][0] for task in tasks_compressed_t2]
 
 axes[row_error].bar(
-    x_max_dim_range + 2 * width,
+    x_max_dim_range + 3 * width,
     errors,
     width=width,
     label="LUCJ compressed",
     color=colors[5],
 )
 axes[row_spin_square].bar(
-    x_max_dim_range + 2 * width,
+    x_max_dim_range + 3 * width,
     spin_squares,
     width=width,
     label="LUCJ compressed",
     color=colors[5],
 )
 axes[row_sci_vec_dim].bar(
-    x_max_dim_range + 2 * width,
+    x_max_dim_range + 3 * width,
     sci_vec_shape,
     width=width,
     label="LUCJ compressed",
@@ -401,14 +401,14 @@ axes[row_sci_vec_dim].set_xticks(x_max_dim_range + width, max_dim_range)
 
 # axes[row_sci_vec_dim, 0].legend(ncol=2, )
 leg = axes[row_sci_vec_dim].legend(
-    bbox_to_anchor=(-0.3, -0.4), loc="upper center", ncol=3
+    bbox_to_anchor=(0.5, -0.4), loc="upper center", ncol=3
 )
 # leg = axes[row_sci_vec_dim, 1].legend(
 #     bbox_to_anchor=(0.5, -0.4), loc="upper center", ncol=3
 # )
 leg.set_in_layout(False)
 plt.tight_layout()
-plt.subplots_adjust(bottom=0.16)
+plt.subplots_adjust(top=0.9,bottom=0.18)
 
 fig.suptitle(
     f"CCSD initial parameters {molecule_name} ({nelectron}e, {norb}o)"
