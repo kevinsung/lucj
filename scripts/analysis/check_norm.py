@@ -10,6 +10,8 @@ from lucj.operator_task.lucj_compressed_t2_task import (
 from molecules_catalog.util import load_molecular_data
 from ffsim.variational.util import interaction_pairs_spin_balanced
 import ffsim
+import pickle
+from opt_einsum import contract
 
 filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
@@ -33,14 +35,14 @@ basis = "6-31g"
 nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-bond_distance_range = [1.0, 2.4]
+bond_distance_range = [1.2, 2.4]
 
 connectivities = [
     "heavy-hex",
     # "square",
     # "all-to-all",
 ]
-n_reps_range = list(range(2, 20, 2))
+n_reps_range = list(range(2, 14, 2))
 
 markers = ["o", "s", "v", "D", "p", "*", "P", "X"]
 prop_cycle = plt.rcParams["axes.prop_cycle"]
@@ -48,24 +50,85 @@ colors = prop_cycle.by_key()["color"]
 alphas = [0.5, 1.0]
 linestyles = ["--", ":", "-"]
 
+def loss(diag_coulomb_mats, orbital_rotations, t2):
+    nocc, _, _, _ = t2.shape
+    diag_coulomb_mats = np.unstack(diag_coulomb_mats, axis=1)[0]
+    reconstructed = (
+            1j
+            * contract(
+                "mpq,map,mip,mbq,mjq->ijab",
+                diag_coulomb_mats,
+                orbital_rotations,
+                orbital_rotations.conj(),
+                orbital_rotations,
+                orbital_rotations.conj(),
+                # optimize="greedy"
+            )[:nocc, :nocc, nocc:, nocc:]
+        )
+    diff = reconstructed - t2
+    return 0.5 * np.sum(np.abs(diff) ** 2)
+
 for connectivity in connectivities:
     fig, axes = plt.subplots(
-        4,
+        5,
         len(bond_distance_range),
-        figsize=(8, 6),  # , layout="constrained"
+        figsize=(8, 10),  # , layout="constrained"
     )
     for i, d in enumerate(bond_distance_range):
         list_average_norm_reference_diagonal_coulumb = []
         list_average_norm_compressed_diagonal_coulumb = []
+        list_average_norm_compressed_diagonal_coulumb_reg0 = []
+        list_average_norm_compressed_diagonal_coulumb_reg1 = []
+        list_average_norm_compressed_diagonal_coulumb_reg2 = []
         list_average_norm_compressed_connectivity_diagonal_coulumb = []
         list_average_diff_norm_compressed_diagonal_coulumb = []
+        list_average_diff_norm_compressed_diagonal_coulumb_reg0 = []
+        list_average_diff_norm_compressed_diagonal_coulumb_reg1 = []
+        list_average_diff_norm_compressed_diagonal_coulumb_reg2 = []
         list_average_diff_norm_compressed_connectivity_diagonal_coulumb = []
         list_average_norm_reference_orbital_rotation = []
         list_average_norm_compressed_orbital_rotation = []
+        list_average_norm_compressed_orbital_rotation_reg0 = []
+        list_average_norm_compressed_orbital_rotation_reg1 = []
+        list_average_norm_compressed_orbital_rotation_reg2 = []
         list_average_norm_compressed_connectivity_orbital_rotation = []
         list_average_diff_norm_compressed_orbital_rotation = []
+        list_average_diff_norm_compressed_orbital_rotation_reg0 = []
+        list_average_diff_norm_compressed_orbital_rotation_reg1 = []
+        list_average_diff_norm_compressed_orbital_rotation_reg2 = []
         list_average_diff_norm_compressed_connectivity_orbital_rotation = []
+        list_loss_compression = []
+        list_loss_compression_reg0 = []
+        list_loss_compression_reg1 = []
+        list_loss_compression_reg2 = []
+
+        # Get molecular data and molecular Hamiltonian
+        mol_data = load_molecular_data(
+            f"{molecule_basename}_d-{d:.5f}",
+            molecules_catalog_dir=MOLECULES_CATALOG_DIR,
+        )
+        norb = mol_data.norb
+        nelec = mol_data.nelec
+        mol_hamiltonian = mol_data.hamiltonian
+
+        # Initialize Hamiltonian, initial state, and LUCJ parameters
+        hamiltonian = ffsim.linear_operator(mol_hamiltonian, norb=norb, nelec=nelec)
+        reference_state = ffsim.hartree_fock_state(norb, nelec)
+        pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
+            connectivity, norb
+        )
         for n_reps in n_reps_range:
+
+            # use CCSD to initialize parameters
+            operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
+                mol_data.ccsd_t2,
+                n_reps=n_reps,
+                t1=mol_data.ccsd_t1,
+                interaction_pairs=(pairs_aa, pairs_ab),
+            )
+            diag_coulomb_mats_reference = operator.diag_coulomb_mats
+            orbital_rotations_reference = operator.orbital_rotations
+
             task_compressed_t2 = LUCJCompressedT2Task(
                                     molecule_basename=molecule_basename,
                                     bond_distance=d,
@@ -78,7 +141,8 @@ for connectivity in connectivities:
                                         multi_stage_optimization=True,
                                         begin_reps=20,
                                         step=2
-                                    )
+                                    ),
+                                    regularization=False
                                 )
 
 
@@ -86,6 +150,79 @@ for connectivity in connectivities:
             operator = np.load(operator_filename)
             diag_coulomb_mats_compressed_t2 = operator["diag_coulomb_mats"]
             orbital_rotations_compressed_t2 = operator["orbital_rotations"]
+            t2_loss = loss(diag_coulomb_mats_compressed_t2, orbital_rotations_compressed_t2, mol_data.ccsd_t2)
+            list_loss_compression.append(t2_loss)
+
+            task_compressed_t2_reg0 = LUCJCompressedT2Task(
+                molecule_basename=molecule_basename,
+                bond_distance=d,
+                lucj_params=LUCJParams(
+                    connectivity=connectivity,
+                    n_reps=n_reps,
+                    with_final_orbital_rotation=True,
+                ),
+                compressed_t2_params=CompressedT2Params(
+                    multi_stage_optimization=True,
+                    begin_reps=20,
+                    step=2
+                ),
+                regularization=True,
+                regularization_option=0
+            )
+            
+            operator_filename = DATA_DIR / task_compressed_t2_reg0.dirpath / "operator.npz"
+            operator = np.load(operator_filename)
+            diag_coulomb_mats_compressed_t2_reg0 = operator["diag_coulomb_mats"]
+            orbital_rotations_compressed_t2_reg0 = operator["orbital_rotations"]
+            t2_loss = loss(diag_coulomb_mats_compressed_t2_reg0, orbital_rotations_compressed_t2_reg0, mol_data.ccsd_t2)
+            list_loss_compression_reg0.append(t2_loss)
+
+            task_compressed_t2_reg1 = LUCJCompressedT2Task(
+                molecule_basename=molecule_basename,
+                bond_distance=d,
+                lucj_params=LUCJParams(
+                    connectivity=connectivity,
+                    n_reps=n_reps,
+                    with_final_orbital_rotation=True,
+                ),
+                compressed_t2_params=CompressedT2Params(
+                    multi_stage_optimization=True,
+                    begin_reps=20,
+                    step=2
+                ),
+                regularization=True,
+                regularization_option=1
+            )
+            operator_filename = DATA_DIR / task_compressed_t2_reg1.dirpath / "operator.npz"
+            operator = np.load(operator_filename)
+            diag_coulomb_mats_compressed_t2_reg1 = operator["diag_coulomb_mats"]
+            orbital_rotations_compressed_t2_reg1 = operator["orbital_rotations"]
+            opt_data_filename = DATA_DIR / task_compressed_t2_reg1.dirpath / "opt_data.pickle"
+            t2_loss = loss(diag_coulomb_mats_compressed_t2_reg1, orbital_rotations_compressed_t2_reg1, mol_data.ccsd_t2)
+            list_loss_compression_reg1.append(t2_loss)
+
+            task_compressed_t2_reg2 = LUCJCompressedT2Task(
+                molecule_basename=molecule_basename,
+                bond_distance=d,
+                lucj_params=LUCJParams(
+                    connectivity=connectivity,
+                    n_reps=n_reps,
+                    with_final_orbital_rotation=True,
+                ),
+                compressed_t2_params=CompressedT2Params(
+                    multi_stage_optimization=True,
+                    begin_reps=20,
+                    step=2
+                ),
+                regularization=True,
+                regularization_option=2
+            )
+            operator_filename = DATA_DIR / task_compressed_t2_reg2.dirpath / "operator.npz"
+            operator = np.load(operator_filename)
+            diag_coulomb_mats_compressed_t2_reg2 = operator["diag_coulomb_mats"]
+            orbital_rotations_compressed_t2_reg2 = operator["orbital_rotations"]
+            t2_loss = loss(diag_coulomb_mats_compressed_t2_reg2, orbital_rotations_compressed_t2_reg2, mol_data.ccsd_t2)
+            list_loss_compression_reg2.append(t2_loss)
 
             if connectivity != 'all-to-all':
                 task_compressed_t2_connectivity = LUCJCompressedT2Task(
@@ -104,43 +241,29 @@ for connectivity in connectivities:
                 diag_coulomb_mats_compressed_t2_connectivity = operator["diag_coulomb_mats"]
                 orbital_rotations_compressed_t2_connectivity = operator["orbital_rotations"]
 
-            # Get molecular data and molecular Hamiltonian
-            mol_data = load_molecular_data(
-                f"{molecule_basename}_d-{d:.5f}",
-                molecules_catalog_dir=MOLECULES_CATALOG_DIR,
-            )
-            norb = mol_data.norb
-            nelec = mol_data.nelec
-            mol_hamiltonian = mol_data.hamiltonian
-
-            # Initialize Hamiltonian, initial state, and LUCJ parameters
-            hamiltonian = ffsim.linear_operator(mol_hamiltonian, norb=norb, nelec=nelec)
-            reference_state = ffsim.hartree_fock_state(norb, nelec)
-            pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
-                connectivity, norb
-            )
-
-            # use CCSD to initialize parameters
-            operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
-                mol_data.ccsd_t2,
-                n_reps=n_reps,
-                t1=mol_data.ccsd_t1,
-                interaction_pairs=(pairs_aa, pairs_ab),
-            )
-            diag_coulomb_mats_reference = operator.diag_coulomb_mats
-            orbital_rotations_reference = operator.orbital_rotations
-
             # print(f"\nconnectivity: {connectivity}, d: {d}, n_reps: {n_reps}")
             norm_reference_diagonal_coulumb = []
             norm_compressed_diagonal_coulumb = []
+            norm_compressed_diagonal_coulumb_reg0 = []
+            norm_compressed_diagonal_coulumb_reg1 = []
+            norm_compressed_diagonal_coulumb_reg2 = []
             norm_compressed_connectivity_diagonal_coulumb = []
             diff_norm_compressed_diagonal_coulumb = []
+            diff_norm_compressed_diagonal_coulumb_reg0 = []
+            diff_norm_compressed_diagonal_coulumb_reg1 = []
+            diff_norm_compressed_diagonal_coulumb_reg2 = []
             diff_norm_compressed_connectivity_diagonal_coulumb = []
 
             norm_reference_orbital_rotation = []
             norm_compressed_orbital_rotation = []
+            norm_compressed_orbital_rotation_reg0 = []
+            norm_compressed_orbital_rotation_reg1 = []
+            norm_compressed_orbital_rotation_reg2 = []
             norm_compressed_connectivity_orbital_rotation = []
             diff_norm_compressed_orbital_rotation = []
+            diff_norm_compressed_orbital_rotation_reg0 = []
+            diff_norm_compressed_orbital_rotation_reg1 = []
+            diff_norm_compressed_orbital_rotation_reg2 = []
             diff_norm_compressed_connectivity_orbital_rotation = []
 
             for layer in range(n_reps):
@@ -150,10 +273,39 @@ for connectivity in connectivities:
                 norm_reference_diagonal_coulumb.append(np.sum(np.abs(diag_coulomb_mats_reference[layer]) ** 2))
                 norm_compressed_diagonal_coulumb.append(np.sum(np.abs(diag_coulomb_mats_compressed_t2[layer]) ** 2))
                 diff_norm_compressed_diagonal_coulumb.append(np.sum(np.abs(diff_diag_coulomb_mats) ** 2))
-                
+
                 norm_reference_orbital_rotation.append(np.sum(np.abs(orbital_rotations_reference[layer]) ** 2))
                 norm_compressed_orbital_rotation.append(np.sum(np.abs(orbital_rotations_compressed_t2[layer]) ** 2))
                 diff_norm_compressed_orbital_rotation.append(np.sum(np.abs(diff_orbital_rotations) ** 2))
+
+                diff_diag_coulomb_mats_reg0 = diag_coulomb_mats_compressed_t2_reg0[layer] - diag_coulomb_mats_reference[layer]
+                diff_orbital_rotations_reg0 = orbital_rotations_compressed_t2_reg0[layer] - orbital_rotations_reference[layer]
+
+                norm_compressed_diagonal_coulumb_reg0.append(np.sum(np.abs(diag_coulomb_mats_compressed_t2_reg0[layer]) ** 2))
+                diff_norm_compressed_diagonal_coulumb_reg0.append(np.sum(np.abs(diff_diag_coulomb_mats_reg0) ** 2))
+
+                norm_compressed_orbital_rotation_reg0.append(np.sum(np.abs(orbital_rotations_compressed_t2_reg0[layer]) ** 2))
+                diff_norm_compressed_orbital_rotation_reg0.append(np.sum(np.abs(diff_orbital_rotations_reg0) ** 2))
+
+
+                diff_diag_coulomb_mats_reg1 = diag_coulomb_mats_compressed_t2_reg1[layer] - diag_coulomb_mats_reference[layer]
+                diff_orbital_rotations_reg1 = orbital_rotations_compressed_t2_reg1[layer] - orbital_rotations_reference[layer]
+
+                norm_compressed_diagonal_coulumb_reg1.append(np.sum(np.abs(diag_coulomb_mats_compressed_t2_reg1[layer]) ** 2))
+                diff_norm_compressed_diagonal_coulumb_reg1.append(np.sum(np.abs(diff_diag_coulomb_mats_reg1) ** 2))
+
+                norm_compressed_orbital_rotation_reg1.append(np.sum(np.abs(orbital_rotations_compressed_t2_reg1[layer]) ** 2))
+                diff_norm_compressed_orbital_rotation_reg1.append(np.sum(np.abs(diff_orbital_rotations_reg1) ** 2))
+
+
+                diff_diag_coulomb_mats_reg2 = diag_coulomb_mats_compressed_t2_reg2[layer] - diag_coulomb_mats_reference[layer]
+                diff_orbital_rotations_reg2 = orbital_rotations_compressed_t2_reg2[layer] - orbital_rotations_reference[layer]
+
+                norm_compressed_diagonal_coulumb_reg2.append(np.sum(np.abs(diag_coulomb_mats_compressed_t2_reg2[layer]) ** 2))
+                diff_norm_compressed_diagonal_coulumb_reg2.append(np.sum(np.abs(diff_diag_coulomb_mats_reg2) ** 2))
+
+                norm_compressed_orbital_rotation_reg2.append(np.sum(np.abs(orbital_rotations_compressed_t2_reg2[layer]) ** 2))
+                diff_norm_compressed_orbital_rotation_reg2.append(np.sum(np.abs(diff_orbital_rotations_reg2) ** 2))
                 
                 if connectivity != "all-to-all":
                     diff_diag_coulomb_mats_c = diag_coulomb_mats_compressed_t2_connectivity[layer] - diag_coulomb_mats_reference[layer]
@@ -182,6 +334,21 @@ for connectivity in connectivities:
             list_average_norm_reference_orbital_rotation.append(np.average(norm_reference_orbital_rotation))
             list_average_norm_compressed_orbital_rotation.append(np.average(norm_compressed_orbital_rotation))
             list_average_diff_norm_compressed_orbital_rotation.append(np.average(diff_norm_compressed_orbital_rotation))
+
+            list_average_norm_compressed_diagonal_coulumb_reg0.append(np.average(norm_compressed_diagonal_coulumb_reg0))
+            list_average_diff_norm_compressed_diagonal_coulumb_reg0.append(np.average(diff_norm_compressed_diagonal_coulumb_reg0))
+            list_average_norm_compressed_orbital_rotation_reg0.append(np.average(norm_compressed_orbital_rotation_reg0))
+            list_average_diff_norm_compressed_orbital_rotation_reg0.append(np.average(diff_norm_compressed_orbital_rotation_reg0))
+
+            list_average_norm_compressed_diagonal_coulumb_reg1.append(np.average(norm_compressed_diagonal_coulumb_reg1))
+            list_average_diff_norm_compressed_diagonal_coulumb_reg1.append(np.average(diff_norm_compressed_diagonal_coulumb_reg1))
+            list_average_norm_compressed_orbital_rotation_reg1.append(np.average(norm_compressed_orbital_rotation_reg1))
+            list_average_diff_norm_compressed_orbital_rotation_reg1.append(np.average(diff_norm_compressed_orbital_rotation_reg1))
+
+            list_average_norm_compressed_diagonal_coulumb_reg2.append(np.average(norm_compressed_diagonal_coulumb_reg2))
+            list_average_diff_norm_compressed_diagonal_coulumb_reg2.append(np.average(diff_norm_compressed_diagonal_coulumb_reg2))
+            list_average_norm_compressed_orbital_rotation_reg2.append(np.average(norm_compressed_orbital_rotation_reg2))
+            list_average_diff_norm_compressed_orbital_rotation_reg2.append(np.average(diff_norm_compressed_orbital_rotation_reg2))
             
             if connectivity != "all-to-all":
                 list_average_norm_compressed_connectivity_diagonal_coulumb.append(np.average(norm_compressed_connectivity_diagonal_coulumb))
@@ -204,6 +371,30 @@ for connectivity in connectivities:
             f"{markers[0]}{linestyles[0]}",
             label="LUCJ compressed",
             color=colors[5],
+        )
+
+        axes[0, i].plot(
+            n_reps_range,
+            list_average_norm_compressed_diagonal_coulumb_reg0,
+            f"{markers[0]}{linestyles[0]}",
+            label="LUCJ compressed-reg0",
+            color=colors[0],
+        )
+
+        axes[0, i].plot(
+            n_reps_range,
+            list_average_norm_compressed_diagonal_coulumb_reg1,
+            f"{markers[0]}{linestyles[0]}",
+            label="LUCJ compressed-reg1",
+            color=colors[1],
+        )
+
+        axes[0, i].plot(
+            n_reps_range,
+            list_average_norm_compressed_diagonal_coulumb_reg2,
+            f"{markers[0]}{linestyles[0]}",
+            label="LUCJ compressed-reg2",
+            color=colors[3],
         )
 
         if connectivity != "all-to-all":
@@ -232,6 +423,30 @@ for connectivity in connectivities:
                 color=colors[6],
             )
 
+        axes[1, i].plot(
+            n_reps_range,
+            list_average_diff_norm_compressed_diagonal_coulumb_reg0,
+            f"{markers[0]}{linestyles[0]}",
+            label="LUCJ compressed-reg0",
+            color=colors[0],
+        )
+
+        axes[1, i].plot(
+            n_reps_range,
+            list_average_diff_norm_compressed_diagonal_coulumb_reg1,
+            f"{markers[0]}{linestyles[0]}",
+            label="LUCJ compressed-reg1",
+            color=colors[1],
+        )
+
+        axes[1, i].plot(
+            n_reps_range,
+            list_average_diff_norm_compressed_diagonal_coulumb_reg2,
+            f"{markers[0]}{linestyles[0]}",
+            label="LUCJ compressed-reg2",
+            color=colors[3],
+        )
+
         # orb rot norm
         axes[2, i].plot(
             n_reps_range,
@@ -257,6 +472,31 @@ for connectivity in connectivities:
                 label="LUCJ compressed-c",
                 color=colors[6],
             )
+        
+        axes[2, i].plot(
+            n_reps_range,
+            list_average_norm_compressed_orbital_rotation_reg0,
+            f"{markers[0]}{linestyles[0]}",
+            label="LUCJ compressed-reg0",
+            color=colors[0],
+        )
+
+        axes[2, i].plot(
+            n_reps_range,
+            list_average_norm_compressed_orbital_rotation_reg1,
+            f"{markers[0]}{linestyles[0]}",
+            label="LUCJ compressed-reg1",
+            color=colors[1],
+        )
+
+        axes[2, i].plot(
+            n_reps_range,
+            list_average_norm_compressed_orbital_rotation_reg2,
+            f"{markers[0]}{linestyles[0]}",
+            label="LUCJ compressed-reg2",
+            color=colors[3],
+        )
+
         # diag coulumn norm diff
         axes[3, i].plot(
             n_reps_range,
@@ -275,6 +515,80 @@ for connectivity in connectivities:
             )
 
         axes[3, i].plot(
+            n_reps_range,
+            list_average_diff_norm_compressed_orbital_rotation_reg0,
+            f"{markers[0]}{linestyles[0]}",
+            label="LUCJ compressed-reg0",
+            color=colors[0],
+        )
+
+        axes[3, i].plot(
+            n_reps_range,
+            list_average_diff_norm_compressed_orbital_rotation_reg1,
+            f"{markers[0]}{linestyles[0]}",
+            label="LUCJ compressed-reg1",
+            color=colors[1],
+        )
+
+        axes[3, i].plot(
+            n_reps_range,
+            list_average_diff_norm_compressed_orbital_rotation_reg2,
+            f"{markers[0]}{linestyles[0]}",
+            label="LUCJ compressed-reg2",
+            color=colors[3],
+        )
+
+        # loss 
+        axes[4, i].plot(
+            n_reps_range,
+            list_loss_compression,
+            f"{markers[0]}{linestyles[0]}",
+            label="LUCJ compressed",
+            color=colors[5],
+        )
+        if connectivity != "all-to-all":
+            axes[4, i].plot(
+                [],
+                [],
+                f"{markers[0]}{linestyles[0]}",
+                label="LUCJ compressed-c",
+                color=colors[6],
+            )  
+
+        print("list_loss_compression_reg0")
+        print(list_loss_compression_reg0)
+
+        axes[4, i].plot(
+            n_reps_range,
+            list_loss_compression_reg0,
+            f"{markers[0]}{linestyles[0]}",
+            label="LUCJ compressed-reg0",
+            color=colors[0],
+        )
+
+        print("list_loss_compression_reg1")
+        print(list_loss_compression_reg1)
+
+        axes[4, i].plot(
+            n_reps_range,
+            list_loss_compression_reg1,
+            f"{markers[0]}{linestyles[0]}",
+            label="LUCJ compressed-reg1",
+            color=colors[1],
+        )
+
+        print("list_loss_compression_reg2")
+        print(list_loss_compression_reg2)
+
+        axes[4, i].plot(
+            n_reps_range,
+            list_loss_compression_reg2,
+            f"{markers[0]}{linestyles[0]}",
+            label="LUCJ compressed-reg2",
+            color=colors[3],
+        )
+
+        axes[4, i].plot(
             [],
             [],
             f"{markers[0]}{linestyles[2]}",
@@ -299,13 +613,17 @@ for connectivity in connectivities:
         axes[3, i].set_xlabel("Repetitions")
         axes[3, i].set_xticks(n_reps_range)
 
+        axes[4, i].set_title("loss", fontsize='small', loc='left')
+        axes[4, i].set_xlabel("Repetitions")
+        axes[4, i].set_xticks(n_reps_range)
+
     # axes[row_sci_vec_dim, 0].legend(ncol=2, )
-    leg = axes[3, 0].legend(
+    leg = axes[4, 0].legend(
         bbox_to_anchor=(0.3, -0.8), loc="upper left", ncol=3
     )
     leg.set_in_layout(False)
     plt.tight_layout()
-    plt.subplots_adjust(top=0.9,left=0.05,bottom=0.15)
+    plt.subplots_adjust(top=0.9,left=0.03,bottom=0.15)
     
     # fig.supylabel('norm')
     fig.suptitle(
