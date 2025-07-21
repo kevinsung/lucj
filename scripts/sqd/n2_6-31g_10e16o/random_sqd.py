@@ -26,7 +26,7 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 4
+MAX_PROCESSES = 1
 OVERWRITE = False
 
 molecule_name = "n2"
@@ -38,9 +38,8 @@ start = 0.9
 stop = 2.7
 step = 0.1
 bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) + 1)
-bond_distance_range = [1.0, 2.4]
+bond_distance_range = [1.2, 2.4]
 
-n_reps_range = list(range(2, 25, 2))
 shots = 100_000
 samples_per_batch_range = [1000]
 n_batches = 3
@@ -51,7 +50,7 @@ max_iterations = 100
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
-max_dim_range = [250, 500]
+max_dim_range = [250, 500, 1000]
 
 
 tasks = [

@@ -3,7 +3,7 @@ import os
 import pickle
 from dataclasses import dataclass
 from pathlib import Path
-
+import pyscf
 import ffsim
 import numpy as np
 import scipy.stats
@@ -12,8 +12,8 @@ from ffsim.variational.util import interaction_pairs_spin_balanced
 from lucj.params import LUCJParams, CompressedT2Params
 
 from qiskit.primitives import BitArray
-from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, solve_sci_batch
-from functools import partial
+from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, SCIResult
+from qiskit_addon_dice_solver import solve_sci_batch
 
 from lucj.hardware_sqd_task.hardware_job.hardware_job import (
     constrcut_lucj_circuit,
@@ -133,15 +133,32 @@ def load_operator(task: HardwareSQDEnergyTask, data_dir: str, mol_data):
     else:
         logging.info(f"Generate truncated operator for {task}.\n")
         norb = mol_data.norb
+        nelec = mol_data.nelec
         pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
             task.lucj_params.connectivity, norb
         )
-        operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
-            mol_data.ccsd_t2,
-            n_reps=task.lucj_params.n_reps,
-            t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
-            interaction_pairs=(pairs_aa, pairs_ab),
-        )
+        if mol_data.ccsd_t2 is None:
+            c0, c1, c2 = pyscf.ci.cisd.cisdvec_to_amplitudes(
+                mol_data.cisd_vec, norb, nelec[0]
+            )
+            assert abs(c0) > 1e-8
+            t1 = c1 / c0
+            t2 = c2 / c0 - np.einsum("ia,jb->ijab", t1, t1)
+            operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
+                t2,
+                t1=t1,
+                n_reps=task.lucj_params.n_reps,
+                interaction_pairs=interaction_pairs_spin_balanced(
+                    connectivity=task.lucj_params.connectivity, norb=norb
+                ),
+            ) 
+        else:
+            operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
+                mol_data.ccsd_t2,
+                n_reps=task.lucj_params.n_reps,
+                t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
+                interaction_pairs=(pairs_aa, pairs_ab),
+            )
 
     return operator
 
@@ -207,7 +224,17 @@ def run_hardware_sqd_energy_task(
 
     # Run SQD
     logging.info(f"{task} Running SQD...\n")
-    sci_solver = partial(solve_sci_batch, spin_sq=0.0)
+    # sci_solver = partial(solve_sci_batch, spin_sq=0.0)
+    result_history = []
+    def callback(results: list[SCIResult]):
+        result_history.append(results)
+        iteration = len(result_history)
+        logging.info(f"Iteration {iteration}")
+        for i, result in enumerate(results):
+            logging.info(f"\tSubsample {i}")
+            logging.info(f"\t\tEnergy: {result.energy + mol_data.core_energy}")
+            logging.info(f"\t\tSubspace dimension: {np.prod(result.sci_state.amplitudes.shape)}")
+
     result = diagonalize_fermionic_hamiltonian(
         mol_hamiltonian.one_body_tensor,
         mol_hamiltonian.two_body_tensor,
@@ -219,11 +246,12 @@ def run_hardware_sqd_energy_task(
         energy_tol=task.energy_tol,
         occupancies_tol=task.occupancies_tol,
         max_iterations=task.max_iterations,
-        sci_solver=sci_solver,
+        sci_solver=solve_sci_batch,
         symmetrize_spin=task.symmetrize_spin,
         carryover_threshold=task.carryover_threshold,
         seed=rng,
         max_dim=task.max_dim,
+        callback=callback
     )
     energy = result.energy + mol_data.core_energy
     sci_state = result.sci_state

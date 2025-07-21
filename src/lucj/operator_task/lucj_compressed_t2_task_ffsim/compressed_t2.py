@@ -149,12 +149,16 @@ def double_factorized_t2_compress(
     interaction_pairs: tuple[list[tuple[int, int]] | None, list[tuple[int, int]] | None]
     | None = None,
     multi_stage_optimization: bool = True,
+    regularization: bool = False,
+    regularization_option: int = 0,
+    coefficient: float = 0,
     begin_reps: int | None = None,
     step: int = 2
 ) -> tuple[np.ndarray, np.ndarray, float, float]:
     diag_coulomb_mats, orbital_rotations = ffsim.linalg.double_factorized_t2(
         t2, tol=tol
     )
+    ori_diag_coulomb_mats = diag_coulomb_mats
     _, _, norb, _ = orbital_rotations.shape
     orbital_rotations = orbital_rotations.reshape(-1, norb, norb)
     n_reps_full, norb, _ = orbital_rotations.shape
@@ -185,6 +189,7 @@ def double_factorized_t2_compress(
     list_init_loss = []
     list_final_loss = []
     list_reps = [i for i in range(begin_reps, n_reps, -step)] + [n_reps]
+    # coefficient for regularization
     for n_tensors in list_reps:
         diag_coulomb_mats = diag_coulomb_mats[:n_tensors]
         orbital_rotations = orbital_rotations[:n_tensors]
@@ -253,7 +258,21 @@ def double_factorized_t2_compress(
                 )[:nocc, :nocc, nocc:, nocc:]
             )
             diff = reconstructed - t2
-            return 0.5 * jnp.sum(jnp.abs(diff) ** 2)
+
+            # regularization term
+            regularization_cost = 0
+            if regularization:
+                coefficient = 1e-4
+                for diag_coulomb_mat in diag_coulomb_mats:
+                    regularization_cost += jnp.sum(jnp.abs(diag_coulomb_mat) ** 2) 
+                if regularization_option == 1:
+                    for ori_diag_coulomb_mat in ori_diag_coulomb_mats:
+                        regularization_cost -= jnp.sum(jnp.abs(ori_diag_coulomb_mat) ** 2) 
+                if regularization_option == 2:
+                    for reps in n_reps:
+                        regularization_cost -= jnp.sum(jnp.abs(ori_diag_coulomb_mats[reps]) ** 2) 
+
+            return 0.5 * jnp.sum(jnp.abs(diff) ** 2) + coefficient * regularization_cost
 
         # value_and_grad_func = jax.value_and_grad(fun_jax, argnums=(0, 1), holomorphic=True)
         value_and_grad_func = jax.value_and_grad(fun_jax, argnums=(0, 1))
@@ -323,7 +342,10 @@ def from_t_amplitudes_compressed(
     optimize: bool = False,
     multi_stage_optimization: bool | None = False,
     begin_reps: int | None = None,
-    step: int | None = 2
+    step: int | None = 2,
+    regularization: bool = False,
+    regularization_option: int = 0,
+    coefficient: float = 0,
 ) -> ffsim.UCJOpSpinBalanced:
     if interaction_pairs is None:
         interaction_pairs = (None, None)
@@ -341,7 +363,10 @@ def from_t_amplitudes_compressed(
                 nocc=nocc,
                 multi_stage_optimization=multi_stage_optimization,
                 begin_reps=begin_reps,
-                step=step
+                step=step,
+                regularization = regularization,
+                regularization_option = regularization_option,
+                coefficient = coefficient
             )
         )
     else:

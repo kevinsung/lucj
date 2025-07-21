@@ -8,7 +8,7 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from lucj.params import LUCJParams
+from lucj.params import LUCJParams, CompressedT2Params
 from lucj.sqd_energy_task.lucj_compressed_t2_task import (
     SQDEnergyTask,
     run_sqd_energy_task,
@@ -30,16 +30,17 @@ MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 1
 OVERWRITE = False
 
-molecule_name = "fe2s2"
-nelectron, norb = 30, 20
-molecule_basename = f"{molecule_name}_{nelectron}e{norb}o"
+molecule_name = "n2"
+basis = "cc-pvdz"
+nelectron, norb = 10, 26
+molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 connectivities = [
     "heavy-hex",
     # "square",
-    # "all-to-all",
+    "all-to-all",
 ]
-n_reps_range = [1] + list(range(2, 12, 2))
+n_reps_range = list(range(2, 12, 2)) + [1]
 shots = 100_000
 samples_per_batch = 1000
 n_batches = 3
@@ -51,11 +52,12 @@ symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
 max_dim_range = [500, 1000] # for large one
+bond_distance_range = [1.2, 2.4]
 
 tasks = [
     SQDEnergyTask(
         molecule_basename=molecule_basename,
-        bond_distance=None,
+        bond_distance=bond_distance,
         lucj_params=LUCJParams(
             connectivity=connectivity,
             n_reps=n_reps,
@@ -74,27 +76,35 @@ tasks = [
         entropy=entropy,
         max_dim=max_dim,
     )
-    for connectivity, n_reps in itertools.product(connectivities, n_reps_range)
-    for max_dim in max_dim_range
+    for max_dim, n_reps in itertools.product(max_dim_range, n_reps_range)
+    for bond_distance in bond_distance_range
+    for connectivity in connectivities
 ]
 
-if MAX_PROCESSES == 1:
-    for task in tqdm(tasks):
-        run_sqd_energy_task(
-            task,
+run_sqd_energy_task(
+            tasks[0],
             data_dir=DATA_DIR,
             molecules_catalog_dir=MOLECULES_CATALOG_DIR,
             overwrite=OVERWRITE,
         )
-else:
-    with tqdm(total=len(tasks)) as progress:
-        with ProcessPoolExecutor(MAX_PROCESSES) as executor:
-            for task in tasks:
-                future = executor.submit(
-                    run_sqd_energy_task,
-                    task,
-                    data_dir=DATA_DIR,
-                    molecules_catalog_dir=MOLECULES_CATALOG_DIR,
-                    overwrite=OVERWRITE,
-                )
-                future.add_done_callback(lambda _: progress.update())
+
+# if MAX_PROCESSES == 1:
+#     for task in tqdm(tasks):
+#         run_sqd_energy_task(
+#             task,
+#             data_dir=DATA_DIR,
+#             molecules_catalog_dir=MOLECULES_CATALOG_DIR,
+#             overwrite=OVERWRITE,
+#         )
+# else:
+#     with tqdm(total=len(tasks)) as progress:
+#         with ProcessPoolExecutor(MAX_PROCESSES) as executor:
+#             for task in tasks:
+#                 future = executor.submit(
+#                     run_sqd_energy_task,
+#                     task,
+#                     data_dir=DATA_DIR,
+#                     molecules_catalog_dir=MOLECULES_CATALOG_DIR,
+#                     overwrite=OVERWRITE,
+#                 )
+#                 future.add_done_callback(lambda _: progress.update())

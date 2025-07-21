@@ -103,7 +103,7 @@ def generate_operator_permutation(diag_coulomb_mats, orbital_rotations):
 for d in bond_distance_range:
     for connectivity in connectivities:
         for n_reps in n_reps_range:
-            print(n_reps)
+            # print(n_reps)
             task_compressed_t2 = LUCJCompressedT2Task(
                                     molecule_basename=molecule_basename,
                                     bond_distance=d,
