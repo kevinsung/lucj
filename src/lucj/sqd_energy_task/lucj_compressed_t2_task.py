@@ -216,7 +216,10 @@ def run_sqd_energy_task(
         if task.molecule_basename != "fe2s2_30e20o":
             logging.info(f"{task} Computing VQE data...\n")
             energy = np.vdot(final_state, hamiltonian @ final_state).real
-            error = energy - mol_data.fci_energy
+            if mol_data.fci_energy is None:
+                error = energy - mol_data.sci_energy
+            else:
+                error = energy - mol_data.fci_energy
             spin_squared = ffsim.spin_square(
                 final_state, norb=mol_data.norb, nelec=mol_data.nelec
             )

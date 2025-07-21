@@ -23,7 +23,7 @@ logging.basicConfig(
     filename=filename,
 )
 
-DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
+DATA_ROOT = "/media/storage/WanHsuan.Lin/"
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
@@ -49,7 +49,7 @@ symmetrize_spin = True
 entropy = 0
 # max_dim_range = [None, 50_000, 100_000, 200_000]
 # max_dim_range = [250, 500]
-max_dim_range = [250, 500]
+max_dim_range = [500, 1000]
 
 for max_dim in max_dim_range:
     tasks = [
