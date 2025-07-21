@@ -269,8 +269,9 @@ def double_factorized_t2_compress(
                     for ori_diag_coulomb_mat in ori_diag_coulomb_mats:
                         regularization_cost -= jnp.sum(jnp.abs(ori_diag_coulomb_mat) ** 2) 
                 if regularization_option == 2:
+                    regularization_cost = 0
                     for reps in range(n_reps):
-                        regularization_cost -= jnp.sum(jnp.abs(ori_diag_coulomb_mats[reps]) ** 2) 
+                        regularization_cost += (jnp.sum(jnp.abs(ori_diag_coulomb_mats[reps] - diag_coulomb_mats[reps]) ** 2) )
 
             return 0.5 * jnp.sum(jnp.abs(diff) ** 2) + coefficient * regularization_cost
 
