@@ -173,6 +173,11 @@ for task in tasks_compressed_t2:
     filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
     results_compressed_t2[task] = load_data(filepath)
 
+opt_results_compressed_t2 = {}
+for task in tasks_compressed_t2:
+    filepath = DATA_ROOT / task.operatorpath / "opt_data.pickle"
+    opt_results_compressed_t2[task] = load_data(filepath)
+
 results_compressed_t2_connectivity = {}
 for task in tasks_compressed_t2_connectivity:
     filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
@@ -439,5 +444,66 @@ plt.savefig(filepath)
 plt.close()
 
 
+fig, axes = plt.subplots(
+    1, len(connectivities), figsize=(12, 6) #, layout="constrained"
+)
+for i, connectivity in enumerate(connectivities):
+    tasks_compressed_t2 = [
+        SQDEnergyTask(
+        molecule_basename=molecule_basename,
+        bond_distance=None,
+        lucj_params=LUCJParams(
+            connectivity=connectivity,
+            n_reps=n_reps,
+            with_final_orbital_rotation=True,
+        ),
+        compressed_t2_params=CompressedT2Params(
+            multi_stage_optimization=True,
+            begin_reps=20,
+            step=2
+        ),
+        regularization=False,
+        shots=shots,
+        samples_per_batch=samples_per_batch,
+        n_batches=n_batches,
+        energy_tol=energy_tol,
+        occupancies_tol=occupancies_tol,
+        carryover_threshold=carryover_threshold,
+        max_iterations=max_iterations,
+        symmetrize_spin=symmetrize_spin,
+        entropy=entropy,
+        max_dim=max_dim,
+    )
+    for n_reps in these_n_reps]
+    init_loss = [opt_results_compressed_t2[task]["init_loss"] for task in tasks_compressed_t2]
+    final_loss = [opt_results_compressed_t2[task]["final_loss"] for task in tasks_compressed_t2]
+    axes[i].plot(
+        these_n_reps,
+        init_loss,
+        f"{markers[0]}{linestyles[0]}",
+        label="init loss",
+        color=colors[0],
+    )
+    axes[i].plot(
+        these_n_reps,
+        final_loss,
+        f"{markers[0]}{linestyles[0]}",
+        label="final loss",
+        color=colors[1],
+    )
+    axes[i].set_title(connectivity)
+    axes[i].set_ylabel("loss")
+    axes[i].set_xlabel("Repetitions")
+    axes[i].set_xticks(these_n_reps)
+    axes[i].legend()
 
-## working not done yet
+    fig.suptitle(
+        f"Opterator loss: {molecule_name} ({nelectron}e, {norb}o)"
+    )
+
+filepath = os.path.join(
+    plots_dir, f"{os.path.splitext(os.path.basename(__file__))[0]}_loss.pdf"
+)
+plt.savefig(filepath)
+plt.close()
+    

@@ -60,3 +60,20 @@ they are differ by different number of slater basis, more gausian
 3. add the max dimension
 4. reorder
 5. the magnitude of J of can related to the device noise
+
+
+
+1-RDM: 1 partical reduced density matrix
+rho_ij = <phi|a_iphi>
+natural orbital rotation: 
+
+with bond length close to eq, dynamic correlation is become more important
+
+with bond length far from eq, static correlation is become more important (and more) so the system is more difficult.
+
+static correlation
+dynamic correlation
+
+
+July 21
+random bit string can generate energy lower than ground truth?
