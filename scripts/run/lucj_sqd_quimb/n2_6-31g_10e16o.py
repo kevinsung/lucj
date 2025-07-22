@@ -34,7 +34,8 @@ nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 bond_distance_range = [1.2, 2.4]
-n_reps_range = [1, 2]
+# bond_distance_range = [2.4]
+n_reps_range = [1]
 connectivities = [
     # "square",
     # "all-to-all",
@@ -49,7 +50,7 @@ occupancies_tol = 1e-3
 carryover_threshold = 1e-3
 max_iterations = 100
 symmetrize_spin = True
-cobyqa_maxiter = 50
+cobyqa_maxiter = 25
 # TODO set entropy and generate seeds properly
 entropy = 0
 max_bond: int
@@ -67,8 +68,7 @@ cutoffs = [
     # 1e-10,
 ]
 seed = 0
-perm_mps = False
-max_dim_range = [250, 500]
+perm_mps = True
 max_dim_range = [500]
 # TODO set limit on subspace dimension
 

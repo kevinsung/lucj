@@ -223,6 +223,10 @@ def run_lucj_sqd_quimb_task(
         info["nit"] += 1
         with open(intermediate_result_filename, "wb") as f:
             pickle.dump(intermediate_result, f)
+        if info["nit"] > 3:
+            if (abs(info["fun"][-1] - info["fun"][-2]) < 1e-5) and (abs(info["fun"][-2] - info["fun"][-3]) < 1e-5):
+                raise StopIteration("Objective function value does not decrease for two iterations.")
+
 
     t0 = timeit.default_timer()
     result = scipy.optimize.minimize(
