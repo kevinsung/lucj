@@ -39,6 +39,8 @@ symmetrize_spin = True
 entropy = 0
 max_dim_range = [500, 1000]
 
+dmrg_energy = -116.6056091 #ref: https://github.com/jrm874/sqd_data_repository/blob/main/classical_reference_energies/2Fe-2S/classical_methods_energies.txt
+
 tasks_lucj = [
     SQDEnergyTask(
         molecule_basename=molecule_basename,
@@ -80,6 +82,7 @@ tasks_compressed_t2 = [
             begin_reps=20,
             step=2
         ),
+        regularization=False,
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
@@ -213,9 +216,12 @@ for i, (connectivity, max_dim) in enumerate(itertools.product(connectivities, ma
                             )
     
     print(f"{connectivity}/max dim-{max_dim}")
-    print(results_random[task_random_bit_string]["error"])
+    print("results_random")
+    print(results_random[task_random_bit_string]["energy"] - dmrg_energy)
+    # print(results_random[task_random_bit_string]["error"])
     axes[0, i].axhline(
-        results_random[task_random_bit_string]["error"],
+        results_random[task_random_bit_string]["energy"] - dmrg_energy,
+        # results_random[task_random_bit_string]["error"],
         linestyle="--",
         label="Rand bit str",
         color="red",
@@ -263,7 +269,10 @@ for i, (connectivity, max_dim) in enumerate(itertools.product(connectivities, ma
         for n_reps in these_n_reps
     ]
     energies = [data_lucj[task]["energy"] for task in tasks_lucj]
-    errors = [data_lucj[task]["error"] for task in tasks_lucj]
+    if data_lucj[tasks_lucj[0]]["error"] == 0:
+        errors = [data_lucj[task]["error"] for task in tasks_lucj]
+    else:
+        errors = [data_lucj[task]["energy"] - dmrg_energy for task in tasks_lucj]
     spin_squares = [data_lucj[task]["spin_squared"] for task in tasks_lucj]
     sci_vec_shape = [data_lucj[task]["sci_vec_shape"][0] for task in tasks_lucj]
 
@@ -303,6 +312,7 @@ for i, (connectivity, max_dim) in enumerate(itertools.product(connectivities, ma
             begin_reps=20,
             step=2
         ),
+        regularization=False,
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
@@ -317,7 +327,8 @@ for i, (connectivity, max_dim) in enumerate(itertools.product(connectivities, ma
     for n_reps in these_n_reps]
 
     energies = [results_compressed_t2[task]['energy'] for task in tasks_compressed_t2]
-    errors = [results_compressed_t2[task]["error"] for task in tasks_compressed_t2]
+    # errors = [results_compressed_t2[task]["error"] for task in tasks_compressed_t2]
+    errors = [results_compressed_t2[task]["energy"] - dmrg_energy  for task in tasks_compressed_t2]
     sci_vec_shape = [results_compressed_t2[task]["sci_vec_shape"][0] for task in tasks_compressed_t2]
 
     axes[0, i].plot(
@@ -328,6 +339,7 @@ for i, (connectivity, max_dim) in enumerate(itertools.product(connectivities, ma
         color=colors[5],
     )
     print(connectivity)
+    print(energies)
     print(errors)
 
     axes[2, i].plot(
@@ -399,7 +411,7 @@ for i, (connectivity, max_dim) in enumerate(itertools.product(connectivities, ma
     axes[0, i].set_xlabel("Repetitions")
     axes[0, i].set_xticks(these_n_reps)
 
-    axes[1, i].set_ylim(0, 0.1)
+    # axes[1, i].set_ylim(0, 0.1)
     axes[1, i].set_ylabel("Spin squares")
     axes[1, i].set_xlabel("Repetitions")
     axes[1, i].set_xticks(these_n_reps)

@@ -34,6 +34,7 @@ entropy = 0
 # max_dim_range = [None, 50_000, 100_000, 200_000]
 # max_dim_range = [250, 500]
 max_dim_range = [250, 500, 1000]
+dmrg_energy = -116.6056091 #ref: https://github.com/jrm874/sqd_data_repository/blob/main/classical_reference_energies/2Fe-2S/classical_methods_energies.txt
 
 tasks_compressed_t2 = [
     HardwareSQDEnergyTask(
@@ -174,7 +175,7 @@ for task in tasks_random_bit_string:
 
 print("Done loading data.")
 
-width = 0.25
+width = 0.2
 prop_cycle = plt.rcParams["axes.prop_cycle"]
 colors = prop_cycle.by_key()["color"]
 alphas = [0.5, 1.0]
@@ -196,7 +197,8 @@ x_max_dim_range = np.arange(len(max_dim_range))
 
 # random bitstring
 
-errors = [results_random_bit_string[task]['error'] for task in tasks_random_bit_string]
+# errors = [results_random_bit_string[task]['error'] for task in tasks_random_bit_string]
+errors = [results_random_bit_string[task]['energy'] - dmrg_energy for task in tasks_random_bit_string]
 spin_squares = [results_random_bit_string[task]['spin_squared'] for task in tasks_random_bit_string]
 sci_vec_shape = [results_random_bit_string[task]['sci_vec_shape'][0] for task in tasks_random_bit_string]
 
@@ -249,7 +251,8 @@ tasks_random = [
         for n_reps in n_reps_range
         for max_dim in max_dim_range]
 
-errors = [results_random[task]['error'] for task in tasks_random]
+# errors = [results_random[task]['error'] for task in tasks_random]
+errors = [results_random[task]['energy'] - dmrg_energy for task in tasks_random]
 spin_squares = [results_random[task]["spin_squared"] for task in tasks_random]
 sci_vec_shape = [results_random[task]["sci_vec_shape"][0] for task in tasks_random]
 
@@ -302,7 +305,10 @@ tasks_truncated_t2 = [
         for n_reps in n_reps_range
         for max_dim in max_dim_range]
 
-errors = [results_truncated_t2[task]["error"] for task in tasks_truncated_t2]
+if results_truncated_t2[tasks_truncated_t2[-1]]["error"] == 0:
+    errors = [results_truncated_t2[task]["error"] for task in tasks_truncated_t2]
+else:
+    errors = [results_truncated_t2[task]["energy"] - dmrg_energy for task in tasks_truncated_t2]
 spin_squares = [results_truncated_t2[task]["spin_squared"] for task in tasks_truncated_t2]
 sci_vec_shape = [ results_truncated_t2[task]["sci_vec_shape"][0] for task in tasks_truncated_t2]
 
@@ -358,10 +364,15 @@ tasks_compressed_t2 = [
         for n_reps in n_reps_range
         for max_dim in max_dim_range]
 
-errors = [results_compressed_t2[task]["error"] for task in tasks_compressed_t2]
+errors = [results_compressed_t2[task]["energy"] - dmrg_energy for task in tasks_compressed_t2]
+# errors = [results_compressed_t2[task]["error"] for task in tasks_compressed_t2]
+# energy = [results_compressed_t2[task]["energy"] for task in tasks_compressed_t2]
 spin_squares = [results_compressed_t2[task]["spin_squared"] for task in tasks_compressed_t2]
 sci_vec_shape = [results_compressed_t2[task]["sci_vec_shape"][0] for task in tasks_compressed_t2]
-
+# print("energy")
+# print(energy)
+# print("errors")
+# print(errors)
 axes[row_error].bar(
     x_max_dim_range + 3 * width,
     errors,
@@ -390,7 +401,7 @@ axes[row_error].set_ylabel("Energy error (Hartree)")
 axes[row_error].set_xlabel("max dim")
 axes[row_error].set_xticks(x_max_dim_range + width, max_dim_range)
 
-axes[row_spin_square].set_ylim(0, 0.1)
+# axes[row_spin_square].set_ylim(0, 0.1)
 axes[row_spin_square].set_ylabel("Spin square")
 axes[row_spin_square].set_xlabel("max dim")
 axes[row_spin_square].set_xticks(x_max_dim_range + width, max_dim_range)
