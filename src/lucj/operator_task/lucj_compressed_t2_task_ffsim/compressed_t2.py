@@ -273,7 +273,7 @@ def double_factorized_t2_compress(
                     for reps in range(n_reps):
                         regularization_cost += (jnp.sum(jnp.abs(ori_diag_coulomb_mats[reps] - diag_coulomb_mats[reps]) ** 2) )
 
-            return 0.5 * jnp.sum(jnp.abs(diff) ** 2) + coefficient * regularization_cost
+            return 0.5 * jnp.sum(jnp.abs(diff) ** 2) + coefficient * jnp.abs(regularization_cost)
 
         # value_and_grad_func = jax.value_and_grad(fun_jax, argnums=(0, 1), holomorphic=True)
         value_and_grad_func = jax.value_and_grad(fun_jax, argnums=(0, 1))

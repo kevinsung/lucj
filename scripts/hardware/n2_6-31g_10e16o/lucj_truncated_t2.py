@@ -9,7 +9,7 @@ from pathlib import Path
 from tqdm import tqdm
 
 from lucj.params import LUCJParams
-from lucj.hardware_sqd_task.lucj_compressed_t2_task import (
+from lucj.hardware_sqd_task.lucj_compressed_t2_task_sci import (
     HardwareSQDEnergyTask,
     run_hardware_sqd_energy_task,
 )
