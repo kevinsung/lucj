@@ -92,7 +92,6 @@ def run_random_sqd_energy_task(
         random_bit_string.append(''.join(str(x) for x in random_int))
 
     bit_array = BitArray.from_samples(random_bit_string, num_bits=2 * norb)
-
     # Run SQD
     logging.info(f"{task} Running SQD...\n")
     # sci_solver = partial(solve_sci_batch, spin_sq=0.0)
