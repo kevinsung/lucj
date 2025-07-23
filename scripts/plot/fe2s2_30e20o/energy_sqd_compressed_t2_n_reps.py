@@ -68,6 +68,33 @@ tasks_lucj = [
     for connectivity in connectivities
 ]
 
+tasks_lucj_full = [
+    SQDEnergyTask(
+        molecule_basename=molecule_basename,
+        bond_distance=None,
+        lucj_params=LUCJParams(
+            connectivity=connectivity,
+            n_reps=None,
+            with_final_orbital_rotation=True,
+        ),
+        compressed_t2_params=None,
+        connectivity_opt=False,
+        random_op =False,
+        shots=shots,
+        samples_per_batch=samples_per_batch,
+        n_batches=n_batches,
+        energy_tol=energy_tol,
+        occupancies_tol=occupancies_tol,
+        carryover_threshold=carryover_threshold,
+        max_iterations=max_iterations,
+        symmetrize_spin=symmetrize_spin,
+        entropy=entropy,
+        max_dim=max_dim,
+    )
+    for max_dim in max_dim_range
+    for connectivity in connectivities
+]
+
 tasks_compressed_t2 = [
     SQDEnergyTask(
         molecule_basename=molecule_basename,
@@ -193,6 +220,11 @@ for task in tasks_lucj:
     filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
     data_lucj[task] = load_data(filepath)
 
+data_lucj_full = {}
+for task in tasks_lucj_full:
+    filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
+    data_lucj_full[task] = load_data(filepath)
+
 print("Done loading data.")
 
 markers = ["o", "s", "v", "D", "p", "*", "P", "X"]
@@ -244,6 +276,52 @@ for i, (connectivity, max_dim) in enumerate(itertools.product(connectivities, ma
         linestyle="--",
         label="Rand bit str",
         color="red",
+    )
+
+    task_lucj_full = SQDEnergyTask(
+                        molecule_basename=molecule_basename,
+                        bond_distance=None,
+                        lucj_params=LUCJParams(
+                            connectivity=connectivity,
+                            n_reps=None,
+                            with_final_orbital_rotation=True,
+                        ),
+                        compressed_t2_params=None,
+                        connectivity_opt=False,
+                        random_op =False,
+                        shots=shots,
+                        samples_per_batch=samples_per_batch,
+                        n_batches=n_batches,
+                        energy_tol=energy_tol,
+                        occupancies_tol=occupancies_tol,
+                        carryover_threshold=carryover_threshold,
+                        max_iterations=max_iterations,
+                        symmetrize_spin=symmetrize_spin,
+                        entropy=entropy,
+                        max_dim=max_dim,
+                    )
+    
+    
+    axes[0, i].axhline(
+        data_lucj_full[task_lucj_full]["energy"] - dmrg_energy,
+        # results_random[task_random_bit_string]["error"],
+        linestyle="--",
+        label="LUCJ full",
+        color=colors[1],
+    )
+
+    axes[1, i].axhline(
+        data_lucj_full[task_lucj_full]["spin_squared"],
+        linestyle="--",
+        label="LUCJ full",
+        color=colors[1],
+    )
+
+    axes[2, i].axhline(
+        data_lucj_full[task_lucj_full]["sci_vec_shape"][0],
+        linestyle="--",
+        label="LUCJ full",
+        color=colors[1],
     )
 
 
@@ -426,7 +504,7 @@ for i, (connectivity, max_dim) in enumerate(itertools.product(connectivities, ma
     axes[2, i].set_xticks(these_n_reps)
 
     # axes[2, 0].legend(ncol=2, )
-    leg = axes[2, 1].legend(bbox_to_anchor=(0.5, -0.4), loc="upper center", ncol = 3)
+    leg = axes[2, 1].legend(bbox_to_anchor=(0.5, -0.4), loc="upper center", ncol = 4)
     leg.set_in_layout(False)
     plt.tight_layout()
     plt.subplots_adjust(bottom = 0.16)
