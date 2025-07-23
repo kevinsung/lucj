@@ -53,6 +53,7 @@ tasks = [
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
         energy_tol=energy_tol,
+        valid_string_only=True,
         occupancies_tol=occupancies_tol,
         carryover_threshold=carryover_threshold,
         max_iterations=max_iterations,
