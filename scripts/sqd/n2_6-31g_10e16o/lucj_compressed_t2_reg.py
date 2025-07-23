@@ -29,7 +29,7 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 8
-OVERWRITE = True
+OVERWRITE = False
 
 molecule_name = "n2"
 basis = "6-31g"
@@ -39,9 +39,9 @@ molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 bond_distance_range = [1.2, 2.4]
 
 connectivities = [
-    "heavy-hex",
+    # "heavy-hex",
     # "square",
-    # "all-to-all",
+    "all-to-all",
 ]
 n_reps_range = list(range(2, 14, 2)) + [1, 3]
 # n_reps_range = list(range(12, 25, 2))
@@ -159,7 +159,7 @@ tasks_reg2 = [
     for samples_per_batch in samples_per_batch_range
 ]
 
-tasks = tasks_reg1 # + tasks_reg2 + tasks_reg0
+tasks =  tasks_reg2 + tasks_reg0 # + tasks_reg1 
 
 if MAX_PROCESSES == 1:
     for task in tqdm(tasks):

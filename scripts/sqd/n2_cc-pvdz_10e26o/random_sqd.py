@@ -52,6 +52,7 @@ tasks = [
         bond_distance=bond_distance,
         shots=shots,
         samples_per_batch=samples_per_batch,
+        valid_string_only=True,
         n_batches=n_batches,
         energy_tol=energy_tol,
         occupancies_tol=occupancies_tol,
