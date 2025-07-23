@@ -119,7 +119,7 @@ class LUCJSQDQuimbPEPSTask:
         )
 
 
-def load_operator(task: LUCJSQDQuimbTask, data_dir: str, mol_data):
+def load_operator(task: LUCJSQDQuimbPEPSTask, data_dir: str, mol_data):
     if task.random_op:
         logging.info(f"Generate random operator for {task}.\n")
         norb = mol_data.norb
