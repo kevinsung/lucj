@@ -39,9 +39,9 @@ molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 bond_distance_range = [1.2, 2.4]
 
 connectivities = [
-    "heavy-hex",
+    # "heavy-hex",
     # "square",
-    # "all-to-all",
+    "all-to-all",
 ]
 n_reps_range = list(range(2, 14, 2)) + [1, 3]
 # n_reps_range = list(range(12, 25, 2))
