@@ -36,11 +36,11 @@ nelectron, norb = 10, 26
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 connectivities = [
+    "all-to-all",
     "heavy-hex",
     # "square",
-    "all-to-all",
 ]
-n_reps_range = list(range(2, 12, 2)) + [1]
+n_reps_range = [1, 2, 3]
 shots = 100_000
 samples_per_batch = 1000
 n_batches = 3
