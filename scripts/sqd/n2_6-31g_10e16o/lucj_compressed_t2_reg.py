@@ -29,7 +29,7 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 8
-OVERWRITE = True
+OVERWRITE = False
 
 molecule_name = "n2"
 basis = "6-31g"
@@ -159,7 +159,7 @@ tasks_reg2 = [
     for samples_per_batch in samples_per_batch_range
 ]
 
-tasks = tasks_reg1 # + tasks_reg2 + tasks_reg0
+tasks =  tasks_reg2 + tasks_reg0 # + tasks_reg1 
 
 if MAX_PROCESSES == 1:
     for task in tqdm(tasks):
