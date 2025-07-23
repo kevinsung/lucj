@@ -68,6 +68,7 @@ tasks = [
             begin_reps=20,
             step=2
         ),
+        regularization=False,
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
