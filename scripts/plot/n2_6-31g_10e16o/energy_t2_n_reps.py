@@ -29,7 +29,7 @@ connectivities = [
     # "square",
     "heavy-hex",
 ]
-n_reps_range = list(range(2, 14, 2)) + [None]
+n_reps_range = list(range(2, 12, 2)) + [None]
 
 shots = 100_000
 samples_per_batch_range = [1000]
@@ -111,7 +111,7 @@ for samples_per_batch, connectivity in itertools.product(
         )
 
         filepath = (
-            DATA_ROOT / "uccsd_initial_params" / task_uccsd.dirpath / "data.pickle"
+             "lucj/uccsd_initial_params" / task_uccsd.dirpath / "data.pickle"
         )
         data_uccsd = load_data(filepath)
 
@@ -143,7 +143,7 @@ for samples_per_batch, connectivity in itertools.product(
         data_lucj = {}
         for task in tasks_lucj:
             filepath = (
-                DATA_ROOT / "lucj_initial_params" / task.dirpath / "data.pickle"
+                "lucj/lucj_initial_params" / task.dirpath / "data.pickle"
             )
             data_lucj[task] = load_data(filepath)
 
@@ -276,7 +276,7 @@ for samples_per_batch, connectivity in itertools.product(
         ]
         results_compressed_t2_reg0 = {}
         for task in tasks_compressed_t2_reg0:
-            filepath = DATA_ROOT / task.dirpath / "data.pickle"
+            filepath = DATA_ROOT / task.operatorpath / "data.pickle"
             results_compressed_t2_reg0[task] = load_data(filepath)
 
         energies = [
@@ -514,7 +514,7 @@ for samples_per_batch, connectivity in itertools.product(
         # axes[row_loss, i].set_xlabel("Repetitions")
         # axes[row_loss, i].set_xticks(these_n_reps)
 
-        axes[row_spin_square, i].set_ylim(0, 0.1)
+        axes[row_spin_square, 0].set_ylim(0, 0.1)
         axes[row_spin_square, i].set_ylabel("Spin square")
         axes[row_spin_square, i].set_xlabel("Repetitions")
         axes[row_spin_square, i].set_xticks(these_n_reps)

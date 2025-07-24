@@ -8,7 +8,7 @@ import numpy as np
 from molecules_catalog.util import load_molecular_data
 
 from qiskit.primitives import BitArray
-from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, solve_sci_batch
+from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, solve_sci_batch, generate_bit_array_uniform
 from qiskit_addon_dice_solver import solve_sci_batch
 # from functools import partial
 
@@ -20,6 +20,7 @@ class RandomSQDEnergyTask:
     molecule_basename: str
     bond_distance: float | None
     shots: int
+    valid_string_only: bool = False,
     samples_per_batch: int
     n_batches: int
     energy_tol: float
@@ -40,6 +41,11 @@ class RandomSQDEnergyTask:
                 else f"bond_distance-{self.bond_distance:.5f}"
             )
             / "random_sample"
+            / (
+                ""
+                if not self.valid_string_only
+                else "valid_string_only"
+            )
             / f"shots-{self.shots}"
             / f"samples_per_batch-{self.samples_per_batch}"
             / f"n_batches-{self.n_batches}"
@@ -86,12 +92,22 @@ def run_random_sqd_energy_task(
 
     logging.info(f"{task} Sampling...\n")
     rng = np.random.default_rng(task.entropy)
-    random_int_list = np.random.randint(2, size=(task.shots, norb*2))
     random_bit_string = []
-    for random_int in random_int_list:
-        random_bit_string.append(''.join(str(x) for x in random_int))
+    if task.valid_string_only:
+        for i in range(task.shots):
+            right_bit_str = ['0' for _ in range(norb)]
+            left_bit_str = ['0' for _ in range(norb)]
+            bit_one_locs_right = np.random.choice(norb, nelec[0], replace=False)
+            bit_one_locs_left = np.random.choice(norb, nelec[0], replace=False)
+            for i in bit_one_locs_right:
+                right_bit_str[i] = '1'
+            for i in bit_one_locs_left:
+                left_bit_str[i] = '1'
+            random_bit_string.append(''.join(x for x in right_bit_str + left_bit_str))
+        bit_array = BitArray.from_samples(random_bit_string, num_bits=2 * norb)
 
-    bit_array = BitArray.from_samples(random_bit_string, num_bits=2 * norb)
+    else:
+        bit_array = generate_bit_array_uniform(task.shots, 2 * norb, rand_seed=rng)
 
     # Run SQD
     logging.info(f"{task} Running SQD...\n")
@@ -133,8 +149,3 @@ def run_random_sqd_energy_task(
     logging.info(f"{task} Saving SQD data...\n")
     with open(data_filename, "wb") as f:
         pickle.dump(data, f)
-
-
-
-
-

@@ -39,7 +39,7 @@ n_batches = 3
 energy_tol = 1e-5
 occupancies_tol = 1e-3
 carryover_threshold = 1e-3
-max_iterations = 100
+max_iterations = 10
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
@@ -52,6 +52,7 @@ tasks = [
         bond_distance=bond_distance,
         shots=shots,
         samples_per_batch=samples_per_batch,
+        valid_string_only=True,
         n_batches=n_batches,
         energy_tol=energy_tol,
         occupancies_tol=occupancies_tol,

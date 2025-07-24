@@ -211,6 +211,9 @@ def run_sqd_energy_task(
     sample_filename = data_dir / task.operatorpath / "sample.pickle"
     state_vector_filename = data_dir / task.operatorpath / "state_vector.npy"
     
+    if task.molecule_basename == "n2_cc-pvdz_10e26o" and task.lucj_params.connectivity == "all-to-all":
+        state_vector_filename = f"/media/storage/WanHsuan.Lin/lucj/lucj_ccsd_state_vector/n2_cc-pvdz_10e26o/bond_distance-{task.bond_distance:.5f}/connectivity-all-to-all/n_reps-{task.lucj_params.n_reps}/with_final_orbital_rotation-True/state_vector.npy"
+
     rng = np.random.default_rng(task.entropy)
     
     if not os.path.exists(sample_filename):

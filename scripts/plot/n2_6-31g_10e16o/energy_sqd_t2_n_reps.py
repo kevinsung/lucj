@@ -29,7 +29,7 @@ connectivities = [
     # "square",
     "heavy-hex",
 ]
-n_reps_range = list(range(2, 14, 2)) + [None]
+n_reps_range = list(range(2, 12, 2)) + [None]
 
 shots = 100_000
 samples_per_batch_range = [1000]
@@ -124,7 +124,7 @@ for samples_per_batch, connectivity, bond_distance in itertools.product(
         )
 
         filepath = (
-            DATA_ROOT / "uccsd_sqd_initial_params" / task_uccsd.dirpath / "data.pickle"
+            "lucj/uccsd_sqd_initial_params" / task_uccsd.dirpath / "data.pickle"
         )
         data_uccsd = load_data(filepath)
 
@@ -210,7 +210,7 @@ for samples_per_batch, connectivity, bond_distance in itertools.product(
         data_lucj = {}
         for task in tasks_lucj:
             filepath = (
-                DATA_ROOT / "lucj_sqd_initial_params" / task.dirpath / "data.pickle"
+                "lucj/lucj_sqd_initial_params" / task.dirpath / "data.pickle"
             )
             data_lucj[task] = load_data(filepath)
 
@@ -374,6 +374,7 @@ for samples_per_batch, connectivity, bond_distance in itertools.product(
         for task in tasks_compressed_t2_reg0:
             filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
             results_compressed_t2_reg0[task] = load_data(filepath)
+            
 
         energies = [
             results_compressed_t2_reg0[task]["energy"]

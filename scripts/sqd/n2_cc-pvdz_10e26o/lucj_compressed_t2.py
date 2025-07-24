@@ -36,18 +36,18 @@ nelectron, norb = 10, 26
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 connectivities = [
+    "all-to-all",
     "heavy-hex",
     # "square",
-    "all-to-all",
 ]
-n_reps_range = list(range(2, 12, 2)) + [1]
+n_reps_range = [1, 2, 3]
 shots = 100_000
 samples_per_batch = 1000
 n_batches = 3
 energy_tol = 1e-5
 occupancies_tol = 1e-3
 carryover_threshold = 1e-3
-max_iterations = 100
+max_iterations = 10
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0

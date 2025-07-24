@@ -36,18 +36,18 @@ nelectron, norb = 10, 26
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 connectivities = [
+    "all-to-all",
     "heavy-hex",
     # "square",
-    "all-to-all",
 ]
-n_reps_range = list(range(2, 12, 2)) + [1]
+n_reps_range = [1, 2, 3, None]
 shots = 100_000
 samples_per_batch = 1000
 n_batches = 3
 energy_tol = 1e-5
 occupancies_tol = 1e-3
 carryover_threshold = 1e-3
-max_iterations = 100
+max_iterations = 10
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
@@ -82,30 +82,30 @@ tasks = [
     for connectivity in connectivities
 ]
 
-run_sqd_energy_task(
-            tasks[0],
-            data_dir=DATA_DIR,
-            molecules_catalog_dir=MOLECULES_CATALOG_DIR,
-            overwrite=OVERWRITE,
-        )
-
-# if MAX_PROCESSES == 1:
-#     for task in tqdm(tasks):
-#         run_sqd_energy_task(
-#             task,
+# run_sqd_energy_task(
+#             tasks[0],
 #             data_dir=DATA_DIR,
 #             molecules_catalog_dir=MOLECULES_CATALOG_DIR,
 #             overwrite=OVERWRITE,
 #         )
-# else:
-#     with tqdm(total=len(tasks)) as progress:
-#         with ProcessPoolExecutor(MAX_PROCESSES) as executor:
-#             for task in tasks:
-#                 future = executor.submit(
-#                     run_sqd_energy_task,
-#                     task,
-#                     data_dir=DATA_DIR,
-#                     molecules_catalog_dir=MOLECULES_CATALOG_DIR,
-#                     overwrite=OVERWRITE,
-#                 )
-#                 future.add_done_callback(lambda _: progress.update())
+
+if MAX_PROCESSES == 1:
+    for task in tqdm(tasks):
+        run_sqd_energy_task(
+            task,
+            data_dir=DATA_DIR,
+            molecules_catalog_dir=MOLECULES_CATALOG_DIR,
+            overwrite=OVERWRITE,
+        )
+else:
+    with tqdm(total=len(tasks)) as progress:
+        with ProcessPoolExecutor(MAX_PROCESSES) as executor:
+            for task in tasks:
+                future = executor.submit(
+                    run_sqd_energy_task,
+                    task,
+                    data_dir=DATA_DIR,
+                    molecules_catalog_dir=MOLECULES_CATALOG_DIR,
+                    overwrite=OVERWRITE,
+                )
+                future.add_done_callback(lambda _: progress.update())

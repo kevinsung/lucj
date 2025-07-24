@@ -184,8 +184,8 @@ def double_factorized_t2_compress(
     diag_coulomb_mask = np.triu(diag_coulomb_mask)
     list_init_loss = []
     list_final_loss = []
-
-    for n_tensors in range(begin_reps, n_reps - 1, -step):
+    list_reps = list(range(begin_reps, n_reps - 1, -step)) + [n_reps]
+    for n_tensors in list_reps:
         diag_coulomb_mats = diag_coulomb_mats[:n_tensors]
         orbital_rotations = orbital_rotations[:n_tensors]
 
@@ -393,7 +393,7 @@ def from_t_amplitudes_compressed(
         init_loss,
         final_loss,
     )
-
+'''
 molecule_name = "n2"
 basis = "sto-6g"
 nelectron, norb = 10, 8
@@ -424,7 +424,7 @@ hamiltonian = ffsim.linear_operator(mol_hamiltonian, norb=norb, nelec=nelec)
 reference_state = ffsim.hartree_fock_state(norb, nelec)
 pairs_aa, pairs_ab = interaction_pairs_spin_balanced("square", norb)
 
-n_reps = 2
+n_reps = 1
 # use CCSD to initialize parameters
 operator, init_loss, final_loss = from_t_amplitudes_compressed(
     mol_data.ccsd_t2,
@@ -432,8 +432,29 @@ operator, init_loss, final_loss = from_t_amplitudes_compressed(
     t1=mol_data.ccsd_t1,
     interaction_pairs=(pairs_aa, pairs_ab),
     optimize=True,
-    multi_stage_optimization=False
+    multi_stage_optimization=True,
+    step=5
 )
+
+import pickle 
+
+with open(f"scratch/operator_n2_sto_6g_n_reps_{n_reps}.pickle", "wb") as f:
+    pickle.dump(operator, f) 
+
+from qiskit.circuit import QuantumCircuit, QuantumRegister
+qubits = QuantumRegister(2 * norb)
+circuit = QuantumCircuit(qubits)
+circuit.append(ffsim.qiskit.PrepareHartreeFockJW(norb, nelec), qubits)
+circuit.append(ffsim.qiskit.UCJOpSpinBalancedJW(operator), qubits)
+# change to quimb
+# Sample using quimb
+decomposed = circuit.decompose(reps=2)
+
+from qiskit import qpy
+with open(f"scratch/operator_n2_sto_6g_n_reps_{n_reps}_circuit.qpy", "wb") as file:
+    qpy.dump(decomposed, file)
 
 print(f"init loss: {init_loss}")
 print(f"final loss: {final_loss}")
+'''
+
