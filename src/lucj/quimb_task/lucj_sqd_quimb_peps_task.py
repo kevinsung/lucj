@@ -25,6 +25,7 @@ from lucj.params import COBYQAParams, LUCJParams, CompressedT2Params
 
 from qiskit.circuit import QuantumCircuit, QuantumRegister
 import quimb.tensor
+import quimb.tensor.belief_propagation
 from qiskit_quimb import quimb_gates
 
 import pyscf
@@ -92,10 +93,10 @@ class LUCJSQDQuimbPEPSTask:
             / f"max_iterations-{self.max_iterations}"
             / f"symmetrize_spin-{self.symmetrize_spin}"
             / f"entropy-{self.entropy}"
+            / "peps"
             / f"max_dim-{self.max_dim}"
             / f"max_bond-{self.max_bond}"
             / f"cutoff-{self.cutoff}"
-            / f"perm_mps-{self.perm_mps}"
             / f"seed-{self.seed}"
         )
 
@@ -289,12 +290,13 @@ def run_lucj_sqd_quimb_task(
         t0 = timeit.default_timer()
         samples = []
         for _ in range(task.shots):
-            config, omega = peps.sample_configuration_cluster(
-                gauges=gauges,
-                seed=task.seed,
-                # single site clusters
-                max_distance=0,
-            )
+            _, config, omega = quimb.tensor.belief_propagation.sample_d2bp(peps, seed=task.seed, progbar=False)
+            # config, omega = peps.sample_configuration_cluster(
+            #     gauges=gauges,
+            #     seed=task.seed,
+            #     # single site clusters
+            #     max_distance=0,
+            # )
             x = "".join(map(str, (config[i] for i in range(circuit.num_qubits))))
             samples.append(x)
         t1 = timeit.default_timer()
