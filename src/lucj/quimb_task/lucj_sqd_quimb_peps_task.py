@@ -158,6 +158,7 @@ def load_operator(task: LUCJSQDQuimbPEPSTask, data_dir: str, mol_data):
             )
         elif mol_data.ccsd_t2 is None:
             nelec = mol_data.nelec
+            norb = mol_data.norb
             c0, c1, c2 = pyscf.ci.cisd.cisdvec_to_amplitudes(
                 mol_data.cisd_vec, norb, nelec[0]
             )
