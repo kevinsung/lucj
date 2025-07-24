@@ -30,12 +30,11 @@ MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 1
 OVERWRITE = False
 
-molecule_name = "n2"
-basis = "6-31g"
-nelectron, norb = 10, 16
-molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
+molecule_name = "fe2s2"
+nelectron, norb = 30, 20
+molecule_basename = f"{molecule_name}_{nelectron}e{norb}o"
 
-bond_distance_range = [1.2, 2.4]
+bond_distance_range = [None]
 # bond_distance_range = [1.2]
 
 connectivities = [
@@ -45,13 +44,13 @@ connectivities = [
 ]
 
 n_reps_range = [1]
-shots = 100_000
+shots = 10_000
 samples_per_batch = 1000
 n_batches = 3
 energy_tol = 1e-5
 occupancies_tol = 1e-3
 carryover_threshold = 1e-3
-max_iterations = 100
+max_iterations = 10
 symmetrize_spin = True
 cobyqa_maxiter = 25
 # TODO set entropy and generate seeds properly
