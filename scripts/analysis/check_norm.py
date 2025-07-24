@@ -40,7 +40,7 @@ bond_distance_range = [1.2, 2.4]
 connectivities = [
     "heavy-hex",
     # "square",
-    # "all-to-all",
+    "all-to-all",
 ]
 n_reps_range = list(range(2, 14, 2))
 

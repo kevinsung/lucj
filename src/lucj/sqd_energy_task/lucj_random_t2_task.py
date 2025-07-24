@@ -8,7 +8,9 @@ import numpy as np
 from molecules_catalog.util import load_molecular_data
 
 from qiskit.primitives import BitArray
-from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, solve_sci_batch, generate_bit_array_uniform
+from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, solve_sci_batch
+from qiskit_addon_sqd.counts import bit_array_to_arrays, generate_bit_array_uniform
+from qiskit_addon_sqd.subsampling import postselect_by_hamming_right_and_left
 from qiskit_addon_dice_solver import solve_sci_batch
 # from functools import partial
 
@@ -94,6 +96,7 @@ def run_random_sqd_energy_task(
     rng = np.random.default_rng(task.entropy)
     random_bit_string = []
     if task.valid_string_only:
+        print("random valid bitstr only")
         for i in range(task.shots):
             right_bit_str = ['0' for _ in range(norb)]
             left_bit_str = ['0' for _ in range(norb)]
@@ -108,6 +111,17 @@ def run_random_sqd_energy_task(
 
     else:
         bit_array = generate_bit_array_uniform(task.shots, 2 * norb, rand_seed=rng)
+    
+
+    # # Run configuration recovery loop
+    # raw_bitstrings, raw_probs = bit_array_to_arrays(bit_array)
+    # # If we don't have average orbital occupancy information, simply postselect
+    # # bitstrings with the correct numbers of spin-up and spin-down electrons
+    # bitstrings, probs = postselect_by_hamming_right_and_left(
+    #     raw_bitstrings, raw_probs, hamming_right=nelec[0], hamming_left=nelec[1]
+    # )
+    # print(f"len valid bitstr: {len(bitstrings)}")
+    # assert(0)
 
     # Run SQD
     logging.info(f"{task} Running SQD...\n")

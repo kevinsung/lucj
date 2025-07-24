@@ -9,8 +9,8 @@ from pathlib import Path
 from tqdm import tqdm
 
 from lucj.params import LUCJParams, CompressedT2Params, COBYQAParams
-from lucj.quimb_task.lucj_sqd_quimb_task import (
-    LUCJSQDQuimbTask,
+from lucj.quimb_task.lucj_sqd_quimb_peps_task import (
+    LUCJSQDQuimbPEPSTask,
     run_lucj_sqd_quimb_task,
 )
 
@@ -58,8 +58,8 @@ cobyqa_maxiter = 25
 entropy = 0
 max_bond: int
 max_bonds = [
-    # 5,
-    10,
+    5,
+    # 10,
     # 25,
     # 50,
     # 100,
@@ -77,7 +77,7 @@ max_dim_range = [500]
 
 for max_dim in max_dim_range:
     tasks = [
-        LUCJSQDQuimbTask(
+        LUCJSQDQuimbPEPSTask(
             molecule_basename=molecule_basename,
             bond_distance=d,
             lucj_params=LUCJParams(

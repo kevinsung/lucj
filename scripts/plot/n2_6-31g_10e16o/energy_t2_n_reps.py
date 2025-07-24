@@ -25,7 +25,7 @@ os.makedirs(plots_dir, exist_ok=True)
 bond_distance_range = [1.2, 2.4]
 
 connectivities = [
-    # "all-to-all",
+    "all-to-all",
     # "square",
     "heavy-hex",
 ]
