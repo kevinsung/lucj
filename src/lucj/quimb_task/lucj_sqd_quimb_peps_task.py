@@ -290,14 +290,14 @@ def run_lucj_sqd_quimb_task(
         t0 = timeit.default_timer()
         samples = []
         for _ in range(task.shots):
-            _, config, omega = quimb.tensor.belief_propagation.sample_d2bp(peps, seed=task.seed, progbar=False)
+            config, tn_config, omega = quimb.tensor.belief_propagation.sample_d2bp(peps, seed=task.seed, progbar=False)
             # config, omega = peps.sample_configuration_cluster(
             #     gauges=gauges,
             #     seed=task.seed,
             #     # single site clusters
             #     max_distance=0,
             # )
-            x = "".join(map(str, (config[i] for i in range(circuit.num_qubits))))
+            x = "".join(map(str, (config[f"k{i}"] for i in range(circuit.num_qubits))))
             samples.append(x)
         t1 = timeit.default_timer()
         time = t1 - t0
