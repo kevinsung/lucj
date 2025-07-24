@@ -96,7 +96,6 @@ def run_random_sqd_energy_task(
     rng = np.random.default_rng(task.entropy)
     random_bit_string = []
     if task.valid_string_only:
-        print("random valid bitstr only")
         for i in range(task.shots):
             right_bit_str = ['0' for _ in range(norb)]
             left_bit_str = ['0' for _ in range(norb)]

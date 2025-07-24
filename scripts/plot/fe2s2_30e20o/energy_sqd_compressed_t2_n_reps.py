@@ -38,6 +38,7 @@ symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
 max_dim_range = [500, 1000]
+max_dim_range = [500]
 
 dmrg_energy = -116.6056091 #ref: https://github.com/jrm874/sqd_data_repository/blob/main/classical_reference_energies/2Fe-2S/classical_methods_energies.txt
 
@@ -160,6 +161,7 @@ tasks_random_bit_string = [
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
         energy_tol=energy_tol,
+        valid_string_only=False,
         occupancies_tol=occupancies_tol,
         carryover_threshold=carryover_threshold,
         max_iterations=max_iterations,
@@ -229,16 +231,20 @@ for task in tasks_compressed_t2_connectivity:
     filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
     results_compressed_t2_connectivity[task] = load_data(filepath)
 
+# print("results_random")
 results_random = {}
 for task in tasks_random_bit_string:
     filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
     results_random[task] = load_data(filepath)
+    print(filepath)
 
+# print("results_random_valid_bitstrings")
 results_random_valid_bitstrings = {}
 for task in tasks_random_valid_bit_string:
     filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
     results_random_valid_bitstrings[task] = load_data(filepath)
-    
+#     print(filepath)
+# input()
 data_lucj = {}
 for task in tasks_lucj:
     filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
@@ -267,6 +273,7 @@ for i, (connectivity, max_dim) in enumerate(itertools.product(connectivities, ma
                                 shots=shots,
                                 samples_per_batch=samples_per_batch,
                                 n_batches=n_batches,
+                                valid_string_only=False,
                                 energy_tol=energy_tol,
                                 occupancies_tol=occupancies_tol,
                                 carryover_threshold=carryover_threshold,
