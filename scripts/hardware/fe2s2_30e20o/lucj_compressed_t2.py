@@ -14,6 +14,7 @@ from lucj.hardware_sqd_task.lucj_compressed_t2_task import (
     run_hardware_sqd_energy_task,
 )
 
+
 filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(
@@ -28,7 +29,7 @@ DATA_ROOT = "/media/storage/WanHsuan.Lin/"
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 1
-OVERWRITE = False
+OVERWRITE = True
 
 molecule_name = "fe2s2"
 nelectron, norb = 30, 20
@@ -48,7 +49,7 @@ symmetrize_spin = True
 entropy = 0
 # max_dim_range = [None, 50_000, 100_000, 200_000]
 # max_dim_range = [250, 500]
-max_dim_range = [500, 1000]
+max_dim_range = [1000]
 
 for max_dim in max_dim_range:
     tasks = [

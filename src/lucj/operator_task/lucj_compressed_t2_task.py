@@ -24,6 +24,7 @@ class LUCJCompressedT2Task:
     random_op: bool = False
     regularization: bool = False,
     regularization_option: int = 0,
+    regularization_factor: float | None
 
     @property
     def dirpath(self) -> Path:
@@ -34,7 +35,10 @@ class LUCJCompressedT2Task:
         elif self.compressed_t2_params is not None:
             compress_option = self.compressed_t2_params.dirpath
             if self.regularization:
-                compress_option = f"{compress_option}/regularization_{self.regularization_option}"
+                if self.regularization_factor is None:
+                    compress_option = f"{compress_option}/regularization_{self.regularization_option}"
+                else:
+                    compress_option = f"{compress_option}/regularization_{self.regularization_option}_{self.regularization_factor:.6f}"
         else:
             compress_option = "truncated"
         return (
@@ -128,6 +132,7 @@ def run_lucj_compressed_t2_task(
                     multi_stage_optimization=task.compressed_t2_params.multi_stage_optimization,
                     regularization=task.regularization,
                     regularization_option=task.regularization_option,
+                    regularization_factor=task.regularization_factor,
                     step=task.compressed_t2_params.step,
                     begin_reps=task.compressed_t2_params.begin_reps,
                 )

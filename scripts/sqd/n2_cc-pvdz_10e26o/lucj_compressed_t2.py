@@ -40,18 +40,18 @@ connectivities = [
     "heavy-hex",
     # "square",
 ]
-n_reps_range = [1, 2, 3]
+n_reps_range = [1, 2, 4, 6, 8, 10]
 shots = 100_000
 samples_per_batch = 1000
 n_batches = 3
 energy_tol = 1e-5
 occupancies_tol = 1e-3
 carryover_threshold = 1e-3
-max_iterations = 10
+max_iterations = 50
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
-max_dim_range = [500, 1000] # for large one
+max_dim_range = [1000] # for large one
 bond_distance_range = [1.2, 2.4]
 
 tasks = [

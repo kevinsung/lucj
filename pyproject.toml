@@ -37,6 +37,7 @@ molecules-catalog = { path = "../molecules-catalog", editable = true }
 qiskit-addon-sqd = { path = "../qiskit-addon-sqd", editable = true }
 ffsim = { path = "../ffsim", editable = true }
 
+
 [dependency-groups]
 dev = [
     "ipykernel>=6.29.5",

@@ -38,7 +38,7 @@ symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
 max_dim_range = [500, 1000]
-max_dim_range = [500]
+max_dim_range = [1000]
 
 dmrg_energy = -116.6056091 #ref: https://github.com/jrm874/sqd_data_repository/blob/main/classical_reference_energies/2Fe-2S/classical_methods_energies.txt
 
@@ -220,6 +220,7 @@ results_compressed_t2 = {}
 for task in tasks_compressed_t2:
     filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
     results_compressed_t2[task] = load_data(filepath)
+    # print(results_compressed_t2[task])
 
 opt_results_compressed_t2 = {}
 for task in tasks_compressed_t2:
@@ -235,8 +236,8 @@ for task in tasks_compressed_t2_connectivity:
 results_random = {}
 for task in tasks_random_bit_string:
     filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
-    results_random[task] = load_data(filepath)
-    print(filepath)
+    # results_random[task] = load_data(filepath)
+    # print(filepath)
 
 # print("results_random_valid_bitstrings")
 results_random_valid_bitstrings = {}
