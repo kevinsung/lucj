@@ -546,6 +546,7 @@ name = "ffsim"
 version = "0.0.58.dev0"
 source = { editable = "../ffsim" }
 dependencies = [
+    { name = "jax" },
     { name = "numpy" },
     { name = "opt-einsum" },
     { name = "orjson" },
@@ -559,6 +560,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "coverage", marker = "extra == 'dev'" },
+    { name = "jax" },
     { name = "maturin", marker = "extra == 'dev'" },
     { name = "mypy", marker = "extra == 'dev'" },
     { name = "myst-parser", marker = "extra == 'dev'" },
@@ -1320,7 +1322,6 @@ source = { editable = "../molecules-catalog" }
 dependencies = [
     { name = "ffsim" },
     { name = "matplotlib" },
-    { name = "qiskit-addon-dice-solver" },
     { name = "requests" },
     { name = "tqdm" },
 ]
@@ -1332,15 +1333,11 @@ requires-dist = [
     { name = "mypy", marker = "extra == 'dev'" },
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "qiskit", extras = ["visualization"], marker = "extra == 'dev'" },
-    { name = "qiskit-addon-dice-solver", editable = "../qiskit-addon-dice-solver" },
     { name = "requests" },
     { name = "ruff", marker = "extra == 'dev'" },
     { name = "tqdm" },
 ]
 provides-extras = ["dev"]
-
-[package.metadata.requires-dev]
-dev = [{ name = "ipykernel", specifier = ">=6.30.0" }]
 
 [[package]]
 name = "mpmath"
@@ -2259,37 +2256,6 @@ requires-dist = [
     { name = "wrapt", specifier = ">=1.13.3" },
 ]
 provides-extras = ["quimb", "quimb-autograd", "quimb-jax", "quimb-all", "aer", "dev", "basetest", "test", "nbtest", "style", "lint", "docs", "notebook-dependencies"]
-
-[[package]]
-name = "qiskit-addon-dice-solver"
-version = "0.3.0"
-source = { editable = "../qiskit-addon-dice-solver" }
-dependencies = [
-    { name = "numpy" },
-    { name = "pyscf" },
-    { name = "qiskit-addon-sqd" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "matplotlib", marker = "extra == 'docs'" },
-    { name = "mypy", marker = "extra == 'lint'", specifier = "==1.16.1" },
-    { name = "numpy" },
-    { name = "pydocstyle", marker = "extra == 'lint'", specifier = "==6.3" },
-    { name = "pylint", marker = "extra == 'lint'", specifier = ">=3.2.7" },
-    { name = "pyscf" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
-    { name = "qiskit-addon-sqd", specifier = ">=0.8" },
-    { name = "qiskit-sphinx-theme", marker = "extra == 'docs'", specifier = "~=2.0.0" },
-    { name = "reno", marker = "extra == 'docs'" },
-    { name = "reno", marker = "extra == 'lint'" },
-    { name = "ruff", marker = "extra == 'style'", specifier = "==0.12.1" },
-    { name = "sphinx-autodoc-typehints", marker = "extra == 'docs'" },
-    { name = "sphinx-copybutton", marker = "extra == 'docs'" },
-    { name = "sphinx-design", marker = "extra == 'docs'" },
-    { name = "tox", marker = "extra == 'dev'", specifier = ">=4.0" },
-]
-provides-extras = ["dev", "docs", "style", "lint"]
 
 [[package]]
 name = "qiskit-addon-sqd"
