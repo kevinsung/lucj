@@ -151,7 +151,7 @@ def double_factorized_t2_compress(
     multi_stage_optimization: bool = True,
     regularization: bool = False,
     regularization_option: int = 0,
-    coefficient: float = 0,
+    regularization_factor: float | None = None,
     begin_reps: int | None = None,
     step: int = 2
 ) -> tuple[np.ndarray, np.ndarray, float, float]:
@@ -262,7 +262,10 @@ def double_factorized_t2_compress(
             # regularization term
             regularization_cost = 0
             if regularization:
-                coefficient = 1e-4
+                if regularization_factor is None:
+                    coefficient = 1e-4
+                else:
+                    coefficient = regularization_factor
                 for diag_coulomb_mat in diag_coulomb_mats:
                     regularization_cost += jnp.sum(jnp.abs(diag_coulomb_mat) ** 2) 
                 if regularization_option == 1:
@@ -346,7 +349,7 @@ def from_t_amplitudes_compressed(
     step: int | None = 2,
     regularization: bool = False,
     regularization_option: int = 0,
-    coefficient: float = 0,
+    regularization_factor: float | None = None,
 ) -> ffsim.UCJOpSpinBalanced:
     if interaction_pairs is None:
         interaction_pairs = (None, None)
@@ -367,7 +370,7 @@ def from_t_amplitudes_compressed(
                 step=step,
                 regularization = regularization,
                 regularization_option = regularization_option,
-                coefficient = coefficient
+                regularization_factor = regularization_factor
             )
         )
     else:

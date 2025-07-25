@@ -28,8 +28,8 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 8
-OVERWRITE = True
+MAX_PROCESSES = 4
+OVERWRITE = False
 
 molecule_name = "n2"
 basis = "6-31g"
@@ -43,7 +43,8 @@ connectivities = [
     # "square",
     "all-to-all",
 ]
-n_reps_range = list(range(2, 14, 2)) + [1, 3]
+n_reps_range = list(range(2, 12, 2)) + [1]
+regularization_options = [0, 1, 2]
 
 tasks = [
     LUCJCompressedT2Task(
@@ -60,10 +61,12 @@ tasks = [
             step=2
         ),
         regularization=True,
-        regularization_option=1
+        regularization_option=regularization_option,
+        regularization_factor=1e-3
     )
-    for connectivity, n_reps in itertools.product(connectivities, n_reps_range)
+    for regularization_option in regularization_options
     for d in bond_distance_range
+    for connectivity, n_reps in itertools.product(connectivities, n_reps_range)
 ]
 
 if MAX_PROCESSES == 1:

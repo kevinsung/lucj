@@ -166,6 +166,8 @@ results_compressed_t2 = {}
 for task in tasks_compressed_t2:
     filepath = DATA_ROOT / task.dirpath / "hardware_sqd_data.pickle"
     results_compressed_t2[task] = load_data(filepath)
+    print("results_compressed_t2[task]")
+    print(results_compressed_t2[task])
 
 results_random_bit_string = {}
 for task in tasks_random_bit_string:

@@ -28,7 +28,7 @@ DATA_ROOT = "/media/storage/WanHsuan.Lin/"
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 1
-OVERWRITE = False
+OVERWRITE = True
 
 molecule_name = "fe2s2"
 nelectron, norb = 30, 20
