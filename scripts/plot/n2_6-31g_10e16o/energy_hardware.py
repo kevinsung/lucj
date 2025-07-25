@@ -35,7 +35,7 @@ symmetrize_spin = True
 entropy = 0
 # max_dim_range = [None, 50_000, 100_000, 200_000]
 # max_dim_range = [250, 500]
-max_dim_range = [250, 500, 1000]
+max_dim_range = [500, 1000]
 
 tasks_compressed_t2 = [
     HardwareSQDEnergyTask(
@@ -130,6 +130,7 @@ tasks_random_bit_string = [
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
         energy_tol=energy_tol,
+        valid_string_only=False,
         occupancies_tol=occupancies_tol,
         carryover_threshold=carryover_threshold,
         max_iterations=max_iterations,
@@ -176,12 +177,7 @@ results_random_bit_string = {}
 for task in tasks_random_bit_string:
     filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
     results_random_bit_string[task] = load_data(filepath)
-    # print(filepath)
-    # print(results_random_bit_string[task])
-    # input()
-
-
-
+    
 print("Done loading data.")
 
 
@@ -215,6 +211,7 @@ for i, bond_distance in enumerate(bond_distance_range):
                 samples_per_batch=samples_per_batch,
                 n_batches=n_batches,
                 energy_tol=energy_tol,
+                valid_string_only=False,
                 occupancies_tol=occupancies_tol,
                 carryover_threshold=carryover_threshold,
                 max_iterations=max_iterations,
