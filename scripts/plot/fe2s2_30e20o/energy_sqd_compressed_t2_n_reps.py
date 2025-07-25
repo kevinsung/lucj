@@ -38,6 +38,7 @@ symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
 max_dim_range = [500, 1000]
+max_dim_range = [1000]
 
 dmrg_energy = -116.6056091 #ref: https://github.com/jrm874/sqd_data_repository/blob/main/classical_reference_energies/2Fe-2S/classical_methods_energies.txt
 
@@ -160,6 +161,26 @@ tasks_random_bit_string = [
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
         energy_tol=energy_tol,
+        valid_string_only=False,
+        occupancies_tol=occupancies_tol,
+        carryover_threshold=carryover_threshold,
+        max_iterations=max_iterations,
+        symmetrize_spin=symmetrize_spin,
+        entropy=entropy,
+        max_dim=max_dim,
+    )
+    for max_dim in max_dim_range
+]
+
+tasks_random_valid_bit_string = [
+    RandomSQDEnergyTask(
+        molecule_basename=molecule_basename,
+        bond_distance=None,
+        shots=shots,
+        valid_string_only=True,
+        samples_per_batch=samples_per_batch,
+        n_batches=n_batches,
+        energy_tol=energy_tol,
         occupancies_tol=occupancies_tol,
         carryover_threshold=carryover_threshold,
         max_iterations=max_iterations,
@@ -199,6 +220,7 @@ results_compressed_t2 = {}
 for task in tasks_compressed_t2:
     filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
     results_compressed_t2[task] = load_data(filepath)
+    # print(results_compressed_t2[task])
 
 opt_results_compressed_t2 = {}
 for task in tasks_compressed_t2:
@@ -210,11 +232,20 @@ for task in tasks_compressed_t2_connectivity:
     filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
     results_compressed_t2_connectivity[task] = load_data(filepath)
 
+# print("results_random")
 results_random = {}
 for task in tasks_random_bit_string:
     filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
-    results_random[task] = load_data(filepath)
-    
+    # results_random[task] = load_data(filepath)
+    # print(filepath)
+
+# print("results_random_valid_bitstrings")
+results_random_valid_bitstrings = {}
+for task in tasks_random_valid_bit_string:
+    filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
+    results_random_valid_bitstrings[task] = load_data(filepath)
+#     print(filepath)
+# input()
 data_lucj = {}
 for task in tasks_lucj:
     filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
@@ -243,6 +274,7 @@ for i, (connectivity, max_dim) in enumerate(itertools.product(connectivities, ma
                                 shots=shots,
                                 samples_per_batch=samples_per_batch,
                                 n_batches=n_batches,
+                                valid_string_only=False,
                                 energy_tol=energy_tol,
                                 occupancies_tol=occupancies_tol,
                                 carryover_threshold=carryover_threshold,
@@ -260,22 +292,63 @@ for i, (connectivity, max_dim) in enumerate(itertools.product(connectivities, ma
         results_random[task_random_bit_string]["energy"] - dmrg_energy,
         # results_random[task_random_bit_string]["error"],
         linestyle="--",
-        label="Rand bit str",
+        label="Rand bitstr",
         color="red",
     )
 
     axes[1, i].axhline(
         results_random[task_random_bit_string]["spin_squared"],
         linestyle="--",
-        label="Rand bit str",
+        label="Rand bitstr",
         color="red",
     )
 
     axes[2, i].axhline(
         results_random[task_random_bit_string]["sci_vec_shape"][0],
         linestyle="--",
-        label="Rand bit str",
+        label="Rand bitstr",
         color="red",
+    )
+    
+    tasks_random_valid_bit_string = RandomSQDEnergyTask(
+                                molecule_basename=molecule_basename,
+                                bond_distance=None,
+                                shots=shots,
+                                samples_per_batch=samples_per_batch,
+                                n_batches=n_batches,
+                                valid_string_only=True,
+                                energy_tol=energy_tol,
+                                occupancies_tol=occupancies_tol,
+                                carryover_threshold=carryover_threshold,
+                                max_iterations=max_iterations,
+                                symmetrize_spin=symmetrize_spin,
+                                entropy=entropy,
+                                max_dim=max_dim,
+                            )
+    
+    print("results_random_valid_bitstring")
+    print(results_random_valid_bitstrings[tasks_random_valid_bit_string]["energy"] - dmrg_energy)
+    # print(results_random[task_random_bit_string]["error"])
+    axes[0, i].axhline(
+        results_random_valid_bitstrings[tasks_random_valid_bit_string]["energy"] - dmrg_energy,
+        # results_random[task_random_bit_string]["error"],
+        linestyle="--",
+        label="Rand valid bitstr",
+        color="palevioletred"
+    )
+
+    axes[1, i].axhline(
+        results_random_valid_bitstrings[tasks_random_valid_bit_string]["spin_squared"],
+        linestyle="--",
+        label="Rand valid bitstr",
+        color="palevioletred"
+    )
+
+    axes[2, i].axhline(
+        results_random_valid_bitstrings[tasks_random_valid_bit_string]["sci_vec_shape"][0],
+        linestyle="--",
+        label="Rand valid bitstr",
+        color="palevioletred",
     )
 
     task_lucj_full = SQDEnergyTask(

@@ -9,7 +9,8 @@ from molecules_catalog.util import load_molecular_data
 
 from qiskit.primitives import BitArray
 from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, solve_sci_batch
-from qiskit_addon_sqd.counts import generate_bit_array_uniform
+from qiskit_addon_sqd.counts import bit_array_to_arrays, generate_bit_array_uniform
+from qiskit_addon_sqd.subsampling import postselect_by_hamming_right_and_left
 from qiskit_addon_dice_solver import solve_sci_batch
 # from functools import partial
 
@@ -109,6 +110,29 @@ def run_random_sqd_energy_task(
 
     else:
         bit_array = generate_bit_array_uniform(task.shots, 2 * norb, rand_seed=rng)
+    
+    result_history = []
+
+    def callback(results: list[SCIResult]):
+        result_history.append(results)
+        iteration = len(result_history)
+        logging.info(f"Iteration {iteration}")
+        for i, result in enumerate(results):
+            logging.info(f"\tSubsample {i}")
+            logging.info(f"\t\tEnergy: {result.energy + mol_data.core_energy}")
+            logging.info(
+                f"\t\tSubspace dimension: {np.prod(result.sci_state.amplitudes.shape)}"
+            )
+
+    # # Run configuration recovery loop
+    # raw_bitstrings, raw_probs = bit_array_to_arrays(bit_array)
+    # # If we don't have average orbital occupancy information, simply postselect
+    # # bitstrings with the correct numbers of spin-up and spin-down electrons
+    # bitstrings, probs = postselect_by_hamming_right_and_left(
+    #     raw_bitstrings, raw_probs, hamming_right=nelec[0], hamming_left=nelec[1]
+    # )
+    # print(f"len valid bitstr: {len(bitstrings)}")
+    # assert(0)
 
     # Run SQD
     logging.info(f"{task} Running SQD...\n")
@@ -128,7 +152,8 @@ def run_random_sqd_energy_task(
         symmetrize_spin=task.symmetrize_spin,
         carryover_threshold=task.carryover_threshold,
         seed=rng,
-        max_dim=task.max_dim
+        max_dim=task.max_dim,
+        callback=callback
     )
     logging.info(f"{task} Finish SQD\n")
     energy = result.energy + mol_data.core_energy

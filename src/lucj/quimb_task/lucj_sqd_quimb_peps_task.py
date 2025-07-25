@@ -156,6 +156,17 @@ def load_operator(task: LUCJSQDQuimbPEPSTask, data_dir: str, mol_data):
                     mol_data.ccsd_t1
                 )
             )
+        elif mol_data.ccsd_t2 is None:
+            nelec = mol_data.nelec
+            norb = mol_data.norb
+            c0, c1, c2 = pyscf.ci.cisd.cisdvec_to_amplitudes(
+                mol_data.cisd_vec, norb, nelec[0]
+            )
+            assert abs(c0) > 1e-8
+            t1 = c1 / c0
+            final_orbital_rotation = (
+                ffsim.variational.util.orbital_rotation_from_t1_amplitudes(t1)
+            )
 
         operator = ffsim.UCJOpSpinBalanced(
             diag_coulomb_mats=diag_coulomb_mats,
@@ -290,14 +301,15 @@ def run_lucj_sqd_quimb_task(
         t0 = timeit.default_timer()
         samples = []
         for _ in range(task.shots):
-            _, config, omega = quimb.tensor.belief_propagation.sample_d2bp(peps, seed=task.seed, progbar=False)
+            # config, tn_config, omega = quimb.tensor.belief_propagation.sample_d2bp(peps, seed=task.seed, progbar=False)
+            config, tn_config, omega = quimb.tensor.belief_propagation.sample_hd1bp(peps, seed=task.seed, progbar=False)
             # config, omega = peps.sample_configuration_cluster(
             #     gauges=gauges,
             #     seed=task.seed,
             #     # single site clusters
             #     max_distance=0,
             # )
-            x = "".join(map(str, (config[i] for i in range(circuit.num_qubits))))
+            x = "".join(map(str, (config[f"k{i}"] for i in range(circuit.num_qubits))))
             samples.append(x)
         t1 = timeit.default_timer()
         time = t1 - t0

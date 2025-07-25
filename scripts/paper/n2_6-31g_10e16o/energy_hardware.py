@@ -8,6 +8,8 @@ from lucj.params import LUCJParams, CompressedT2Params
 from lucj.hardware_sqd_task.lucj_compressed_t2_task import HardwareSQDEnergyTask
 from lucj.sqd_energy_task.lucj_random_t2_task import RandomSQDEnergyTask
 
+import json
+
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 
@@ -16,7 +18,7 @@ basis = "6-31g"
 nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-plots_dir = os.path.join("plots", molecule_basename)
+plots_dir = os.path.join("paper", molecule_basename)
 os.makedirs(plots_dir, exist_ok=True)
 
 bond_distance_range = [1.2, 2.4]
@@ -35,7 +37,7 @@ symmetrize_spin = True
 entropy = 0
 # max_dim_range = [None, 50_000, 100_000, 200_000]
 # max_dim_range = [250, 500]
-max_dim_range = [500, 1000]
+max_dim_range = [1000]
 
 tasks_compressed_t2 = [
     HardwareSQDEnergyTask(
@@ -177,25 +179,32 @@ results_random_bit_string = {}
 for task in tasks_random_bit_string:
     filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
     results_random_bit_string[task] = load_data(filepath)
-    
+    # print(filepath)
+    # print(results_random_bit_string[task])
+    # input()
+
+
+
 print("Done loading data.")
 
 
-width = 0.2
-prop_cycle = plt.rcParams["axes.prop_cycle"]
-colors = prop_cycle.by_key()["color"]
+width = 0.15
+# prop_cycle = plt.rcParams["axes.prop_cycle"]
+# colors = prop_cycle.by_key()["color"]
 alphas = [0.5, 1.0]
+
+with open('scripts/paper/color.json', 'r') as file:
+    colors = json.load(file)
 
 
 row_error = 0
-row_spin_square = 1
 # row_loss = 2
-row_sci_vec_dim = 2
+row_sci_vec_dim = 1
 
 fig, axes = plt.subplots(
-    3,
+    2,
     len(bond_distance_range),
-    figsize=(6, 6),  # , layout="constrained"
+    figsize=(6, 5),  # , layout="constrained"
 )
 
 x_max_dim_range = np.arange(len(max_dim_range))
@@ -223,28 +232,21 @@ for i, bond_distance in enumerate(bond_distance_range):
     ]
 
     errors = [results_random_bit_string[task]['error'] for task in tasks_random_bit_string]
-    spin_squares = [results_random_bit_string[task]['spin_squared'] for task in tasks_random_bit_string]
     sci_vec_shape = [results_random_bit_string[task]['sci_vec_shape'][0] for task in tasks_random_bit_string]
     axes[row_error, i].bar(
         x_max_dim_range,
         errors,
         width=width,
         label="Rand bitstr",
-        color='red',
+        color=colors["random_valid_bit_string"],
     )
-    axes[row_spin_square, i].bar(
-        x_max_dim_range,
-        spin_squares,
-        width=width,
-        label="Rand bitstr",
-        color='red',
-    )
+    
     axes[row_sci_vec_dim, i].bar(
         x_max_dim_range,
         sci_vec_shape,
         width=width,
         label="Rand bitstr",
-        color='red',
+        color=colors["random_valid_bit_string"],
     )
 
     # random lucj
@@ -275,7 +277,6 @@ for i, bond_distance in enumerate(bond_distance_range):
             for max_dim in max_dim_range]
 
     errors = [results_random[task]['error'] for task in tasks_random]
-    spin_squares = [results_random[task]["spin_squared"] for task in tasks_random]
     sci_vec_shape = [results_random[task]["sci_vec_shape"][0] for task in tasks_random]
 
     axes[row_error, i].bar(
@@ -283,21 +284,15 @@ for i, bond_distance in enumerate(bond_distance_range):
         errors,
         width=width,
         label="LUCJ random",
-        color=colors[0],
+        color=colors["lucj_random"],
     )
-    axes[row_spin_square, i].bar(
-        x_max_dim_range + width,
-        spin_squares,
-        width=width,
-        label="LUCJ random",
-        color=colors[0],
-    )
+    
     axes[row_sci_vec_dim, i].bar(
         x_max_dim_range + width,
         sci_vec_shape,
         width=width,
         label="LUCJ random",
-        color=colors[0],
+        color=colors["lucj_random"],
     )
 
     # LUCJ data
@@ -328,7 +323,6 @@ for i, bond_distance in enumerate(bond_distance_range):
             for max_dim in max_dim_range]
     
     errors = [results_truncated_t2[task]["error"] for task in tasks_truncated_t2]
-    spin_squares = [results_truncated_t2[task]["spin_squared"] for task in tasks_truncated_t2]
     sci_vec_shape = [ results_truncated_t2[task]["sci_vec_shape"][0] for task in tasks_truncated_t2]
 
     axes[row_error, i].bar(
@@ -336,21 +330,14 @@ for i, bond_distance in enumerate(bond_distance_range):
         errors,
         width=width,
         label="LUCJ truncated",
-        color=colors[2],
-    )
-    axes[row_spin_square, i].bar(
-        x_max_dim_range + 2* width,
-        spin_squares,
-        width=width,
-        label="LUCJ truncated",
-        color=colors[2],
+        color=colors["lucj_truncated"],
     )
     axes[row_sci_vec_dim, i].bar(
         x_max_dim_range + 2* width,
         sci_vec_shape,
         width=width,
         label="LUCJ truncated",
-        color=colors[2],
+        color=colors["lucj_truncated"],
     )
 
 
@@ -384,7 +371,6 @@ for i, bond_distance in enumerate(bond_distance_range):
             for max_dim in max_dim_range]
     
     errors = [results_compressed_t2[task]["error"] for task in tasks_compressed_t2]
-    spin_squares = [results_compressed_t2[task]["spin_squared"] for task in tasks_compressed_t2]
     sci_vec_shape = [results_compressed_t2[task]["sci_vec_shape"][0] for task in tasks_compressed_t2]
 
     axes[row_error, i].bar(
@@ -392,21 +378,14 @@ for i, bond_distance in enumerate(bond_distance_range):
         errors,
         width=width,
         label="LUCJ compressed",
-        color=colors[5],
-    )
-    axes[row_spin_square, i].bar(
-        x_max_dim_range + 3 * width,
-        spin_squares,
-        width=width,
-        label="LUCJ compressed",
-        color=colors[5],
+        color=colors["lucj_compressed"],
     )
     axes[row_sci_vec_dim, i].bar(
         x_max_dim_range + 3 * width,
         sci_vec_shape,
         width=width,
         label="LUCJ compressed",
-        color=colors[5],
+        color=colors["lucj_compressed"],
     )
 
     axes[row_error, i].set_title(f"R: {bond_distance} Å ")
@@ -415,10 +394,6 @@ for i, bond_distance in enumerate(bond_distance_range):
     axes[row_error, i].set_ylabel("Energy error (Hartree)")
     axes[row_error, i].set_xlabel("max dim")
     axes[row_error, i].set_xticks(x_max_dim_range + width, max_dim_range)
-    axes[row_spin_square, i].set_ylim(0, 0.1)
-    axes[row_spin_square, i].set_ylabel("Spin square")
-    axes[row_spin_square, i].set_xlabel("max dim")
-    axes[row_spin_square, i].set_xticks(x_max_dim_range + width, max_dim_range)
 
     axes[row_sci_vec_dim, i].set_ylabel("SCI subspace")
     axes[row_sci_vec_dim, i].set_xlabel("max dim")
@@ -426,7 +401,7 @@ for i, bond_distance in enumerate(bond_distance_range):
 
     # axes[row_sci_vec_dim, 0].legend(ncol=2, )
     leg = axes[row_sci_vec_dim, 1].legend(
-        bbox_to_anchor=(-0.3, -0.4), loc="upper center", ncol=3
+        bbox_to_anchor=(-0.48, -0.3), loc="upper center", ncol=4, columnspacing=0.8, handletextpad=0.2
     )
     # leg = axes[row_sci_vec_dim, 1].legend(
     #     bbox_to_anchor=(0.5, -0.4), loc="upper center", ncol=3

@@ -10,24 +10,27 @@ import scipy.stats
 from molecules_catalog.util import load_molecular_data
 from ffsim.variational.util import interaction_pairs_spin_balanced
 from lucj.params import LUCJParams, CompressedT2Params
-
+from functools import partial
 from qiskit.primitives import BitArray
-from qiskit_addon_sqd.fermion import SCIResult, diagonalize_fermionic_hamiltonian
-# from functools import partial
-from qiskit_addon_dice_solver import solve_sci_batch
+from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, SCIResult, solve_sci_batch
+
+from lucj.hardware_sqd_task.hardware_job.hardware_job import (
+    constrcut_lucj_circuit,
+    run_on_hardware,
+)
+
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass(frozen=True, kw_only=True)
-class SQDEnergyTask:
+class HardwareSQDEnergyTask:
     molecule_basename: str
     bond_distance: float | None
     lucj_params: LUCJParams
-    compressed_t2_params: CompressedT2Params | None
+    compressed_t2_params: CompressedT2Params
     connectivity_opt: bool = False
     random_op: bool = False
-    regularization: bool = False,
-    regularization_option: int = 0,
     shots: int
     samples_per_batch: int
     n_batches: int
@@ -47,8 +50,6 @@ class SQDEnergyTask:
             compress_option = "connectivity_opt-True"
         elif self.compressed_t2_params is not None:
             compress_option = self.compressed_t2_params.dirpath
-            if self.regularization:
-                compress_option = f"{compress_option}/regularization_{self.regularization_option}"
         else:
             compress_option = "truncated"
         return (
@@ -80,8 +81,6 @@ class SQDEnergyTask:
             compress_option = "connectivity_opt-True"
         elif self.compressed_t2_params is not None:
             compress_option = self.compressed_t2_params.dirpath
-            if self.regularization:
-                compress_option = f"{compress_option}/regularization_{self.regularization_option}"
         else:
             compress_option = "truncated"
         return (
@@ -96,7 +95,7 @@ class SQDEnergyTask:
         )
 
 
-def load_operator(task: SQDEnergyTask, data_dir: str, mol_data):
+def load_operator(task: HardwareSQDEnergyTask, data_dir: str, mol_data):
     if task.random_op:
         logging.info(f"Generate random operator for {task}.\n")
         norb = mol_data.norb
@@ -126,7 +125,6 @@ def load_operator(task: SQDEnergyTask, data_dir: str, mol_data):
             )
         elif mol_data.ccsd_t2 is None:
             nelec = mol_data.nelec
-            norb = mol_data.norb
             c0, c1, c2 = pyscf.ci.cisd.cisdvec_to_amplitudes(
                 mol_data.cisd_vec, norb, nelec[0]
             )
@@ -170,38 +168,24 @@ def load_operator(task: SQDEnergyTask, data_dir: str, mol_data):
                 t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
                 interaction_pairs=(pairs_aa, pairs_ab),
             )
+
     return operator
 
-def run_sqd_energy_task(
-    task: SQDEnergyTask,
+
+def run_hardware_sqd_energy_task(
+    task: HardwareSQDEnergyTask,
     *,
     data_dir: Path,
     molecules_catalog_dir: Path | None = None,
     overwrite: bool = True,
-) -> SQDEnergyTask:
+) -> HardwareSQDEnergyTask:
     logging.info(f"{task} Starting...\n")
     os.makedirs(data_dir / task.dirpath, exist_ok=True)
 
-    data_filename = data_dir / task.dirpath / "sqd_data.pickle"
+    data_filename = data_dir / task.dirpath / "hardware_sqd_data.pickle"
     if (not overwrite) and os.path.exists(data_filename):
         logging.info(f"Data for {task} already exists. Skipping...\n")
         return task
-
-    # debug fe2s2
-    if os.path.exists(data_filename):
-        import datetime
-        # Get the modification timestamp of the file
-        modification_timestamp = os.path.getmtime(data_filename)
-
-        # Convert the timestamp to a datetime object
-        modification_time = datetime.datetime.fromtimestamp(modification_timestamp)
-
-        # Get the current time
-        pass_time = datetime.datetime(2025, 7, 24)
-
-        # Calculate the time difference
-        if pass_time < modification_time:
-            return task
 
     # Get molecular data and molecular Hamiltonian
     if task.molecule_basename == "fe2s2_30e20o":
@@ -218,95 +202,40 @@ def run_sqd_energy_task(
     nelec = mol_data.nelec
     mol_hamiltonian = mol_data.hamiltonian
 
-    # Initialize Hamiltonian, initial state, and LUCJ parameters
-    hamiltonian = ffsim.linear_operator(mol_hamiltonian, norb=norb, nelec=nelec)
-    reference_state = ffsim.hartree_fock_state(norb, nelec)
-
     # use CCSD to initialize parameters
-    vqe_filename = data_dir / task.operatorpath / "data.pickle"
-    sample_filename = data_dir / task.operatorpath / "sample.pickle"
-    state_vector_filename = data_dir / task.operatorpath / "state_vector.npy"
-    
-    if task.molecule_basename == "n2_cc-pvdz_10e26o" and task.lucj_params.connectivity == "all-to-all":
-        state_vector_filename = f"/media/storage/WanHsuan.Lin/lucj/lucj_ccsd_state_vector/n2_cc-pvdz_10e26o/bond_distance-{task.bond_distance:.5f}/connectivity-all-to-all/n_reps-{task.lucj_params.n_reps}/with_final_orbital_rotation-True/state_vector.npy"
+    sample_filename = data_dir / task.operatorpath / "hardware_sample.pickle"
 
     rng = np.random.default_rng(task.entropy)
-    
+
     if not os.path.exists(sample_filename):
-        if os.path.exists(state_vector_filename):
-            with open(state_vector_filename, "rb") as f:
-                final_state = np.load(f)
-        else:
-            operator = load_operator(task, data_dir, mol_data)
-            if operator is None:
-                return
-            
-            # Compute final state
-            if not os.path.exists(state_vector_filename):
-                final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
-                with open(state_vector_filename, "wb") as f:
-                    np.save(f, final_state)
-        
-        # record vqe energy
-        if task.molecule_basename != "fe2s2_30e20o":
-            logging.info(f"{task} Computing VQE data...\n")
-            energy = np.vdot(final_state, hamiltonian @ final_state).real
-            if mol_data.fci_energy is None:
-                error = energy - mol_data.sci_energy
-            else:
-                error = energy - mol_data.fci_energy
-            spin_squared = ffsim.spin_square(
-                final_state, norb=mol_data.norb, nelec=mol_data.nelec
-            )
-            probs = np.abs(final_state) ** 2
-            entropy = scipy.stats.entropy(probs)
+        assert(0)
+        operator = load_operator(task, data_dir, mol_data)
+        if operator is None:
+            return
+        # construct lucj circuit
+        circuit = constrcut_lucj_circuit(norb, nelec, operator)
 
-            data = {
-                "energy": energy,
-                "error": error,
-                "spin_squared": spin_squared,
-                "entropy": entropy,
-            }
+        # run on hardware and get the sample
+        logging.info(f"{task} Sampling from real device...\n")
+        samples = run_on_hardware(circuit, norb, 1_000_000)
 
-            logging.info(f"{task} Saving VQE data...\n")
-            with open(vqe_filename, "wb") as f:
-                pickle.dump(data, f)
-
-
-        logging.info(f"{task} Sampling...\n")
-        samples = ffsim.sample_state_vector(
-            final_state,
-            norb=norb,
-            nelec=nelec,
-            shots=1_000_000,
-            seed=rng,
-            bitstring_type=ffsim.BitstringType.INT,
-        )
-        bit_array = BitArray.from_samples(samples, num_bits=2 * norb)
-        bit_array_count = bit_array.get_int_counts()
         with open(sample_filename, "wb") as f:
-            pickle.dump(bit_array_count, f)
-    
+            pickle.dump(samples, f)
+
     else:
         logging.info(f"{task} load sample...\n")
         with open(sample_filename, "rb") as f:
-            bit_array_count = pickle.load(f)
-            bit_array = BitArray.from_counts(bit_array_count)
-    
-    array = bit_array.to_bool_array()
+            samples = pickle.load(f)
 
-    # Generate n unique random integers from the specified range
-    unique_integers = np.random.choice(np.arange(0, array.shape[0]), size=task.shots, replace=False)
-    array = array[unique_integers]
-    bit_array = BitArray.from_bool_array(array)
-    
+    logging.info(f"{task} Done sampling\n")
+    # print(samples)
+    samples = samples[: task.shots]
+    # print(samples)
 
     # Run SQD
     logging.info(f"{task} Running SQD...\n")
-    # sci_solver = partial(solve_sci_batch, spin_sq=0.0)
-
+    sci_solver = partial(solve_sci_batch, spin_sq=0.0)
     result_history = []
-
     def callback(results: list[SCIResult]):
         result_history.append(results)
         iteration = len(result_history)
@@ -319,7 +248,7 @@ def run_sqd_energy_task(
     result = diagonalize_fermionic_hamiltonian(
         mol_hamiltonian.one_body_tensor,
         mol_hamiltonian.two_body_tensor,
-        bit_array,
+        samples,
         samples_per_batch=task.samples_per_batch,
         norb=norb,
         nelec=nelec,
@@ -327,12 +256,12 @@ def run_sqd_energy_task(
         energy_tol=task.energy_tol,
         occupancies_tol=task.occupancies_tol,
         max_iterations=task.max_iterations,
-        sci_solver=solve_sci_batch,
+        sci_solver=sci_solver,
         symmetrize_spin=task.symmetrize_spin,
         carryover_threshold=task.carryover_threshold,
         seed=rng,
-        callback=callback,
-        max_dim=task.max_dim
+        max_dim=task.max_dim,
+        callback=callback
     )
     energy = result.energy + mol_data.core_energy
     sci_state = result.sci_state
@@ -351,12 +280,7 @@ def run_sqd_energy_task(
         "spin_squared": spin_squared,
         "sci_vec_shape": sci_state.amplitudes.shape,
     }
-    
+
     logging.info(f"{task} Saving SQD data...\n")
     with open(data_filename, "wb") as f:
         pickle.dump(data, f)
-
-
-
-
-
