@@ -8,7 +8,8 @@ import numpy as np
 from molecules_catalog.util import load_molecular_data
 
 from qiskit.primitives import BitArray
-from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, solve_sci_batch, generate_bit_array_uniform
+from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, solve_sci_batch
+from qiskit_addon_sqd.counts import generate_bit_array_uniform
 from qiskit_addon_dice_solver import solve_sci_batch
 # from functools import partial
 

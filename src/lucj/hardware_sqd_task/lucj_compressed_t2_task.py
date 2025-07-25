@@ -199,7 +199,6 @@ def run_hardware_sqd_energy_task(
     rng = np.random.default_rng(task.entropy)
 
     if not os.path.exists(sample_filename):
-        assert(0)
         operator = load_operator(task, data_dir, mol_data)
         if operator is None:
             return
