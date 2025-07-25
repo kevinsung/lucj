@@ -27,6 +27,7 @@ class UCCSDSQDInitialParamsTask:
     max_iterations: int
     symmetrize_spin: bool
     entropy: int | None
+    max_dim: int | None
 
     @property
     def dirpath(self) -> Path:
@@ -47,8 +48,10 @@ class UCCSDSQDInitialParamsTask:
             / f"max_iterations-{self.max_iterations}"
             / f"symmetrize_spin-{self.symmetrize_spin}"
             / f"entropy-{self.entropy}"
+            / f"max_dim-{self.max_dim}"
         )
 
+    @property
     def vqepath(self) -> Path:
         return (
             Path(self.molecule_basename)

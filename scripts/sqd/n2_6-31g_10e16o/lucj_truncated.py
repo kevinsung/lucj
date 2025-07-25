@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import itertools
 import logging
 import os
 from concurrent.futures import ProcessPoolExecutor
@@ -9,7 +8,7 @@ from pathlib import Path
 import numpy as np
 from tqdm import tqdm
 
-from lucj.params import LUCJParams, CompressedT2Params
+from lucj.params import LUCJParams
 from lucj.sqd_energy_task.lucj_compressed_t2_task_sci import (
     SQDEnergyTask,
     run_sqd_energy_task,

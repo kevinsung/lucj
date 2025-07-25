@@ -35,7 +35,11 @@ basis = "6-31g"
 nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-bond_distance_range = list(range(0.9, 2.7, 0.1))
+start = 0.9
+stop = 2.7
+step = 0.1
+bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) + 1)
+
 
 shots = 100_000
 n_batches = 10
@@ -69,7 +73,7 @@ tasks = [
 
 if MAX_PROCESSES == 1:
     for task in tqdm(tasks):
-        run_sqd_energy_task(
+        run_uccsd_sqd_initial_params_task(
             task,
             data_dir=DATA_DIR,
             molecules_catalog_dir=MOLECULES_CATALOG_DIR,
@@ -80,7 +84,7 @@ else:
         with ProcessPoolExecutor(MAX_PROCESSES) as executor:
             for task in tasks:
                 future = executor.submit(
-                    run_sqd_energy_task,
+                    run_uccsd_sqd_initial_params_task,
                     task,
                     data_dir=DATA_DIR,
                     molecules_catalog_dir=MOLECULES_CATALOG_DIR,

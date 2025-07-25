@@ -6,7 +6,6 @@ import os
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
-import numpy as np
 from tqdm import tqdm
 
 from lucj.params import LUCJParams, CompressedT2Params
@@ -86,10 +85,9 @@ tasks = [
         entropy=entropy,
         max_dim=max_dim,
     )
-    for max_dim, n_reps in itertools.product(max_dim_range, n_reps_range)
+    for n_reps in n_reps_range
     for connectivity in connectivities
     for d in bond_distance_range
-    for samples_per_batch in samples_per_batch_range
 ]
 
 if MAX_PROCESSES == 1:
