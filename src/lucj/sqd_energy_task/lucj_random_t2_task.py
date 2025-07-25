@@ -111,18 +111,24 @@ def run_random_sqd_energy_task(
     else:
         bit_array = generate_bit_array_uniform(task.shots, 2 * norb, rand_seed=rng)
     
-    result_history = []
+    result_history_energy = []
+    result_history_subspace_dim = []
 
     def callback(results: list[SCIResult]):
-        result_history.append(results)
+        result_energy = []
+        result_subspace_dim = []
         iteration = len(result_history)
         logging.info(f"Iteration {iteration}")
         for i, result in enumerate(results):
+            result_energy.append(result.energy + mol_data.core_energy)
+            result_subspace_dim.append(result.sci_state.amplitudes.shape)
             logging.info(f"\tSubsample {i}")
             logging.info(f"\t\tEnergy: {result.energy + mol_data.core_energy}")
             logging.info(
                 f"\t\tSubspace dimension: {np.prod(result.sci_state.amplitudes.shape)}"
             )
+        result_history_energy.append(result_energy)
+        result_history_subspace_dim.append(result_subspace_dim)
 
     # # Run configuration recovery loop
     # raw_bitstrings, raw_probs = bit_array_to_arrays(bit_array)
@@ -170,6 +176,8 @@ def run_random_sqd_energy_task(
         "error": error,
         "spin_squared": spin_squared,
         "sci_vec_shape": sci_state.amplitudes.shape,
+        "history_energy": result_history_energy
+        "history_sci_vec_shape": result_history_subspace_dim
     }
     
     logging.info(f"{task} Saving SQD data...\n")

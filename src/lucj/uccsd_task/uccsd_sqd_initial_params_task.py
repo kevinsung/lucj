@@ -36,6 +36,7 @@ class UCCSDSQDInitialParamsTask:
                 if self.bond_distance is None
                 else f"bond_distance-{self.bond_distance:.5f}"
             )
+            / "uccsd"
             / f"shots-{self.shots}"
             / f"samples_per_batch-{self.samples_per_batch}"
             / f"n_batches-{self.n_batches}"
@@ -45,6 +46,17 @@ class UCCSDSQDInitialParamsTask:
             / f"max_iterations-{self.max_iterations}"
             / f"symmetrize_spin-{self.symmetrize_spin}"
             / f"entropy-{self.entropy}"
+        )
+
+    def vqepath(self) -> Path:
+        return (
+            Path(self.molecule_basename)
+            / (
+                ""
+                if self.bond_distance is None
+                else f"bond_distance-{self.bond_distance:.5f}"
+            )
+            / "uccsd"
         )
 
 
@@ -59,7 +71,8 @@ def run_uccsd_sqd_initial_params_task(
     logging.info(f"{task} Starting...\n")
     os.makedirs(data_dir / task.dirpath, exist_ok=True)
 
-    data_filename = data_dir / task.dirpath / "data.pickle"
+    data_filename = data_dir / task.dirpath / "sqd_data.pickle"
+    vqe_data_filename = data_dir / task.vqepath / "data.pickle"
     if (not overwrite) and os.path.exists(data_filename):
         logging.info(f"Data for {task} already exists. Skipping...\n")
         return task
@@ -74,6 +87,7 @@ def run_uccsd_sqd_initial_params_task(
     nelec = mol_data.nelec
 
     # Initialize initial state
+    hamiltonian = ffsim.linear_operator(mol_hamiltonian, norb=norb, nelec=nelec)
     reference_state = ffsim.hartree_fock_state(norb, nelec)
 
     # use CCSD to initialize parameters
@@ -81,6 +95,30 @@ def run_uccsd_sqd_initial_params_task(
 
     # Compute final state
     final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
+
+    # record vqe energy
+    logging.info(f"{task} Computing VQE data...\n")
+    energy = np.vdot(final_state, hamiltonian @ final_state).real
+    if mol_data.fci_energy is None:
+        error = energy - mol_data.sci_energy
+    else:
+        error = energy - mol_data.fci_energy
+    spin_squared = ffsim.spin_square(
+        final_state, norb=mol_data.norb, nelec=mol_data.nelec
+    )
+    probs = np.abs(final_state) ** 2
+    entropy = scipy.stats.entropy(probs)
+    
+    data = {
+        "energy": energy,
+        "error": error,
+        "spin_squared": spin_squared,
+        "entropy": entropy,
+    }
+
+    logging.info(f"{task} Saving VQE data...\n")
+    with open(vqe_data_filename, "wb") as f:
+        pickle.dump(data, f)
 
     # Run SQD
     logging.info(f"{task} Running SQD...\n")
@@ -93,6 +131,26 @@ def run_uccsd_sqd_initial_params_task(
         seed=rng,
         bitstring_type=ffsim.BitstringType.INT,
     )
+
+    result_history_energy = []
+    result_history_subspace_dim = []
+
+    def callback(results: list[SCIResult]):
+        result_energy = []
+        result_subspace_dim = []
+        iteration = len(result_history)
+        logging.info(f"Iteration {iteration}")
+        for i, result in enumerate(results):
+            result_energy.append(result.energy + mol_data.core_energy)
+            result_subspace_dim.append(result.sci_state.amplitudes.shape)
+            logging.info(f"\tSubsample {i}")
+            logging.info(f"\t\tEnergy: {result.energy + mol_data.core_energy}")
+            logging.info(
+                f"\t\tSubspace dimension: {np.prod(result.sci_state.amplitudes.shape)}"
+            )
+        result_history_energy.append(result_energy)
+        result_history_subspace_dim.append(result_subspace_dim)
+
     bit_array = BitArray.from_samples(samples, num_bits=2 * norb)
     sci_solver = partial(solve_sci_batch, spin_sq=0.0)
     result = diagonalize_fermionic_hamiltonian(
@@ -110,6 +168,8 @@ def run_uccsd_sqd_initial_params_task(
         symmetrize_spin=task.symmetrize_spin,
         carryover_threshold=task.carryover_threshold,
         seed=rng,
+        callback=callback,
+        max_dim=task.max_dim
     )
     energy = result.energy + mol_data.core_energy
     sci_state = result.sci_state

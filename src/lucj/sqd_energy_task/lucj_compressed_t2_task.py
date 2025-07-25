@@ -187,21 +187,21 @@ def run_sqd_energy_task(
         logging.info(f"Data for {task} already exists. Skipping...\n")
         return task
 
-    # debug fe2s2
-    if os.path.exists(data_filename):
-        import datetime
-        # Get the modification timestamp of the file
-        modification_timestamp = os.path.getmtime(data_filename)
+    # # debug fe2s2
+    # if os.path.exists(data_filename):
+    #     import datetime
+    #     # Get the modification timestamp of the file
+    #     modification_timestamp = os.path.getmtime(data_filename)
 
-        # Convert the timestamp to a datetime object
-        modification_time = datetime.datetime.fromtimestamp(modification_timestamp)
+    #     # Convert the timestamp to a datetime object
+    #     modification_time = datetime.datetime.fromtimestamp(modification_timestamp)
 
-        # Get the current time
-        pass_time = datetime.datetime(2025, 7, 24)
+    #     # Get the current time
+    #     pass_time = datetime.datetime(2025, 7, 24)
 
-        # Calculate the time difference
-        if pass_time < modification_time:
-            return task
+    #     # Calculate the time difference
+    #     if pass_time < modification_time:
+    #         return task
 
     # Get molecular data and molecular Hamiltonian
     if task.molecule_basename == "fe2s2_30e20o":
@@ -305,16 +305,26 @@ def run_sqd_energy_task(
     logging.info(f"{task} Running SQD...\n")
     # sci_solver = partial(solve_sci_batch, spin_sq=0.0)
 
-    result_history = []
+    result_history_energy = []
+    result_history_subspace_dim = []
 
     def callback(results: list[SCIResult]):
-        result_history.append(results)
+        result_energy = []
+        result_subspace_dim = []
         iteration = len(result_history)
         logging.info(f"Iteration {iteration}")
         for i, result in enumerate(results):
+            result_energy.append(result.energy + mol_data.core_energy)
+            result_subspace_dim.append(result.sci_state.amplitudes.shape)
             logging.info(f"\tSubsample {i}")
             logging.info(f"\t\tEnergy: {result.energy + mol_data.core_energy}")
-            logging.info(f"\t\tSubspace dimension: {np.prod(result.sci_state.amplitudes.shape)}")
+            logging.info(
+                f"\t\tSubspace dimension: {np.prod(result.sci_state.amplitudes.shape)}"
+            )
+        result_history_energy.append(result_energy)
+        result_history_subspace_dim.append(result_subspace_dim)
+
+
 
     result = diagonalize_fermionic_hamiltonian(
         mol_hamiltonian.one_body_tensor,
@@ -334,6 +344,7 @@ def run_sqd_energy_task(
         callback=callback,
         max_dim=task.max_dim
     )
+    logging.info(f"{task} Finish SQD\n")
     energy = result.energy + mol_data.core_energy
     sci_state = result.sci_state
     spin_squared = sci_state.spin_square()
@@ -350,6 +361,8 @@ def run_sqd_energy_task(
         "error": error,
         "spin_squared": spin_squared,
         "sci_vec_shape": sci_state.amplitudes.shape,
+        "history_energy": result_history_energy
+        "history_sci_vec_shape": result_history_subspace_dim
     }
     
     logging.info(f"{task} Saving SQD data...\n")

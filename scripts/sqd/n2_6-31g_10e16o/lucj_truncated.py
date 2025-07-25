@@ -29,35 +29,33 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 16
-OVERWRITE = True
+OVERWRITE = False
 
 molecule_name = "n2"
 basis = "6-31g"
 nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-bond_distance_range = [1.2, 2.4]
+bond_distance_range = [1.2]
 
 connectivities = [
     "heavy-hex",
+    "square",
     "all-to-all",
 ]
-
-n_reps_range = list(range(2, 12, 2))
-
 shots = 100_000
-n_batches = 3
+n_batches = 10
 energy_tol = 1e-5
 occupancies_tol = 1e-3
 carryover_threshold = 1e-3
-max_iterations = 100
+max_iterations = 1
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
-
 max_dim = 4000
 samples_per_batch = max_dim
 
+n_reps_range = list(range(1, 10, 1)) + list(range(10, 110, 10)) 
 
 
 tasks = [
@@ -69,11 +67,9 @@ tasks = [
             n_reps=n_reps,
             with_final_orbital_rotation=True,
         ),
-        compressed_t2_params=CompressedT2Params(
-            multi_stage_optimization=True,
-            begin_reps=20,
-            step=2
-        ),
+        random_op=False,
+        connectivity_opt=False,
+        compressed_t2_params=None,
         regularization=False,
         shots=shots,
         samples_per_batch=samples_per_batch,
@@ -86,10 +82,9 @@ tasks = [
         entropy=entropy,
         max_dim=max_dim,
     )
-    for max_dim, n_reps in itertools.product(max_dim_range, n_reps_range)
     for connectivity in connectivities
     for d in bond_distance_range
-    for samples_per_batch in samples_per_batch_range
+    for n_reps in n_reps_range
 ]
 
 if MAX_PROCESSES == 1:

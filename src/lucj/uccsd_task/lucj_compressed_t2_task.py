@@ -16,7 +16,7 @@ class UCCSDCompressedTask:
     molecule_basename: str
     bond_distance: float | None
     lucj_params: LUCJParams
-    compressed_t2_params: CompressedT2Params | None
+    compressed_t2_params: CompressedT2Params
     connectivity_opt: bool = False
     random_op: bool = False
     regularization: bool = False,
@@ -24,16 +24,9 @@ class UCCSDCompressedTask:
 
     @property
     def dirpath(self) -> Path:
-        if self.random_op:
-            compress_option = "random"
-        elif self.connectivity_opt:
-            compress_option = "connectivity_opt-True"
-        elif self.compressed_t2_params is not None:
-            compress_option = self.compressed_t2_params.dirpath
-            if self.regularization:
-                compress_option = f"{compress_option}/regularization_{self.regularization_option}"
-        else:
-            compress_option = "truncated"
+        compress_option = self.compressed_t2_params.dirpath
+        if self.regularization:
+            compress_option = f"{compress_option}/regularization_{self.regularization_option}"
         return (
             Path(self.molecule_basename)
             / (
