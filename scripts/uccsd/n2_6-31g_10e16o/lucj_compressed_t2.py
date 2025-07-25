@@ -9,10 +9,10 @@ from pathlib import Path
 import numpy as np
 from tqdm import tqdm
 
-from lucj.params import LUCJParams
-from lucj.tasks.uccsd_compressed_t2_params_task import (
-    UCCSDCompressedT2ParamsTask,
-    run_uccsd_compressed_t2_params_task
+from lucj.params import LUCJParams, CompressedT2Params
+from lucj.uccsd_task.lucj_compressed_t2_task import (
+    UCCSDCompressedTask,
+    run_vqe_energy_task,
 )
 
 filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}.log"
@@ -25,9 +25,10 @@ logging.basicConfig(
 )
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
-DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
+# DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 32
+MAX_PROCESSES = 2
 OVERWRITE = False
 
 molecule_name = "n2"
@@ -35,22 +36,15 @@ basis = "6-31g"
 nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-start = 0.9
-stop = 2.7
-step = 0.1
-bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) + 1)
-# bond_distance_range = [0.9, 1.0, 1.2, 1.5, 1.8, 2.0, 2.7]
 bond_distance_range = [1.2, 2.4]
 
 connectivities = [
-    "heavy-hex",
-    # "square",
     "all-to-all",
 ]
 n_reps_range = list(range(2, 12, 2))
 
 tasks = [
-    UCCSDCompressedT2ParamsTask(
+    UCCSDCompressedTask(
         molecule_basename=molecule_basename,
         bond_distance=d,
         lucj_params=LUCJParams(
@@ -58,6 +52,11 @@ tasks = [
             n_reps=n_reps,
             with_final_orbital_rotation=True,
         ),
+        compressed_t2_params=CompressedT2Params(
+            multi_stage_optimization=True,
+            begin_reps=20,
+            step=2
+        )
     )
     for connectivity, n_reps in itertools.product(connectivities, n_reps_range)
     for d in bond_distance_range
@@ -65,7 +64,7 @@ tasks = [
 
 if MAX_PROCESSES == 1:
     for task in tqdm(tasks):
-        run_uccsd_compressed_t2_params_task(
+        run_vqe_energy_task(
             task,
             data_dir=DATA_DIR,
             molecules_catalog_dir=MOLECULES_CATALOG_DIR,
@@ -76,7 +75,7 @@ else:
         with ProcessPoolExecutor(MAX_PROCESSES) as executor:
             for task in tasks:
                 future = executor.submit(
-                    run_uccsd_compressed_t2_params_task,
+                    run_vqe_energy_task,
                     task,
                     data_dir=DATA_DIR,
                     molecules_catalog_dir=MOLECULES_CATALOG_DIR,

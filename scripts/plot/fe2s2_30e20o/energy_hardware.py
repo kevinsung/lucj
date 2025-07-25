@@ -33,7 +33,7 @@ symmetrize_spin = True
 entropy = 0
 # max_dim_range = [None, 50_000, 100_000, 200_000]
 # max_dim_range = [250, 500]
-max_dim_range = [500, 1000]
+max_dim_range = [1000]
 dmrg_energy = -116.6056091 #ref: https://github.com/jrm874/sqd_data_repository/blob/main/classical_reference_energies/2Fe-2S/classical_methods_energies.txt
 
 tasks_compressed_t2 = [
@@ -124,6 +124,7 @@ tasks_random_bit_string = [
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
+        valid_string_only=False,
         energy_tol=energy_tol,
         occupancies_tol=occupancies_tol,
         carryover_threshold=carryover_threshold,
@@ -173,6 +174,9 @@ results_random_bit_string = {}
 for task in tasks_random_bit_string:
     filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
     results_random_bit_string[task] = load_data(filepath)
+    # print(filepath)
+    # print(results_random_bit_string[task])
+    # input()
 
 
 print("Done loading data.")
