@@ -85,7 +85,7 @@ def run_vqe_energy_task(
     logging.info(f"{task} Starting...\n")
     os.makedirs(data_dir / task.dirpath, exist_ok=True)
 
-    data_filename = data_dir / task.operatorpath / "vqe_uccsd_data.pickle"
+    data_filename = data_dir / task.dirpath / "data_uccsd.pickle"
     if (not overwrite) and os.path.exists(data_filename):
         logging.info(f"Data for {task} already exists. Skipping...\n")
         return task
@@ -111,7 +111,7 @@ def run_vqe_energy_task(
     reference_state = ffsim.hartree_fock_state(norb, nelec)
 
     # use CCSD to initialize parameters
-    state_vector_filename = data_dir / task.operatorpath / "state_vector_uccsd.npy"
+    state_vector_filename = data_dir / task.dirpath / "state_vector_uccsd.npy"
     
     if os.path.exists(state_vector_filename):
         with open(state_vector_filename, "rb") as f:

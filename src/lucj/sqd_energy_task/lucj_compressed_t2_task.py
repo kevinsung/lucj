@@ -306,6 +306,7 @@ def run_sqd_energy_task(
     # sci_solver = partial(solve_sci_batch, spin_sq=0.0)
 
     result_history = []
+
     def callback(results: list[SCIResult]):
         result_history.append(results)
         iteration = len(result_history)
@@ -314,7 +315,6 @@ def run_sqd_energy_task(
             logging.info(f"\tSubsample {i}")
             logging.info(f"\t\tEnergy: {result.energy + mol_data.core_energy}")
             logging.info(f"\t\tSubspace dimension: {np.prod(result.sci_state.amplitudes.shape)}")
-
 
     result = diagonalize_fermionic_hamiltonian(
         mol_hamiltonian.one_body_tensor,
