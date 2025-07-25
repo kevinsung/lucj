@@ -28,7 +28,7 @@ DATA_ROOT = "/media/storage/WanHsuan.Lin/"
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 1
-OVERWRITE = False
+OVERWRITE = True
 
 molecule_name = "fe2s2"
 nelectron, norb = 30, 20
@@ -39,7 +39,7 @@ connectivities = [
     # "square",
     "all-to-all",
 ]
-n_reps_range = [1] + list(range(2, 12, 2))
+n_reps_range = list(reversed(range(2, 12, 2)))
 shots = 100_000
 samples_per_batch = 1000
 n_batches = 3
@@ -50,7 +50,7 @@ max_iterations = 100
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
-max_dim_range = [500, 1000] # for large one
+max_dim_range = [1000] # for large one
 
 
 tasks = [

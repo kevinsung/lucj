@@ -187,6 +187,22 @@ def run_sqd_energy_task(
         logging.info(f"Data for {task} already exists. Skipping...\n")
         return task
     
+    ## for debug
+    if os.path.exists(data_filename):
+        import datetime
+        # Get the modification timestamp of the file
+        modification_timestamp = os.path.getmtime(data_filename)
+
+        # Convert the timestamp to a datetime object
+        modification_time = datetime.datetime.fromtimestamp(modification_timestamp)
+
+        # Get the current time
+        pass_time = datetime.datetime(2025, 7, 24)
+
+        # Calculate the time difference
+        if pass_time < modification_time:
+            return task
+    
 
     # Get molecular data and molecular Hamiltonian
     if task.molecule_basename == "fe2s2_30e20o":
