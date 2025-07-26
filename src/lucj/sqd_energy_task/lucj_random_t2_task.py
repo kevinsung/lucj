@@ -8,9 +8,9 @@ import numpy as np
 from molecules_catalog.util import load_molecular_data
 
 from qiskit.primitives import BitArray
-from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, solve_sci_batch
+from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, SCIResult
 from qiskit_addon_sqd.counts import bit_array_to_arrays, generate_bit_array_uniform
-from qiskit_addon_sqd.subsampling import postselect_by_hamming_right_and_left
+# from qiskit_addon_sqd.subsampling import postselect_by_hamming_right_and_left
 from qiskit_addon_dice_solver import solve_sci_batch
 # from functools import partial
 
@@ -113,11 +113,12 @@ def run_random_sqd_energy_task(
     
     result_history_energy = []
     result_history_subspace_dim = []
-
+    result_history = []
     def callback(results: list[SCIResult]):
         result_energy = []
         result_subspace_dim = []
         iteration = len(result_history)
+        result_history.append(results)
         logging.info(f"Iteration {iteration}")
         for i, result in enumerate(results):
             result_energy.append(result.energy + mol_data.core_energy)
@@ -176,7 +177,7 @@ def run_random_sqd_energy_task(
         "error": error,
         "spin_squared": spin_squared,
         "sci_vec_shape": sci_state.amplitudes.shape,
-        "history_energy": result_history_energy
+        "history_energy": result_history_energy,
         "history_sci_vec_shape": result_history_subspace_dim
     }
     

@@ -6,7 +6,6 @@ import os
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
-import numpy as np
 from tqdm import tqdm
 
 from lucj.params import LUCJParams, CompressedT2Params
@@ -29,7 +28,7 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 16
-OVERWRITE = True
+OVERWRITE = False
 
 molecule_name = "n2"
 basis = "6-31g"
@@ -43,14 +42,14 @@ connectivities = [
     "all-to-all",
 ]
 
-n_reps_range = list(range(2, 12, 2))
+n_reps_range = list(range(1, 11))
 
 shots = 100_000
-n_batches = 3
+n_batches = 10
 energy_tol = 1e-5
 occupancies_tol = 1e-3
 carryover_threshold = 1e-3
-max_iterations = 100
+max_iterations = 1
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
@@ -75,6 +74,7 @@ tasks = [
             step=2
         ),
         regularization=False,
+        regularization_option=None,
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
@@ -86,10 +86,9 @@ tasks = [
         entropy=entropy,
         max_dim=max_dim,
     )
-    for max_dim, n_reps in itertools.product(max_dim_range, n_reps_range)
+    for n_reps in n_reps_range
     for connectivity in connectivities
     for d in bond_distance_range
-    for samples_per_batch in samples_per_batch_range
 ]
 
 if MAX_PROCESSES == 1:

@@ -45,16 +45,17 @@ connectivities = [
 ]
 n_reps_range = list(range(2, 25, 2))
 shots = 100_000
-samples_per_batch_range = [1000]
-n_batches = 3
+n_batches = 10
 energy_tol = 1e-5
 occupancies_tol = 1e-3
 carryover_threshold = 1e-3
-max_iterations = 100
+max_iterations = 1
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
-max_dim_range = [250, 500]
+
+max_dim = 4000
+samples_per_batch = max_dim
 
 
 tasks = [
@@ -79,10 +80,9 @@ tasks = [
         entropy=entropy,
         max_dim=max_dim,
     )
-    for max_dim, n_reps in itertools.product(max_dim_range, n_reps_range)
+    for max_dim, n_reps in n_reps_range
     for connectivity in connectivities
     for d in bond_distance_range
-    for samples_per_batch in samples_per_batch_range
 ]
 
 if MAX_PROCESSES == 1:

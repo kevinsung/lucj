@@ -26,8 +26,8 @@ class SQDEnergyTask:
     compressed_t2_params: CompressedT2Params | None
     connectivity_opt: bool = False
     random_op: bool = False
-    regularization: bool = False,
-    regularization_option: int = 0,
+    regularization: bool = False
+    regularization_option: int | None = None
     shots: int
     samples_per_batch: int
     n_batches: int
@@ -307,11 +307,12 @@ def run_sqd_energy_task(
 
     result_history_energy = []
     result_history_subspace_dim = []
-
+    result_history = []
     def callback(results: list[SCIResult]):
         result_energy = []
         result_subspace_dim = []
         iteration = len(result_history)
+        result_history.append(results)
         logging.info(f"Iteration {iteration}")
         for i, result in enumerate(results):
             result_energy.append(result.energy + mol_data.core_energy)
@@ -361,7 +362,7 @@ def run_sqd_energy_task(
         "error": error,
         "spin_squared": spin_squared,
         "sci_vec_shape": sci_state.amplitudes.shape,
-        "history_energy": result_history_energy
+        "history_energy": result_history_energy,
         "history_sci_vec_shape": result_history_subspace_dim
     }
     

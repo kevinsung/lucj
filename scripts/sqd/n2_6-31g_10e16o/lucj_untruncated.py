@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import itertools
 import logging
 import os
 from concurrent.futures import ProcessPoolExecutor
@@ -9,7 +8,7 @@ from pathlib import Path
 import numpy as np
 from tqdm import tqdm
 
-from lucj.params import LUCJParams, CompressedT2Params
+from lucj.params import LUCJParams
 from lucj.sqd_energy_task.lucj_compressed_t2_task_sci import (
     SQDEnergyTask,
     run_sqd_energy_task,
@@ -36,7 +35,11 @@ basis = "6-31g"
 nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-bond_distance_range = list(range(0.9, 2.7, 0.1))
+start = 0.9
+stop = 2.7
+step = 0.1
+bond_distance_range = np.linspace(start, stop, num=round((stop - start) / step) + 1)
+
 
 connectivities = [
     "heavy-hex",

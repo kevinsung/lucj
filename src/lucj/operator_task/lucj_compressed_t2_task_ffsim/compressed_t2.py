@@ -190,6 +190,8 @@ def double_factorized_t2_compress(
     list_final_loss = []
     list_reps = [i for i in range(begin_reps, n_reps, -step)] + [n_reps]
     # coefficient for regularization
+    if regularization_factor is None:
+        regularization_factor = 1e-4
     for n_tensors in list_reps:
         diag_coulomb_mats = diag_coulomb_mats[:n_tensors]
         orbital_rotations = orbital_rotations[:n_tensors]
@@ -262,10 +264,6 @@ def double_factorized_t2_compress(
             # regularization term
             regularization_cost = 0
             if regularization:
-                if regularization_factor is None:
-                    coefficient = 1e-4
-                else:
-                    coefficient = regularization_factor
                 for diag_coulomb_mat in diag_coulomb_mats:
                     regularization_cost += jnp.sum(jnp.abs(diag_coulomb_mat) ** 2) 
                 if regularization_option == 1:
@@ -276,7 +274,7 @@ def double_factorized_t2_compress(
                     for reps in range(n_reps):
                         regularization_cost += (jnp.sum(jnp.abs(ori_diag_coulomb_mats[reps] - diag_coulomb_mats[reps]) ** 2) )
 
-            return 0.5 * jnp.sum(jnp.abs(diff) ** 2) + coefficient * jnp.abs(regularization_cost)
+            return 0.5 * jnp.sum(jnp.abs(diff) ** 2) + regularization_factor * jnp.abs(regularization_cost)
 
         # value_and_grad_func = jax.value_and_grad(fun_jax, argnums=(0, 1), holomorphic=True)
         value_and_grad_func = jax.value_and_grad(fun_jax, argnums=(0, 1))
