@@ -28,7 +28,7 @@ DATA_ROOT = "/media/storage/WanHsuan.Lin/"
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 1
-OVERWRITE = True
+OVERWRITE = False
 
 molecule_name = "fe2s2"
 nelectron, norb = 30, 20
@@ -39,19 +39,18 @@ connectivities = [
     # "square",
     "all-to-all",
 ]
-n_reps_range = list(reversed(range(2, 12, 2)))
+n_reps_range = list(range(1, 11, 1))
 shots = 100_000
-samples_per_batch = 1000
-n_batches = 3
+n_batches = 10
 energy_tol = 1e-5
 occupancies_tol = 1e-3
 carryover_threshold = 1e-3
-max_iterations = 100
+max_iterations = 1
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
-max_dim_range = [1000] # for large one
-
+max_dim = 4000
+samples_per_batch = max_dim
 
 tasks = [
     SQDEnergyTask(
@@ -79,7 +78,7 @@ tasks = [
         entropy=entropy,
         max_dim=max_dim,
     )
-    for max_dim, n_reps in itertools.product(max_dim_range, n_reps_range)
+    for n_reps in n_reps_range
     for connectivity in connectivities
 ]
 

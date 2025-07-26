@@ -9,7 +9,6 @@ from pathlib import Path
 import numpy as np
 from tqdm import tqdm
 
-from lucj.params import LUCJParams, CompressedT2Params
 from lucj.uccsd_task.uccsd_sqd_initial_params_task import (
     UCCSDSQDInitialParamsTask,
     run_uccsd_sqd_initial_params_task,

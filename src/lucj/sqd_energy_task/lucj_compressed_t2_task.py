@@ -26,8 +26,8 @@ class SQDEnergyTask:
     compressed_t2_params: CompressedT2Params | None
     connectivity_opt: bool = False
     random_op: bool = False
-    regularization: bool = False,
-    regularization_option: int = 0,
+    regularization: bool = False
+    regularization_option: int | None = None
     shots: int
     samples_per_batch: int
     n_batches: int

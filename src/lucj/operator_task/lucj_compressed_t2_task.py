@@ -22,9 +22,9 @@ class LUCJCompressedT2Task:
     compressed_t2_params: CompressedT2Params | None
     connectivity_opt: bool = False
     random_op: bool = False
-    regularization: bool = False,
-    regularization_option: int = 0,
-    regularization_factor: float | None
+    regularization: bool = False
+    regularization_option: int | None = None
+    regularization_factor: float | None = None
 
     @property
     def dirpath(self) -> Path:

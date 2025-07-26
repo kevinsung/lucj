@@ -44,6 +44,7 @@ connectivities = [
     "all-to-all",
 ]
 n_reps_range = list(range(2, 25, 2)) + [None, 1, 3, 5, 7]
+n_reps_range = [9]
 
 tasks = [
     LUCJCompressedT2Task(
@@ -58,7 +59,9 @@ tasks = [
             multi_stage_optimization=True,
             begin_reps=20,
             step=2
-        )
+        ),
+        regularization=False,
+        regularization_option=None,
     )
     for connectivity, n_reps in itertools.product(connectivities, n_reps_range)
     for d in bond_distance_range
