@@ -40,18 +40,18 @@ connectivities = [
     "heavy-hex",
     # "square",
 ]
-n_reps_range = [1, 2, 4, 6, 8, 10]
+n_reps_range = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 shots = 100_000
-samples_per_batch = 1000
-n_batches = 3
+n_batches = 10
 energy_tol = 1e-5
 occupancies_tol = 1e-3
 carryover_threshold = 1e-3
-max_iterations = 50
+max_iterations = 1
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
-max_dim_range = [1000] # for large one
+max_dim = 4000
+samples_per_batch = max_dim
 bond_distance_range = [1.2, 2.4]
 
 tasks = [
@@ -69,6 +69,8 @@ tasks = [
             step=2
         ),
         regularization=False,
+        regularization_option=None,
+        regularization_factor=None,
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
@@ -80,9 +82,9 @@ tasks = [
         entropy=entropy,
         max_dim=max_dim,
     )
-    for max_dim, n_reps in itertools.product(max_dim_range, n_reps_range)
     for bond_distance in bond_distance_range
     for connectivity in connectivities
+    for n_reps in n_reps_range
 ]
 
 run_sqd_energy_task(

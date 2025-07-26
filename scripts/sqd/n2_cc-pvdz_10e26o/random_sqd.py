@@ -34,16 +34,16 @@ nelectron, norb = 10, 26
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 shots = 100_000
-samples_per_batch = 1000
-n_batches = 3
+n_batches = 10
 energy_tol = 1e-5
 occupancies_tol = 1e-3
 carryover_threshold = 1e-3
-max_iterations = 50
+max_iterations = 1
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
-max_dim_range = [500, 1000]
+max_dim = 4000
+samples_per_batch = max_dim
 bond_distance_range = [1.2, 2.4]
 
 tasks = [
@@ -62,7 +62,6 @@ tasks = [
         entropy=entropy,
         max_dim=max_dim,
     )
-    for max_dim in max_dim_range
     for bond_distance in bond_distance_range
 ]
 
