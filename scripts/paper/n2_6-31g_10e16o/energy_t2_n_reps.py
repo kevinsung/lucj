@@ -19,7 +19,7 @@ basis = "6-31g"
 nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-plots_dir = "paper"
+plots_dir = os.path.join("paper", molecule_basename)
 os.makedirs(plots_dir, exist_ok=True)
 
 bond_distance_range = [1.2, 2.4]
@@ -260,7 +260,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
 
 filepath = os.path.join(
     plots_dir,
-    f"{molecule_basename}/{os.path.splitext(os.path.basename(__file__))[0]}.pdf",
+    f"{os.path.splitext(os.path.basename(__file__))[0]}.pdf",
 )
 plt.savefig(filepath)
 plt.close()

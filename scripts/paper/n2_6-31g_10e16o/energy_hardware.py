@@ -228,7 +228,7 @@ for i, bond_distance in enumerate(bond_distance_range):
         errors,
         width=width,
         label="Rand bitstr",
-        color=colors["random_valid_bit_string"],
+        color=colors["random_bit_string"],
     )
     
     axes[row_sci_vec_dim, i].bar(
@@ -236,7 +236,7 @@ for i, bond_distance in enumerate(bond_distance_range):
         sci_vec_shape,
         width=width,
         label="Rand bitstr",
-        color=colors["random_valid_bit_string"],
+        color=colors["random_bit_string"],
     )
 
     # random lucj

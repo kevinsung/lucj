@@ -21,7 +21,7 @@ basis = "6-31g"
 nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-plots_dir = "paper"
+plots_dir = os.path.join("paper", molecule_basename)
 os.makedirs(plots_dir, exist_ok=True)
 
 start = 0.9
@@ -268,7 +268,7 @@ for plot_type in ["vqe", "sqd"]:
         )
         
     plt.legend()
-    plt.ylabel("Energy")
+    plt.ylabel("Energy (Hartree)")
     plt.ylim(-109.2, -107.7)
     plt.xlabel("Bond length (Å)")
 
@@ -284,7 +284,8 @@ for plot_type in ["vqe", "sqd"]:
 
 
     filepath = os.path.join(
-        plots_dir, f"{molecule_basename}/{os.path.splitext(os.path.basename(__file__))[0]}_{plot_type}.pdf"
+        plots_dir,
+        f"{os.path.splitext(os.path.basename(__file__))[0]}.pdf",
     )
     plt.savefig(filepath)
     print(f"Saved figure to {filepath}.")
