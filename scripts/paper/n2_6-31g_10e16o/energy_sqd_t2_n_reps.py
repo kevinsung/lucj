@@ -6,9 +6,9 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 from lucj.params import LUCJParams, CompressedT2Params
-from lucj.uccsd_task.lucj_compressed_t2_task import UCCSDCompressedTask
-from lucj.uccsd_task.uccsd_sqd_initial_params_task import UCCSDSQDInitialParamsTask
 from lucj.sqd_energy_task.lucj_compressed_t2_task import SQDEnergyTask
+from lucj.sqd_energy_task.lucj_random_t2_task import RandomSQDEnergyTask
+from molecules_catalog.util import load_molecular_data
 import json
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
@@ -44,6 +44,7 @@ entropy = 0
 max_dim = 4000
 samples_per_batch = max_dim
 
+
 def load_data(filepath):
     if not os.path.exists(filepath):
         result = {
@@ -67,22 +68,16 @@ linestyles = ["--", ":"]
 with open('scripts/paper/color.json', 'r') as file:
     colors = json.load(file)
 
-
-fig, axes = plt.subplots(
-    1,
-    len(bond_distance_range) * len(connectivities),
-    figsize=(10, 3.5),  # , layout="constrained"
-)
-
-results_uccsd = {}
+results_random = {}
 for d in bond_distance_range:
-    task = UCCSDSQDInitialParamsTask(
+    task = RandomSQDEnergyTask(
         molecule_basename=molecule_basename,
         bond_distance=d,
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
         energy_tol=energy_tol,
+        valid_string_only=True,
         occupancies_tol=occupancies_tol,
         carryover_threshold=carryover_threshold,
         max_iterations=max_iterations,
@@ -90,16 +85,32 @@ for d in bond_distance_range:
         entropy=entropy,
         max_dim=max_dim,
     )
-    filepath = DATA_ROOT / task.vqepath / "data.pickle"
-    results_uccsd[d] = load_data(filepath)
+    filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
+    results_random[d] = load_data(filepath)
+
+
+fig, axes = plt.subplots(
+    2,
+    len(bond_distance_range) * len(connectivities),
+    figsize=(10, 5),  # , layout="constrained"
+)
 
 for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distance_range, connectivities)):
-    axes[i].axhline(
-        results_uccsd[bond_distance]['error'],
+
+    axes[0, i].axhline(
+        results_random[bond_distance]['error'],
         linestyle="--",
-        label="UCCSD",
-        color=colors["uccsd"],
+        label="Rand bitstr",
+        color=colors["random_bit_string"],
     )
+
+    axes[1, i].axhline(
+        results_random[bond_distance]['sci_vec_shape'][0],
+        linestyle="--",
+        label="Rand bitstr",
+        color=colors["random_bit_string"],
+    )
+
 
     task_lucj_full = SQDEnergyTask(
         molecule_basename=molecule_basename,
@@ -124,36 +135,24 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         max_dim=max_dim,
     )
 
-    filepath = DATA_ROOT / task_lucj_full.operatorpath / "data.pickle"
+    filepath = DATA_ROOT / task_lucj_full.dirpath / "sqd_data.pickle"
     results = load_data(filepath)
 
-    axes[i].axhline(
+    axes[0, i].axhline(
         results['error'],
         linestyle="--",
         label="LUCJ-full",
         color=colors["lucj_full"],
     )
 
-    if connectivity == "all-to-all":
-        # UCCSD
-        tasks_uccsd_compressed_t2 = [UCCSDCompressedTask(
-                molecule_basename=molecule_basename,
-                bond_distance=bond_distance,
-                lucj_params=LUCJParams(
-                    connectivity=connectivity,
-                    n_reps=n_reps,
-                    with_final_orbital_rotation=True,
-                ),
-                compressed_t2_params=CompressedT2Params(
-                    multi_stage_optimization=True,
-                    begin_reps=20,
-                    step=2
-                ),
-                regularization=False
-            )
-            for n_reps in n_reps_range
-        ]
+    axes[1, i].axhline(
+        results['sci_vec_shape'][0],
+        linestyle="--",
+        label="LUCJ-full",
+        color=colors["lucj_full"],
+    )
     
+
     tasks_compressed_t2 = [
         SQDEnergyTask(
             molecule_basename=molecule_basename,
@@ -212,27 +211,20 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         for n_reps in n_reps_range
     ]
 
-    if connectivity == "all-to-all":
-        list_tasks = [tasks_uccsd_compressed_t2, tasks_truncated, tasks_compressed_t2]
-        color_keys = ["uccsd-compressed", "lucj_truncated", "lucj_compressed"]
-        labels = ["UCCSD-compressed t2", "LUCJ-truncated", "LUCJ-compressed"]
-    else:
-        list_tasks = [tasks_truncated, tasks_compressed_t2]
-        color_keys = ["lucj_truncated", "lucj_compressed"]
-        labels = ["LUCJ-truncated", "LUCJ-compressed"]
+    list_tasks = [tasks_truncated, tasks_compressed_t2]
+    color_keys = ["lucj_truncated", "lucj_compressed"]
+    labels = ["LUCJ-truncated", "LUCJ-compressed"]
 
     for tasks, color_key, label in zip(list_tasks, color_keys, labels):
         results = {}
         for task in tasks:
-            if color_key == "uccsd-compressed":
-                filepath = DATA_ROOT / task.dirpath / "data_uccsd.pickle"
-            else:
-                filepath = DATA_ROOT / task.operatorpath / "data.pickle"
+            filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
             results[task] = load_data(filepath)
 
         errors = [results[task]["error"] for task in tasks]
+        sci_vec_shape = [results[task]["sci_vec_shape"][0] for task in tasks]
         
-        axes[i].plot(
+        axes[0, i].plot(
             n_reps_range,
             errors,
             f"{markers[0]}{linestyles[0]}",
@@ -240,19 +232,32 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
             color=colors[color_key],
         )
 
-    axes[i].set_title(f"R={bond_distance} Å / {connectivity}")
-    axes[i].set_yscale("log")
-    axes[i].axhline(1.6e-3, linestyle="--", color="gray")
-    axes[i].set_ylabel("Energy error (Hartree)")
-    axes[i].set_xlabel("Repetitions")
-    axes[i].set_xticks(n_reps_range)
+        axes[1, i].plot(
+            n_reps_range,
+            sci_vec_shape,
+            f"{markers[0]}{linestyles[0]}",
+            label=label,
+            color=colors[color_key],
+        )
 
-    leg = axes[2].legend(
-        bbox_to_anchor=(-0.3, -0.25), loc="upper center", ncol=5
+
+    axes[0, i].set_title(f"R={bond_distance} Å / {connectivity}")
+    axes[0, i].set_yscale("log")
+    axes[0, i].axhline(1.6e-3, linestyle="--", color="gray")
+    axes[0, i].set_ylabel("Energy error (Hartree)")
+    axes[0, i].set_xlabel("Repetitions")
+    axes[0, i].set_xticks(n_reps_range)
+
+    axes[1, i].set_ylabel("SCI subspace")
+    axes[1, i].set_xlabel("Repetitions")
+    axes[1, i].set_xticks(n_reps_range)
+
+    leg = axes[1, 2].legend(
+        bbox_to_anchor=(-0.3, -0.28), loc="upper center", ncol=5
     )
     leg.set_in_layout(False)
     plt.tight_layout()
-    plt.subplots_adjust(bottom=0.25)
+    plt.subplots_adjust(bottom=0.16)
 
     fig.suptitle(
         f"CCSD initial parameters {molecule_name} {basis} ({nelectron}e, {norb}o)"

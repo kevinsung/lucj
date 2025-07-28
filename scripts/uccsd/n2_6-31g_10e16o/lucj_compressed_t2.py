@@ -41,7 +41,7 @@ bond_distance_range = [1.2, 2.4]
 connectivities = [
     "all-to-all",
 ]
-n_reps_range = list(range(2, 12, 2))
+n_reps_range = list(range(1, 11, 1))
 
 tasks = [
     UCCSDCompressedTask(
@@ -57,7 +57,8 @@ tasks = [
             begin_reps=20,
             step=2
         ),
-        regularization=False
+        regularization=False,
+        regularization_option=0
     )
     for connectivity, n_reps in itertools.product(connectivities, n_reps_range)
     for d in bond_distance_range
