@@ -289,3 +289,4 @@ for plot_type in ["vqe", "sqd"]:
     plt.savefig(filepath)
     print(f"Saved figure to {filepath}.")
     plt.close()
+

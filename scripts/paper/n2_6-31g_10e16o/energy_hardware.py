@@ -26,7 +26,6 @@ bond_distance_range = [1.2, 2.4]
 n_reps_range = [1]
 
 shots = 100_000
-samples_per_batch = 1000
 n_batches = 3
 energy_tol = 1e-5
 occupancies_tol = 1e-3
@@ -35,9 +34,8 @@ max_iterations = 100
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
-# max_dim_range = [None, 50_000, 100_000, 200_000]
-# max_dim_range = [250, 500]
-max_dim_range = [1000]
+max_dim = 4000
+samples_per_batch = max_dim
 
 tasks_compressed_t2 = [
     HardwareSQDEnergyTask(
@@ -65,8 +63,7 @@ tasks_compressed_t2 = [
         max_dim=max_dim,
     )
     for n_reps in n_reps_range
-    for d in bond_distance_range
-    for max_dim in max_dim_range]
+    for d in bond_distance_range]
 
 
 tasks_random = [
@@ -93,8 +90,7 @@ tasks_random = [
             max_dim=max_dim,
         )
         for n_reps in n_reps_range
-        for d in bond_distance_range
-        for max_dim in max_dim_range]
+        for d in bond_distance_range]
 
 tasks_truncated_t2 = [
         HardwareSQDEnergyTask(
@@ -120,8 +116,7 @@ tasks_truncated_t2 = [
             max_dim=max_dim,
         )
         for n_reps in n_reps_range
-        for d in bond_distance_range
-        for max_dim in max_dim_range]
+        for d in bond_distance_range]
 
 
 tasks_random_bit_string = [
@@ -132,7 +127,7 @@ tasks_random_bit_string = [
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
         energy_tol=energy_tol,
-        valid_string_only=False,
+        valid_string_only=True,
         occupancies_tol=occupancies_tol,
         carryover_threshold=carryover_threshold,
         max_iterations=max_iterations,
@@ -140,7 +135,6 @@ tasks_random_bit_string = [
         entropy=entropy,
         max_dim=max_dim,
     )
-    for max_dim in max_dim_range
     for d in bond_distance_range
 ]
 
@@ -184,7 +178,6 @@ for task in tasks_random_bit_string:
     # input()
 
 
-
 print("Done loading data.")
 
 
@@ -207,8 +200,6 @@ fig, axes = plt.subplots(
     figsize=(6, 5),  # , layout="constrained"
 )
 
-x_max_dim_range = np.arange(len(max_dim_range))
-
 for i, bond_distance in enumerate(bond_distance_range):
     # random bitstring
 
@@ -220,7 +211,7 @@ for i, bond_distance in enumerate(bond_distance_range):
                 samples_per_batch=samples_per_batch,
                 n_batches=n_batches,
                 energy_tol=energy_tol,
-                valid_string_only=False,
+                valid_string_only=True,
                 occupancies_tol=occupancies_tol,
                 carryover_threshold=carryover_threshold,
                 max_iterations=max_iterations,
@@ -228,13 +219,12 @@ for i, bond_distance in enumerate(bond_distance_range):
                 entropy=entropy,
                 max_dim=max_dim,
             )
-            for max_dim in max_dim_range
     ]
 
     errors = [results_random_bit_string[task]['error'] for task in tasks_random_bit_string]
     sci_vec_shape = [results_random_bit_string[task]['sci_vec_shape'][0] for task in tasks_random_bit_string]
     axes[row_error, i].bar(
-        x_max_dim_range,
+        -1.5 * width,
         errors,
         width=width,
         label="Rand bitstr",
@@ -242,7 +232,7 @@ for i, bond_distance in enumerate(bond_distance_range):
     )
     
     axes[row_sci_vec_dim, i].bar(
-        x_max_dim_range,
+        -1.5 * width,
         sci_vec_shape,
         width=width,
         label="Rand bitstr",
@@ -273,14 +263,13 @@ for i, bond_distance in enumerate(bond_distance_range):
                 entropy=entropy,
                 max_dim=max_dim,
             )
-            for n_reps in n_reps_range
-            for max_dim in max_dim_range]
+            for n_reps in n_reps_range]
 
     errors = [results_random[task]['error'] for task in tasks_random]
     sci_vec_shape = [results_random[task]["sci_vec_shape"][0] for task in tasks_random]
 
     axes[row_error, i].bar(
-        x_max_dim_range + width,
+        - 0.5 * width,
         errors,
         width=width,
         label="LUCJ random",
@@ -288,7 +277,7 @@ for i, bond_distance in enumerate(bond_distance_range):
     )
     
     axes[row_sci_vec_dim, i].bar(
-        x_max_dim_range + width,
+        - 0.5 *  width,
         sci_vec_shape,
         width=width,
         label="LUCJ random",
@@ -319,21 +308,20 @@ for i, bond_distance in enumerate(bond_distance_range):
                 entropy=entropy,
                 max_dim=max_dim,
             )
-            for n_reps in n_reps_range
-            for max_dim in max_dim_range]
+            for n_reps in n_reps_range]
     
     errors = [results_truncated_t2[task]["error"] for task in tasks_truncated_t2]
     sci_vec_shape = [ results_truncated_t2[task]["sci_vec_shape"][0] for task in tasks_truncated_t2]
 
     axes[row_error, i].bar(
-        x_max_dim_range + 2* width,
+        0.5 * width,
         errors,
         width=width,
         label="LUCJ truncated",
         color=colors["lucj_truncated"],
     )
     axes[row_sci_vec_dim, i].bar(
-        x_max_dim_range + 2* width,
+        0.5 * width,
         sci_vec_shape,
         width=width,
         label="LUCJ truncated",
@@ -367,21 +355,20 @@ for i, bond_distance in enumerate(bond_distance_range):
                 entropy=entropy,
                 max_dim=max_dim,
             )
-            for n_reps in n_reps_range
-            for max_dim in max_dim_range]
+            for n_reps in n_reps_range]
     
     errors = [results_compressed_t2[task]["error"] for task in tasks_compressed_t2]
     sci_vec_shape = [results_compressed_t2[task]["sci_vec_shape"][0] for task in tasks_compressed_t2]
 
     axes[row_error, i].bar(
-        x_max_dim_range + 3 * width,
+        1.5 * width,
         errors,
         width=width,
         label="LUCJ compressed",
         color=colors["lucj_compressed"],
     )
     axes[row_sci_vec_dim, i].bar(
-        x_max_dim_range + 3 * width,
+        1.5 * width,
         sci_vec_shape,
         width=width,
         label="LUCJ compressed",
@@ -392,23 +379,21 @@ for i, bond_distance in enumerate(bond_distance_range):
     axes[row_error, i].set_yscale("log")
     axes[row_error, i].axhline(1.6e-3, linestyle="--", color="gray")
     axes[row_error, i].set_ylabel("Energy error (Hartree)")
-    axes[row_error, i].set_xlabel("max dim")
-    axes[row_error, i].set_xticks(x_max_dim_range + width, max_dim_range)
-
+    axes[row_error, i].set_xticks([])
+    
     axes[row_sci_vec_dim, i].set_ylabel("SCI subspace")
-    axes[row_sci_vec_dim, i].set_xlabel("max dim")
-    axes[row_sci_vec_dim, i].set_xticks(x_max_dim_range + width, max_dim_range)
+    axes[row_sci_vec_dim, i].set_xticks([])
 
     # axes[row_sci_vec_dim, 0].legend(ncol=2, )
     leg = axes[row_sci_vec_dim, 1].legend(
-        bbox_to_anchor=(-0.48, -0.3), loc="upper center", ncol=4, columnspacing=0.8, handletextpad=0.2
+        bbox_to_anchor=(-0.48, -0.05), loc="upper center", ncol=4, columnspacing=0.8, handletextpad=0.2
     )
     # leg = axes[row_sci_vec_dim, 1].legend(
     #     bbox_to_anchor=(0.5, -0.4), loc="upper center", ncol=3
     # )
     leg.set_in_layout(False)
     plt.tight_layout()
-    plt.subplots_adjust(bottom=0.16)
+    plt.subplots_adjust(bottom=0.1)
 
     fig.suptitle(
         f"CCSD initial parameters {molecule_name} {basis} ({nelectron}e, {norb}o)"
@@ -416,7 +401,7 @@ for i, bond_distance in enumerate(bond_distance_range):
 
 filepath = os.path.join(
     plots_dir,
-    f"{os.path.splitext(os.path.basename(__file__))[0]}.pdf",
+    f"{os.path.splitext(os.path.basename(__file__))[0]}_maxdim-{max_dim}.pdf",
 )
 plt.savefig(filepath)
 plt.close()
