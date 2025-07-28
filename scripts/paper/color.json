@@ -5,5 +5,10 @@
     "lucj_truncated": "forestgreen", 
     "lucj_full": "lightsalmon",
     "lucj_compressed": "royalblue", 
-    "uccsd": "palevioletred"
+    "uccsd": "palevioletred",
+    "fci": "black",
+    "ccsd": "forestgreen",
+    "cisd": "royalblue",
+    "ucj": "goldenrod",
+    "lucj_full_square": "firebrick"
 }
