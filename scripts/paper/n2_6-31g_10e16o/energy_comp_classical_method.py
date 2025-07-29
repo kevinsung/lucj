@@ -218,9 +218,14 @@ color_keys = ["uccsd", "ucj", "lucj_full_square", "lucj_full"]
 labels = ["UCCSD", "UCJ", "LUCJ:square", "LUCJ:heavy-hex"]
 
 for plot_type in ["vqe", "sqd"]:
-    fig = plt.plot(figsize=(9, 12))
+    # fig = plt.plot(figsize=(9, 12))
+    fig, axes = plt.subplots(
+        2,
+        1,
+        figsize=(9, 8),  # , layout="constrained"
+    )
 
-    plt.plot(
+    axes[0].plot(
         reference_bond_distance_range,
         fci_energies_reference,
         "-",
@@ -228,7 +233,7 @@ for plot_type in ["vqe", "sqd"]:
         color=colors["fci"],
     )
 
-    plt.plot(
+    axes[0].plot(
         reference_bond_distance_range,
         ccsd_energies_reference,
         "--",
@@ -236,7 +241,7 @@ for plot_type in ["vqe", "sqd"]:
         color=colors["ccsd"],
     )
 
-    plt.plot(
+    axes[0].plot(
         reference_bond_distance_range,
         cisd_energies_reference,
         "--",
@@ -257,8 +262,7 @@ for plot_type in ["vqe", "sqd"]:
             results[task] = load_data(filepath)
 
         energies = [results[task]["energy"] for task in tasks]
-        errors = [results[task]["error"] for task in tasks]
-        plt.plot(
+        axes[0].plot(
             bond_distance_range,
             energies,
             # f"{markers[0]}{linestyles[0]}",
@@ -267,22 +271,70 @@ for plot_type in ["vqe", "sqd"]:
             color=colors[color_key],
         )
         
-    plt.legend()
-    plt.ylabel("Energy (Hartree)")
-    plt.ylim(-109.2, -107.7)
-    plt.xlabel("Bond length (Å)")
+    # plt.legend()
+    axes[0].set_ylabel("Energy (Hartree)")
+    axes[0].set_ylim(-109.2, -107.7)
+    axes[0].set_xlabel("Bond length (Å)")
+
+    axes[1].plot(
+        reference_bond_distance_range,
+        ccsd_errors_reference,
+        "--",
+        label="CCSD",
+        color=colors["ccsd"],
+    )
+
+    axes[1].plot(
+        reference_bond_distance_range,
+        cisd_errors_reference,
+        "--",
+        label="CISD",
+        color=colors["cisd"],
+    )
+    
+    for tasks, color_key, label in zip(list_tasks, color_keys, labels):
+        results = {}
+        for task in tasks:
+            if plot_type == "vqe":
+                if color_key == "uccsd":
+                    filepath = DATA_ROOT / task.vqepath / "data.pickle"
+                else:
+                    filepath = DATA_ROOT / task.operatorpath / "data.pickle"
+            else:
+                filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
+            results[task] = load_data(filepath)
+
+        errors = [results[task]["error"] for task in tasks]
+
+        axes[1].plot(
+            bond_distance_range,
+            errors,
+            # f"{markers[0]}{linestyles[0]}",
+            linestyles[0],
+            label=label,
+            color=colors[color_key],
+        )
+        
+    # plt.legend()
+    axes[1].set_ylabel("Energy erro (Hartree)")
+    axes[1].set_yscale("log")
+    axes[1].set_xlabel("Bond length (Å)")
+
     plt.tight_layout()
     plt.subplots_adjust(top=0.93)
 
+    leg = axes[0].legend(
+        # bbox_to_anchor=(-0.3, -0.28), loc="upper center", ncol=5
+    )
     # plt.set_yscale("log")
     # plt.axhline(1.6e-3, linestyle="--", color="gray")
     # plt.set_ylabel("Energy error (Hartree)")
     # plt.set_xlabel("Bond length (Å)")
 
     if plot_type == "vqe":
-        plt.title(f"$N_2$ (6-31g, {nelectron}e, {norb}o)")
+        fig.suptitle(f"$N_2$ (6-31g, {nelectron}e, {norb}o)")
     else:
-        plt.title(f"$N_2$ (6-31g, {nelectron}e, {norb}o)")
+        fig.suptitle(f"$N_2$ (6-31g, {nelectron}e, {norb}o)")
 
 
     filepath = os.path.join(

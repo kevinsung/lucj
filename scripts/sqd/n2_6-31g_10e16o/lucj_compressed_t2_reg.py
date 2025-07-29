@@ -105,6 +105,7 @@ tasks_reg1 = [
         ),
         regularization=True,
         regularization_option=1,
+        regularization_factor=1e-3,
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
