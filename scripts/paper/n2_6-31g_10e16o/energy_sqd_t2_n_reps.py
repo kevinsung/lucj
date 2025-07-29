@@ -211,9 +211,39 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         for n_reps in n_reps_range
     ]
 
-    list_tasks = [tasks_truncated, tasks_compressed_t2]
-    color_keys = ["lucj_truncated", "lucj_compressed"]
-    labels = ["LUCJ-truncated", "LUCJ-compressed"]
+    tasks_compressed_t2_naive = [
+        SQDEnergyTask(
+            molecule_basename=molecule_basename,
+            bond_distance=bond_distance,
+            lucj_params=LUCJParams(
+                connectivity=connectivity,
+                n_reps=n_reps,
+                with_final_orbital_rotation=True,
+            ),
+            compressed_t2_params=CompressedT2Params(
+                multi_stage_optimization=False,
+                begin_reps=n_reps,
+                step=2
+            ),
+            regularization=False,
+            regularization_option=None,
+            shots=shots,
+            samples_per_batch=samples_per_batch,
+            n_batches=n_batches,
+            energy_tol=energy_tol,
+            occupancies_tol=occupancies_tol,
+            carryover_threshold=carryover_threshold,
+            max_iterations=max_iterations,
+            symmetrize_spin=symmetrize_spin,
+            entropy=entropy,
+            max_dim=max_dim,
+        )
+        for n_reps in n_reps_range
+    ]
+
+    list_tasks = [tasks_truncated, tasks_compressed_t2, tasks_compressed_t2_naive]
+    color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_1stg"]
+    labels = ["LUCJ-truncated", "LUCJ-compressed", "LUCJ-compressed-1stg"]
 
     for tasks, color_key, label in zip(list_tasks, color_keys, labels):
         results = {}

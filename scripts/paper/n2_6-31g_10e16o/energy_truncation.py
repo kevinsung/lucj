@@ -174,6 +174,7 @@ for plot_type in ["vqe", "sqd"]:
     plt.xticks([1, 5] + list(range(10, 120, 10)))
     plt.tight_layout()
     plt.yscale("log")
+    plt.axhline(1.6e-3, linestyle="--", color="gray")
 
     if plot_type == "vqe":
         plt.subplots_adjust(top=0.93, left=0.15)

@@ -6,7 +6,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 from lucj.params import LUCJParams, CompressedT2Params
-from lucj.sqd_energy_task.lucj_compressed_t2_task import SQDEnergyTask
+from lucj.sqd_energy_task.lucj_compressed_t2_task_sci import SQDEnergyTask
 from lucj.sqd_energy_task.lucj_random_t2_task import RandomSQDEnergyTask
 from molecules_catalog.util import load_molecular_data
 import json
@@ -258,14 +258,17 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         
         if label == "LUCJ-compressed-reg":
             marker_index = 1
+            alpha=0.5
         else:
             marker_index = 0
-            
+            alpha=1
+                
         axes[0, i].plot(
             n_reps_range,
             errors,
             f"{markers[marker_index]}{linestyles[0]}",
             label=label,
+            alpha=alpha,
             color=colors[color_key],
         )
 
@@ -274,6 +277,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
             sci_vec_shape,
             f"{markers[marker_index]}{linestyles[0]}",
             label=label,
+            alpha=alpha,
             color=colors[color_key],
         )
 

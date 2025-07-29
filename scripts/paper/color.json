@@ -10,5 +10,6 @@
     "ccsd": "forestgreen",
     "cisd": "royalblue",
     "ucj": "goldenrod",
-    "lucj_full_square": "firebrick"
+    "lucj_full_square": "firebrick",
+    "lucj_compressed_1stg": "deepskyblue"
 }

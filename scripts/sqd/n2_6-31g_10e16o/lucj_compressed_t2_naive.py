@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import itertools
 import logging
 import os
 from concurrent.futures import ProcessPoolExecutor
@@ -25,7 +27,7 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 1
+MAX_PROCESSES = 10
 OVERWRITE = False
 
 molecule_name = "n2"
@@ -37,16 +39,16 @@ bond_distance_range = [1.2, 2.4]
 
 connectivities = [
     "heavy-hex",
-    # "square",
     "all-to-all",
 ]
-n_reps_range = list(range(2, 11, 1)) + [1]
-# n_reps_range = list(range(12, 25, 2))
+
+n_reps_range = list(range(1, 11))
+
 shots = 100_000
 n_batches = 10
-energy_tol = 1e-5
-occupancies_tol = 1e-3
-carryover_threshold = 1e-3
+energy_tol = 1e-5 
+occupancies_tol = 1e-3 
+carryover_threshold = 1e-3 
 max_iterations = 1
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
@@ -57,7 +59,7 @@ samples_per_batch = max_dim
 
 
 
-tasks_reg0 = [
+tasks = [
     SQDEnergyTask(
         molecule_basename=molecule_basename,
         bond_distance=d,
@@ -67,12 +69,12 @@ tasks_reg0 = [
             with_final_orbital_rotation=True,
         ),
         compressed_t2_params=CompressedT2Params(
-            multi_stage_optimization=True,
-            begin_reps=20,
+            multi_stage_optimization=False,
+            begin_reps=n_reps,
             step=2
         ),
-        regularization=True,
-        regularization_option=0,
+        regularization=False,
+        regularization_option=None,
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
@@ -88,73 +90,6 @@ tasks_reg0 = [
     for connectivity in connectivities
     for d in bond_distance_range
 ]
-
-tasks_reg1 = [
-    SQDEnergyTask(
-        molecule_basename=molecule_basename,
-        bond_distance=d,
-        lucj_params=LUCJParams(
-            connectivity=connectivity,
-            n_reps=n_reps,
-            with_final_orbital_rotation=True,
-        ),
-        compressed_t2_params=CompressedT2Params(
-            multi_stage_optimization=True,
-            begin_reps=20,
-            step=2
-        ),
-        regularization=True,
-        regularization_option=1,
-        regularization_factor=1e-3,
-        shots=shots,
-        samples_per_batch=samples_per_batch,
-        n_batches=n_batches,
-        energy_tol=energy_tol,
-        occupancies_tol=occupancies_tol,
-        carryover_threshold=carryover_threshold,
-        max_iterations=max_iterations,
-        symmetrize_spin=symmetrize_spin,
-        entropy=entropy,
-        max_dim=max_dim,
-    )
-    for n_reps in n_reps_range
-    for connectivity in connectivities
-    for d in bond_distance_range
-]
-
-tasks_reg2 = [
-    SQDEnergyTask(
-        molecule_basename=molecule_basename,
-        bond_distance=d,
-        lucj_params=LUCJParams(
-            connectivity=connectivity,
-            n_reps=n_reps,
-            with_final_orbital_rotation=True,
-        ),
-        compressed_t2_params=CompressedT2Params(
-            multi_stage_optimization=True,
-            begin_reps=20,
-            step=2
-        ),
-        regularization=True,
-        regularization_option=2,
-        shots=shots,
-        samples_per_batch=samples_per_batch,
-        n_batches=n_batches,
-        energy_tol=energy_tol,
-        occupancies_tol=occupancies_tol,
-        carryover_threshold=carryover_threshold,
-        max_iterations=max_iterations,
-        symmetrize_spin=symmetrize_spin,
-        entropy=entropy,
-        max_dim=max_dim,
-    )
-    for n_reps in n_reps_range
-    for connectivity in connectivities
-    for d in bond_distance_range
-]
-
-tasks =  tasks_reg1 # tasks_reg2 + tasks_reg0 + tasks_reg1 
 
 if MAX_PROCESSES == 1:
     for task in tqdm(tasks):

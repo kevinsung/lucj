@@ -319,7 +319,7 @@ for plot_type in ["vqe", "sqd"]:
     axes[1].set_ylabel("Energy erro (Hartree)")
     axes[1].set_yscale("log")
     axes[1].set_xlabel("Bond length (Å)")
-
+    axes[1].axhline(1.6e-3, linestyle="--", color="gray")
     plt.tight_layout()
     plt.subplots_adjust(top=0.93)
 

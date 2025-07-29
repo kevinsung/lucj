@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from lucj.params import LUCJParams, CompressedT2Params
 from lucj.uccsd_task.lucj_compressed_t2_task import UCCSDCompressedTask
 from lucj.uccsd_task.uccsd_sqd_initial_params_task import UCCSDSQDInitialParamsTask
-from lucj.sqd_energy_task.lucj_compressed_t2_task import SQDEnergyTask
+from lucj.sqd_energy_task.lucj_compressed_t2_task_sci import SQDEnergyTask
 import json
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
@@ -244,11 +244,11 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     ]
 
     if connectivity == "all-to-all":
-        list_tasks = [tasks_uccsd_compressed_t2, tasks_truncated, tasks_compressed_t2]
+        list_tasks = [tasks_uccsd_compressed_t2, tasks_truncated, tasks_compressed_t2, tasks_compressed_t2_reg]
         color_keys = ["uccsd-compressed", "lucj_truncated", "lucj_compressed", "lucj_compressed"]
         labels = ["UCCSD-compressed t2", "LUCJ-truncated", "LUCJ-compressed", "LUCJ-compressed-reg"]
     else:
-        list_tasks = [tasks_truncated, tasks_compressed_t2]
+        list_tasks = [tasks_truncated, tasks_compressed_t2, tasks_compressed_t2_reg]
         color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed"]
         labels = ["LUCJ-truncated", "LUCJ-compressed", "LUCJ-compressed-reg"]
 
@@ -265,14 +265,17 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         
         if label == "LUCJ-compressed-reg":
             marker_index = 1
+            alpha=0.5
         else:
             marker_index = 0
+            alpha=1
             
         axes[i].plot(
             n_reps_range,
             errors,
             f"{markers[marker_index]}{linestyles[0]}",
             label=label,
+            alpha=alpha,
             color=colors[color_key],
         )
 
