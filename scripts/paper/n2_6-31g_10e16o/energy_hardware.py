@@ -125,12 +125,12 @@ tasks_random_bit_string = [
         bond_distance=d,
         shots=shots,
         samples_per_batch=samples_per_batch,
-        n_batches=n_batches,
+        n_batches=10,
         energy_tol=energy_tol,
         valid_string_only=True,
         occupancies_tol=occupancies_tol,
         carryover_threshold=carryover_threshold,
-        max_iterations=max_iterations,
+        max_iterations=1,
         symmetrize_spin=symmetrize_spin,
         entropy=entropy,
         max_dim=max_dim,
@@ -177,7 +177,6 @@ for task in tasks_random_bit_string:
     # print(results_random_bit_string[task])
     # input()
 
-
 print("Done loading data.")
 
 
@@ -209,12 +208,12 @@ for i, bond_distance in enumerate(bond_distance_range):
                 bond_distance=bond_distance,
                 shots=shots,
                 samples_per_batch=samples_per_batch,
-                n_batches=n_batches,
+                n_batches=10,
                 energy_tol=energy_tol,
                 valid_string_only=True,
                 occupancies_tol=occupancies_tol,
                 carryover_threshold=carryover_threshold,
-                max_iterations=max_iterations,
+                max_iterations=1,
                 symmetrize_spin=symmetrize_spin,
                 entropy=entropy,
                 max_dim=max_dim,
@@ -386,17 +385,17 @@ for i, bond_distance in enumerate(bond_distance_range):
 
     # axes[row_sci_vec_dim, 0].legend(ncol=2, )
     leg = axes[row_sci_vec_dim, 1].legend(
-        bbox_to_anchor=(-0.48, -0.05), loc="upper center", ncol=4, columnspacing=0.8, handletextpad=0.2
+        bbox_to_anchor=(-0.32, -0.05), loc="upper center", ncol=4, columnspacing=0.8, handletextpad=0.2
     )
     # leg = axes[row_sci_vec_dim, 1].legend(
     #     bbox_to_anchor=(0.5, -0.4), loc="upper center", ncol=3
     # )
     leg.set_in_layout(False)
     plt.tight_layout()
-    plt.subplots_adjust(bottom=0.1)
+    plt.subplots_adjust(bottom=0.1, top=0.88)
 
     fig.suptitle(
-        f"CCSD initial parameters {molecule_name} {basis} ({nelectron}e, {norb}o)"
+        f"$N_2$ (6-31g, {nelectron}e, {norb}o)"
     )
 
 filepath = os.path.join(

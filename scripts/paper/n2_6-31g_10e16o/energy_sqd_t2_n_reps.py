@@ -257,10 +257,10 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     )
     leg.set_in_layout(False)
     plt.tight_layout()
-    plt.subplots_adjust(bottom=0.16)
+    plt.subplots_adjust(bottom=0.16, top=0.88)
 
     fig.suptitle(
-        f"CCSD initial parameters {molecule_name} {basis} ({nelectron}e, {norb}o)"
+        f"$N_2$ (6-31g, {nelectron}e, {norb}o)"
     )
 
 filepath = os.path.join(

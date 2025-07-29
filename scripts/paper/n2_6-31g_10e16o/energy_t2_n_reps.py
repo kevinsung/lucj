@@ -71,7 +71,7 @@ with open('scripts/paper/color.json', 'r') as file:
 fig, axes = plt.subplots(
     1,
     len(bond_distance_range) * len(connectivities),
-    figsize=(10, 3.5),  # , layout="constrained"
+    figsize=(10, 3),  # , layout="constrained"
 )
 
 results_uccsd = {}
@@ -252,10 +252,10 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     )
     leg.set_in_layout(False)
     plt.tight_layout()
-    plt.subplots_adjust(bottom=0.25)
+    plt.subplots_adjust(bottom=0.28, top=0.82)
 
     fig.suptitle(
-        f"CCSD initial parameters {molecule_name} {basis} ({nelectron}e, {norb}o)"
+        f"$N_2$ (6-31g, {nelectron}e, {norb}o)"
     )
 
 filepath = os.path.join(

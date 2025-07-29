@@ -218,7 +218,7 @@ color_keys = ["uccsd", "ucj", "lucj_full_square", "lucj_full"]
 labels = ["UCCSD", "UCJ", "LUCJ:square", "LUCJ:heavy-hex"]
 
 for plot_type in ["vqe", "sqd"]:
-    fig = plt.plot(figsize=(9, 12), layout="constrained")
+    fig = plt.plot(figsize=(9, 12))
 
     plt.plot(
         reference_bond_distance_range,
@@ -271,6 +271,8 @@ for plot_type in ["vqe", "sqd"]:
     plt.ylabel("Energy (Hartree)")
     plt.ylim(-109.2, -107.7)
     plt.xlabel("Bond length (Å)")
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.93)
 
     # plt.set_yscale("log")
     # plt.axhline(1.6e-3, linestyle="--", color="gray")
@@ -278,14 +280,14 @@ for plot_type in ["vqe", "sqd"]:
     # plt.set_xlabel("Bond length (Å)")
 
     if plot_type == "vqe":
-        plt.title(f"{molecule_basename} ({nelectron}e, {norb}o)")
+        plt.title(f"$N_2$ (6-31g, {nelectron}e, {norb}o)")
     else:
-        plt.title(f"SQD with CCSD parameters, {molecule_basename} ({nelectron}e, {norb}o)")
+        plt.title(f"$N_2$ (6-31g, {nelectron}e, {norb}o)")
 
 
     filepath = os.path.join(
         plots_dir,
-        f"{os.path.splitext(os.path.basename(__file__))[0]}.pdf",
+        f"{os.path.splitext(os.path.basename(__file__))[0]}_{plot_type}.pdf",
     )
     plt.savefig(filepath)
     print(f"Saved figure to {filepath}.")
