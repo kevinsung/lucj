@@ -1,12 +1,9 @@
 from __future__ import annotations
-
-import itertools
 import logging
 import os
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
-import numpy as np
 from tqdm import tqdm
 
 from lucj.params import LUCJParams, CompressedT2Params
@@ -28,7 +25,7 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 8
+MAX_PROCESSES = 1
 OVERWRITE = False
 
 molecule_name = "n2"
@@ -39,11 +36,11 @@ molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 bond_distance_range = [1.2, 2.4]
 
 connectivities = [
-    # "heavy-hex",
+    "heavy-hex",
     # "square",
     "all-to-all",
 ]
-n_reps_range = list(range(2, 14, 2)) + [1, 3]
+n_reps_range = list(range(2, 12, 2)) + [1]
 # n_reps_range = list(range(12, 25, 2))
 shots = 100_000
 n_batches = 10
@@ -87,7 +84,7 @@ tasks_reg0 = [
         entropy=entropy,
         max_dim=max_dim,
     )
-    for max_dim, n_reps in n_reps_range
+    for n_reps in n_reps_range
     for connectivity in connectivities
     for d in bond_distance_range
 ]
@@ -119,7 +116,7 @@ tasks_reg1 = [
         entropy=entropy,
         max_dim=max_dim,
     )
-    for max_dim, n_reps in n_reps_range
+    for n_reps in n_reps_range
     for connectivity in connectivities
     for d in bond_distance_range
 ]
@@ -151,12 +148,12 @@ tasks_reg2 = [
         entropy=entropy,
         max_dim=max_dim,
     )
-    for max_dim, n_reps in n_reps_range
+    for n_reps in n_reps_range
     for connectivity in connectivities
     for d in bond_distance_range
 ]
 
-tasks =  tasks_reg2 + tasks_reg0 # + tasks_reg1 
+tasks =  tasks_reg1 # tasks_reg2 + tasks_reg0 + tasks_reg1 
 
 if MAX_PROCESSES == 1:
     for task in tqdm(tasks):

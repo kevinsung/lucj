@@ -39,10 +39,10 @@ n_reps_range = [1]
 
 shots = 100_000
 n_batches = 3
-energy_tol = 1e-5
-occupancies_tol = 1e-3
-carryover_threshold = 1e-3
-max_iterations = 100
+energy_tol = 1e-8
+occupancies_tol = 1e-5
+carryover_threshold = 1e-4
+max_iterations = 20
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
