@@ -40,7 +40,11 @@ connectivities = [
     # "square",
     "all-to-all",
 ]
+<<<<<<< HEAD
 n_reps_range = list(range(2, 12, 2)) + [1]
+=======
+n_reps_range = list(range(2, 11, 1)) + [1]
+>>>>>>> c57844138a8977b428021bddc80a39c48067f7ad
 # n_reps_range = list(range(12, 25, 2))
 shots = 100_000
 n_batches = 10
@@ -105,6 +109,7 @@ tasks_reg1 = [
         ),
         regularization=True,
         regularization_option=1,
+        regularization_factor=1e-3,
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,

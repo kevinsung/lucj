@@ -6,7 +6,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 from lucj.params import LUCJParams, CompressedT2Params
-from lucj.sqd_energy_task.lucj_compressed_t2_task_sci import SQDEnergyTask
+from lucj.sqd_energy_task.lucj_compressed_t2_task import SQDEnergyTask
 from lucj.sqd_energy_task.lucj_random_t2_task import RandomSQDEnergyTask
 from molecules_catalog.util import load_molecular_data
 import json
@@ -19,7 +19,7 @@ basis = "6-31g"
 nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-plots_dir = os.path.join("plots", molecule_basename)
+plots_dir = os.path.join("paper", molecule_basename)
 os.makedirs(plots_dir, exist_ok=True)
 
 bond_distance_range = [1.2, 2.4]
@@ -183,38 +183,6 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         for n_reps in n_reps_range
     ]
 
-    tasks_compressed_t2_reg = [
-        SQDEnergyTask(
-            molecule_basename=molecule_basename,
-            bond_distance=bond_distance,
-            lucj_params=LUCJParams(
-                connectivity=connectivity,
-                n_reps=n_reps,
-                with_final_orbital_rotation=True,
-            ),
-            compressed_t2_params=CompressedT2Params(
-                multi_stage_optimization=True,
-                begin_reps=20,
-                step=2
-            ),
-            regularization=True,
-            regularization_option=1,
-            regularization_factor=1e-3,
-            shots=shots,
-            samples_per_batch=samples_per_batch,
-            n_batches=n_batches,
-            energy_tol=energy_tol,
-            occupancies_tol=occupancies_tol,
-            carryover_threshold=carryover_threshold,
-            max_iterations=max_iterations,
-            symmetrize_spin=symmetrize_spin,
-            entropy=entropy,
-            max_dim=max_dim,
-        )
-        for n_reps in n_reps_range
-    ]
-
-
     tasks_truncated = [
         SQDEnergyTask(
             molecule_basename=molecule_basename,
@@ -243,9 +211,39 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         for n_reps in n_reps_range
     ]
 
-    list_tasks = [tasks_truncated, tasks_compressed_t2, tasks_compressed_t2_reg]
-    color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed"]
-    labels = ["LUCJ-truncated", "LUCJ-compressed", "LUCJ-compressed-reg"]
+    tasks_compressed_t2_naive = [
+        SQDEnergyTask(
+            molecule_basename=molecule_basename,
+            bond_distance=bond_distance,
+            lucj_params=LUCJParams(
+                connectivity=connectivity,
+                n_reps=n_reps,
+                with_final_orbital_rotation=True,
+            ),
+            compressed_t2_params=CompressedT2Params(
+                multi_stage_optimization=False,
+                begin_reps=n_reps,
+                step=2
+            ),
+            regularization=False,
+            regularization_option=None,
+            shots=shots,
+            samples_per_batch=samples_per_batch,
+            n_batches=n_batches,
+            energy_tol=energy_tol,
+            occupancies_tol=occupancies_tol,
+            carryover_threshold=carryover_threshold,
+            max_iterations=max_iterations,
+            symmetrize_spin=symmetrize_spin,
+            entropy=entropy,
+            max_dim=max_dim,
+        )
+        for n_reps in n_reps_range
+    ]
+
+    list_tasks = [tasks_truncated, tasks_compressed_t2, tasks_compressed_t2_naive]
+    color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_1stg"]
+    labels = ["LUCJ-truncated", "LUCJ-compressed", "LUCJ-compressed-1stg"]
 
     for tasks, color_key, label in zip(list_tasks, color_keys, labels):
         results = {}
@@ -256,28 +254,19 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         errors = [results[task]["error"] for task in tasks]
         sci_vec_shape = [results[task]["sci_vec_shape"][0] for task in tasks]
         
-        if label == "LUCJ-compressed-reg":
-            marker_index = 1
-            alpha=0.5
-        else:
-            marker_index = 0
-            alpha=1
-                
         axes[0, i].plot(
             n_reps_range,
             errors,
-            f"{markers[marker_index]}{linestyles[0]}",
+            f"{markers[0]}{linestyles[0]}",
             label=label,
-            alpha=alpha,
             color=colors[color_key],
         )
 
         axes[1, i].plot(
             n_reps_range,
             sci_vec_shape,
-            f"{markers[marker_index]}{linestyles[0]}",
+            f"{markers[0]}{linestyles[0]}",
             label=label,
-            alpha=alpha,
             color=colors[color_key],
         )
 

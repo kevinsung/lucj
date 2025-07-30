@@ -1,9 +1,15 @@
 {
     "random_bit_string": "mediumpurple",
-    "random_valid_bit_string": "thistle",
     "lucj_random": "plum", 
     "lucj_truncated": "forestgreen", 
     "lucj_full": "lightsalmon",
     "lucj_compressed": "royalblue", 
-    "uccsd": "palevioletred"
+    "uccsd": "palevioletred",
+    "uccsd-compressed": "crimson",
+    "fci": "black",
+    "ccsd": "forestgreen",
+    "cisd": "royalblue",
+    "ucj": "goldenrod",
+    "lucj_full_square": "firebrick",
+    "lucj_compressed_1stg": "deepskyblue"
 }
