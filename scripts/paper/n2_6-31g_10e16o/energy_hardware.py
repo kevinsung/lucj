@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 
 from lucj.params import LUCJParams, CompressedT2Params
 from lucj.hardware_sqd_task.lucj_compressed_t2_task import HardwareSQDEnergyTask
-from lucj.sqd_energy_task.lucj_random_t2_task import RandomSQDEnergyTask
 
 import json
 
@@ -27,13 +26,14 @@ n_reps_range = [1]
 
 shots = 100_000
 n_batches = 3
-energy_tol = 1e-5
-occupancies_tol = 1e-3
-carryover_threshold = 1e-3
-max_iterations = 100
+energy_tol = 1e-8
+occupancies_tol = 1e-5
+carryover_threshold = 1e-4
+max_iterations = 20
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
+
 max_dim = 4000
 samples_per_batch = max_dim
 
@@ -119,25 +119,6 @@ tasks_truncated_t2 = [
         for d in bond_distance_range]
 
 
-tasks_random_bit_string = [
-    RandomSQDEnergyTask(
-        molecule_basename=molecule_basename,
-        bond_distance=d,
-        shots=shots,
-        samples_per_batch=samples_per_batch,
-        n_batches=n_batches,
-        energy_tol=energy_tol,
-        valid_string_only=True,
-        occupancies_tol=occupancies_tol,
-        carryover_threshold=carryover_threshold,
-        max_iterations=max_iterations,
-        symmetrize_spin=symmetrize_spin,
-        entropy=entropy,
-        max_dim=max_dim,
-    )
-    for d in bond_distance_range
-]
-
 def load_data(filepath):
     if not os.path.exists(filepath):
         result = {
@@ -169,15 +150,6 @@ for task in tasks_compressed_t2:
     filepath = DATA_ROOT / task.dirpath / "hardware_sqd_data.pickle"
     results_compressed_t2[task] = load_data(filepath)
 
-results_random_bit_string = {}
-for task in tasks_random_bit_string:
-    filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
-    results_random_bit_string[task] = load_data(filepath)
-    # print(filepath)
-    # print(results_random_bit_string[task])
-    # input()
-
-
 print("Done loading data.")
 
 
@@ -201,43 +173,6 @@ fig, axes = plt.subplots(
 )
 
 for i, bond_distance in enumerate(bond_distance_range):
-    # random bitstring
-
-    tasks_random_bit_string = [
-        RandomSQDEnergyTask(
-                molecule_basename=molecule_basename,
-                bond_distance=bond_distance,
-                shots=shots,
-                samples_per_batch=samples_per_batch,
-                n_batches=n_batches,
-                energy_tol=energy_tol,
-                valid_string_only=True,
-                occupancies_tol=occupancies_tol,
-                carryover_threshold=carryover_threshold,
-                max_iterations=max_iterations,
-                symmetrize_spin=symmetrize_spin,
-                entropy=entropy,
-                max_dim=max_dim,
-            )
-    ]
-
-    errors = [results_random_bit_string[task]['error'] for task in tasks_random_bit_string]
-    sci_vec_shape = [results_random_bit_string[task]['sci_vec_shape'][0] for task in tasks_random_bit_string]
-    axes[row_error, i].bar(
-        -1.5 * width,
-        errors,
-        width=width,
-        label="Rand bitstr",
-        color=colors["random_bit_string"],
-    )
-    
-    axes[row_sci_vec_dim, i].bar(
-        -1.5 * width,
-        sci_vec_shape,
-        width=width,
-        label="Rand bitstr",
-        color=colors["random_bit_string"],
-    )
 
     # random lucj
     tasks_random = [
@@ -269,7 +204,7 @@ for i, bond_distance in enumerate(bond_distance_range):
     sci_vec_shape = [results_random[task]["sci_vec_shape"][0] for task in tasks_random]
 
     axes[row_error, i].bar(
-        - 0.5 * width,
+        - width,
         errors,
         width=width,
         label="LUCJ random",
@@ -277,7 +212,7 @@ for i, bond_distance in enumerate(bond_distance_range):
     )
     
     axes[row_sci_vec_dim, i].bar(
-        - 0.5 *  width,
+        - width,
         sci_vec_shape,
         width=width,
         label="LUCJ random",
@@ -314,14 +249,14 @@ for i, bond_distance in enumerate(bond_distance_range):
     sci_vec_shape = [ results_truncated_t2[task]["sci_vec_shape"][0] for task in tasks_truncated_t2]
 
     axes[row_error, i].bar(
-        0.5 * width,
+        0,
         errors,
         width=width,
         label="LUCJ truncated",
         color=colors["lucj_truncated"],
     )
     axes[row_sci_vec_dim, i].bar(
-        0.5 * width,
+        0,
         sci_vec_shape,
         width=width,
         label="LUCJ truncated",
@@ -361,14 +296,14 @@ for i, bond_distance in enumerate(bond_distance_range):
     sci_vec_shape = [results_compressed_t2[task]["sci_vec_shape"][0] for task in tasks_compressed_t2]
 
     axes[row_error, i].bar(
-        1.5 * width,
+        width,
         errors,
         width=width,
         label="LUCJ compressed",
         color=colors["lucj_compressed"],
     )
     axes[row_sci_vec_dim, i].bar(
-        1.5 * width,
+        width,
         sci_vec_shape,
         width=width,
         label="LUCJ compressed",
@@ -386,17 +321,17 @@ for i, bond_distance in enumerate(bond_distance_range):
 
     # axes[row_sci_vec_dim, 0].legend(ncol=2, )
     leg = axes[row_sci_vec_dim, 1].legend(
-        bbox_to_anchor=(-0.48, -0.05), loc="upper center", ncol=4, columnspacing=0.8, handletextpad=0.2
+        bbox_to_anchor=(-0.32, -0.05), loc="upper center", ncol=4, columnspacing=0.8, handletextpad=0.2
     )
     # leg = axes[row_sci_vec_dim, 1].legend(
     #     bbox_to_anchor=(0.5, -0.4), loc="upper center", ncol=3
     # )
     leg.set_in_layout(False)
     plt.tight_layout()
-    plt.subplots_adjust(bottom=0.1)
+    plt.subplots_adjust(bottom=0.1, top=0.88)
 
     fig.suptitle(
-        f"CCSD initial parameters {molecule_name} {basis} ({nelectron}e, {norb}o)"
+        f"$N_2$ (6-31g, {nelectron}e, {norb}o)"
     )
 
 filepath = os.path.join(

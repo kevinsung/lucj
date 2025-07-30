@@ -169,14 +169,19 @@ for plot_type in ["vqe", "sqd"]:
         )
         
     plt.legend()
-    plt.ylabel("Energy error")
+    plt.ylabel("Energy error (Hartree)")
     plt.xlabel("Repetitions")
     plt.xticks([1, 5] + list(range(10, 120, 10)))
+    plt.tight_layout()
+    plt.yscale("log")
+    plt.axhline(1.6e-3, linestyle="--", color="gray")
 
     if plot_type == "vqe":
-        plt.title(f"{molecule_basename} ({nelectron}e, {norb}o)")
+        plt.subplots_adjust(top=0.93, left=0.15)
+        plt.title(f"$N_2$ (6-31g, {nelectron}e, {norb}o, 1.2Å)")
     else:
-        plt.title(f"SQD with CCSD parameters, {molecule_basename} ({nelectron}e, {norb}o)")
+        plt.subplots_adjust(top=0.93)
+        plt.title(f"$N_2$ (6-31g, {nelectron}e, {norb}o, 1.2Å)")
     
     filepath = os.path.join(
         plots_dir, f"{os.path.splitext(os.path.basename(__file__))[0]}_{plot_type}.pdf"

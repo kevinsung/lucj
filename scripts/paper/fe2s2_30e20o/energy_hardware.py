@@ -103,22 +103,6 @@ task_truncated_t2 = HardwareSQDEnergyTask(
             max_dim=max_dim,
         )
 
-task_random_bit_string = RandomSQDEnergyTask(
-        molecule_basename=molecule_basename,
-        bond_distance=None,
-        shots=shots,
-        samples_per_batch=samples_per_batch,
-        n_batches=n_batches,
-        valid_string_only=False,
-        energy_tol=energy_tol,
-        occupancies_tol=occupancies_tol,
-        carryover_threshold=carryover_threshold,
-        max_iterations=max_iterations,
-        symmetrize_spin=symmetrize_spin,
-        entropy=entropy,
-        max_dim=max_dim,
-    )
-
 def load_data(filepath):
     if not os.path.exists(filepath):
         result = {
@@ -144,9 +128,6 @@ result_truncated_t2 = load_data(filepath)
 filepath = DATA_ROOT / task_compressed_t2.dirpath / "hardware_sqd_data.pickle"
 result_compressed_t2 = load_data(filepath)
 
-filepath = DATA_ROOT / task_random_bit_string.dirpath / "sqd_data.pickle"
-result_random_bit_string = load_data(filepath)
-
 print("Done loading data.")
 
 width = 0.15
@@ -166,39 +147,19 @@ fig, axes = plt.subplots(
     figsize=(6, 6),  # , layout="constrained"
 )
 
-# random bitstring
-
-errors = result_random_bit_string['energy'] - dmrg_energy
-sci_vec_shape = result_random_bit_string['sci_vec_shape'][0]
-
-axes[row_error].bar(
-        -1.5 * width,
-        errors,
-        width=width,
-        label="Rand bitstr",
-        color=colors["random_bit_string"],
-    )
-axes[row_sci_vec_dim].bar(
-    -1.5 * width,
-    sci_vec_shape,
-    width=width,
-    label="Rand bitstr",
-    color=colors["random_bit_string"],
-)
-
 # random lucj
 errors = result_random['energy'] - dmrg_energy 
 sci_vec_shape = result_random["sci_vec_shape"][0] 
 
 axes[row_error].bar(
-    - 0.5 * width,
+    - width,
     errors,
     width=width,
     label="LUCJ random",
     color=colors["lucj_random"],
 )
 axes[row_sci_vec_dim].bar(
-    - 0.5 * width,
+    - width,
     sci_vec_shape,
     width=width,
     label="LUCJ random",
@@ -210,14 +171,14 @@ errors = result_truncated_t2["energy"] - dmrg_energy
 sci_vec_shape = result_truncated_t2["sci_vec_shape"][0]
 
 axes[row_error].bar(
-    0.5 * width,
+    0,
     errors,
     width=width,
     label="LUCJ truncated",
     color=colors["lucj_truncated"],
 )
 axes[row_sci_vec_dim].bar(
-    0.5 * width,
+    0,
     sci_vec_shape,
     width=width,
     label="LUCJ truncated",
@@ -231,7 +192,7 @@ errors = result_compressed_t2["energy"] - dmrg_energy
 sci_vec_shape = result_compressed_t2["sci_vec_shape"][0]
 
 axes[row_error].bar(
-    1.5 * width,
+    width,
     errors,
     width=width,
     label="LUCJ compressed",
@@ -239,7 +200,7 @@ axes[row_error].bar(
 )
 
 axes[row_sci_vec_dim].bar(
-    1.5 * width,
+    width,
     sci_vec_shape,
     width=width,
     label="LUCJ compressed",

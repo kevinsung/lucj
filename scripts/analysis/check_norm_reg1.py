@@ -178,7 +178,7 @@ for connectivity in connectivities:
             orbital_rotations_compressed_t2_reg = operator["orbital_rotations"]
             opt_data_filename = DATA_DIR / task_compressed_t2_reg.dirpath / "opt_data.pickle"
             t2_loss = loss(diag_coulomb_mats_compressed_t2_reg, orbital_rotations_compressed_t2_reg, mol_data.ccsd_t2)
-            task_compressed_t2_reg.append(t2_loss)
+            list_loss_compression_reg.append(t2_loss)
 
             if connectivity != 'all-to-all':
                 task_compressed_t2_connectivity = LUCJCompressedT2Task(
