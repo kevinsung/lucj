@@ -63,7 +63,6 @@ def load_operator(task: UCCSDCompressedTask, data_dir: str, mol_data):
                     # optimize="greedy"
                 )[:nocc, :nocc, nocc:, nocc:]
             )
-    logging.info(f"{task} UCCSDOpRestricted\n")
     operator = ffsim.UCCSDOpRestricted(t1=mol_data.ccsd_t1, t2=t2_reconstructed)
     return operator
     
