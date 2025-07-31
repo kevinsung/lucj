@@ -202,6 +202,10 @@ fig, axes = plt.subplots(
 
 for i, bond_distance in enumerate(bond_distance_range):
     # random bitstring
+    if bond_distance == 1.2:
+        energy_ground_truth = -109.20854905
+    else:
+        energy_ground_truth = -108.94168735
 
     tasks_random_bit_string = [
         RandomSQDEnergyTask(
@@ -221,7 +225,7 @@ for i, bond_distance in enumerate(bond_distance_range):
             )
     ]
 
-    errors = [results_random_bit_string[task]['error'] for task in tasks_random_bit_string]
+    errors = [results_random_bit_string[task]['energy'] - energy_ground_truth for task in tasks_random_bit_string]
     sci_vec_shape = [results_random_bit_string[task]['sci_vec_shape'][0] for task in tasks_random_bit_string]
     axes[row_error, i].bar(
         -1.5 * width,
@@ -265,7 +269,7 @@ for i, bond_distance in enumerate(bond_distance_range):
             )
             for n_reps in n_reps_range]
 
-    errors = [results_random[task]['error'] for task in tasks_random]
+    errors = [results_random[task]['energy'] - energy_ground_truth for task in tasks_random]
     sci_vec_shape = [results_random[task]["sci_vec_shape"][0] for task in tasks_random]
 
     axes[row_error, i].bar(
@@ -310,7 +314,7 @@ for i, bond_distance in enumerate(bond_distance_range):
             )
             for n_reps in n_reps_range]
     
-    errors = [results_truncated_t2[task]["error"] for task in tasks_truncated_t2]
+    errors = [results_truncated_t2[task]["energy"] - energy_ground_truth for task in tasks_truncated_t2]
     sci_vec_shape = [ results_truncated_t2[task]["sci_vec_shape"][0] for task in tasks_truncated_t2]
 
     axes[row_error, i].bar(
@@ -357,7 +361,7 @@ for i, bond_distance in enumerate(bond_distance_range):
             )
             for n_reps in n_reps_range]
     
-    errors = [results_compressed_t2[task]["error"] for task in tasks_compressed_t2]
+    errors = [results_compressed_t2[task]["energy"] - energy_ground_truth for task in tasks_compressed_t2]
     sci_vec_shape = [results_compressed_t2[task]["sci_vec_shape"][0] for task in tasks_compressed_t2]
 
     axes[row_error, i].bar(

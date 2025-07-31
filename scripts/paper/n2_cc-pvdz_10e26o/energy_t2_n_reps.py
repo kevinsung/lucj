@@ -135,8 +135,13 @@ for d in bond_distance_range:
     results_uccsd[d] = load_data(filepath)
 
 for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distance_range, connectivities)):
+    if bond_distance == 1.2:
+        energy_ground_truth = -109.20854905
+    else:
+        energy_ground_truth = -108.94168735
+
     axes[0, i].axhline(
-        results_uccsd[bond_distance]['error'],
+        results_uccsd[bond_distance]['energy'] - energy_ground_truth,
         linestyle="--",
         label="UCCSD",
         color=colors["uccsd"],
@@ -169,7 +174,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     results = load_data(filepath)
 
     axes[0, i].axhline(
-        results['error'],
+        results['energy'] - energy_ground_truth,
         linestyle="--",
         label="LUCJ-full",
         color=colors["lucj_full"],
@@ -276,7 +281,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
                 filepath = DATA_ROOT / task.operatorpath / "data.pickle"
             results[task] = load_data(filepath)
 
-        errors = [results[task]["error"] for task in tasks]
+        errors = [results[task]["energy"] - energy_ground_truth for task in tasks]
         
         axes[0, i].plot(
             n_reps_range,

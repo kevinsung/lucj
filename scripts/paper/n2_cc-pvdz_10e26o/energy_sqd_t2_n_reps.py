@@ -104,10 +104,14 @@ fig, axes = plt.subplots(
 )
 
 for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distance_range, connectivities)):
+    if bond_distance == 1.2:
+        energy_ground_truth = -109.20854905
+    else:
+        energy_ground_truth = -108.94168735
 
-    error_avg = np.average(results_random[bond_distance]['history_energy']) - mol_data.sci_energy
-    error_min = np.min(results_random[bond_distance]['history_energy']) - mol_data.sci_energy
-    error_max = np.max(results_random[bond_distance]['history_energy']) - mol_data.sci_energy
+    error_avg = np.average(results_random[bond_distance]['history_energy']) - energy_ground_truth
+    error_min = np.min(results_random[bond_distance]['history_energy']) - energy_ground_truth
+    error_max = np.max(results_random[bond_distance]['history_energy']) - energy_ground_truth
 
     sci_vec_shape_avg = np.average(results_random[bond_distance]['history_sci_vec_shape'][0]) 
     sci_vec_shape_min = np.min(results_random[bond_distance]['history_sci_vec_shape'][0]) 
@@ -186,9 +190,9 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     filepath = DATA_ROOT / task_lucj_full.dirpath / "sqd_data.pickle"
     results = load_data(filepath)
 
-    error_avg = np.average(results['history_energy']) - mol_data.sci_energy
-    error_min = np.min(results['history_energy']) - mol_data.sci_energy
-    error_max = np.max(results['history_energy']) - mol_data.sci_energy
+    error_avg = np.average(results['history_energy']) - energy_ground_truth
+    error_min = np.min(results['history_energy']) - energy_ground_truth
+    error_max = np.max(results['history_energy']) - energy_ground_truth
 
     sci_vec_shape_avg = np.average(results['history_sci_vec_shape'][0]) 
     sci_vec_shape_min = np.min(results['history_sci_vec_shape'][0]) 
@@ -320,6 +324,11 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         for task in tasks:
             filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
             results = load_data(filepath)
+            
+            energy_avg = np.average(results['history_energy'])
+            error_avg.append(energy_avg - energy_ground_truth)
+            error_min.append(energy_avg - np.min(results['history_energy']))
+            error_max.append(np.max(results['history_energy']) - energy_avg)
 
             svs_avg = np.average(results['history_sci_vec_shape'][0])
             sci_vec_shape_avg.append(svs_avg)

@@ -9,9 +9,9 @@ from pathlib import Path
 from tqdm import tqdm
 
 from lucj.params import LUCJParams, CompressedT2Params
-from lucj.sqd_energy_task.lucj_compressed_t2_task import (
-    SQDEnergyTask,
-    run_sqd_energy_task,
+from lucj.state_vector_task.state_vector_task import (
+    StateVecTask,
+    run_state_vec_task,
 )
 
 filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}.log"
@@ -27,7 +27,7 @@ DATA_ROOT = "/media/storage/WanHsuan.Lin/"
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 1
+MAX_PROCESSES = 4
 OVERWRITE = False
 
 molecule_name = "n2"
@@ -40,7 +40,8 @@ connectivities = [
     "heavy-hex",
     # "square",
 ]
-n_reps_range = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+# n_reps_range = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+n_reps_range = [2, 3, 4, 5, 6, 7, 8, 9, 10]
 shots = 100_000
 n_batches = 10
 energy_tol = 1e-5
@@ -55,7 +56,7 @@ samples_per_batch = max_dim
 bond_distance_range = [1.2, 2.4]
 
 tasks = [
-    SQDEnergyTask(
+    StateVecTask(
         molecule_basename=molecule_basename,
         bond_distance=bond_distance,
         lucj_params=LUCJParams(
@@ -82,12 +83,12 @@ tasks = [
     )
     for bond_distance in bond_distance_range
     for connectivity in connectivities
-    for n_reps in reversed(n_reps_range)
+    for n_reps in n_reps_range
 ]
 
 if MAX_PROCESSES == 1:
     for task in tqdm(tasks):
-        run_sqd_energy_task(
+        run_state_vec_task(
             task,
             data_dir=DATA_DIR,
             molecules_catalog_dir=MOLECULES_CATALOG_DIR,
@@ -98,7 +99,7 @@ else:
         with ProcessPoolExecutor(MAX_PROCESSES) as executor:
             for task in tasks:
                 future = executor.submit(
-                    run_sqd_energy_task,
+                    run_state_vec_task,
                     task,
                     data_dir=DATA_DIR,
                     molecules_catalog_dir=MOLECULES_CATALOG_DIR,
