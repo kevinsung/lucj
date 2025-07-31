@@ -9,8 +9,8 @@ from pathlib import Path
 from tqdm import tqdm
 
 from lucj.params import LUCJParams, CompressedT2Params, COBYQAParams
-from lucj.quimb_task.lucj_sqd_quimb_task import (
-    LUCJSQDQuimbTask,
+from lucj.quimb_task.lucj_sqd_quimb_circuit_task import (
+    LUCJSQDQuimbCircuitTask,
     run_lucj_sqd_quimb_task,
 )
 
@@ -76,7 +76,7 @@ max_dim = 4000
 samples_per_batch = max_dim
 
 tasks = [
-    LUCJSQDQuimbTask(
+    LUCJSQDQuimbCircuitTask(
         molecule_basename=molecule_basename,
         bond_distance=d,
         lucj_params=LUCJParams(
