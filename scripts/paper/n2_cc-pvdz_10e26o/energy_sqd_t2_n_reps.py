@@ -10,7 +10,11 @@ from lucj.sqd_energy_task.lucj_compressed_t2_task import SQDEnergyTask
 from lucj.sqd_energy_task.lucj_random_t2_task import RandomSQDEnergyTask
 from molecules_catalog.util import load_molecular_data
 import json
-import numpy as np 
+from molecules_catalog.util import load_molecular_data
+from ffsim.variational.util import interaction_pairs_spin_balanced
+import ffsim
+import numpy as np
+from opt_einsum import contract
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
@@ -62,6 +66,42 @@ def load_data(filepath):
             result = pickle.load(f)
     return result
 
+
+def init_loss(n_reps: int, bond_distance: float, connectivity):
+    mol_data = load_molecular_data(
+        f"{molecule_basename}_d-{bond_distance:.5f}",
+        molecules_catalog_dir=MOLECULES_CATALOG_DIR,
+    )
+    norb = mol_data.norb
+    nelec = mol_data.nelec
+    pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
+        connectivity, norb
+    )
+    operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
+        mol_data.ccsd_t2,
+        n_reps=n_reps,
+        t1=mol_data.ccsd_t1,
+        interaction_pairs=(pairs_aa, pairs_ab),
+    )
+    diag_coulomb_mats = operator.diag_coulomb_mats
+    orbital_rotations = operator.orbital_rotations
+    t2 = mol_data.ccsd_t2
+    nocc, _, _, _ = t2.shape
+    diag_coulomb_mats = np.unstack(diag_coulomb_mats, axis=1)[0]
+    reconstructed = (
+            1j
+            * contract(
+                "mpq,map,mip,mbq,mjq->ijab",
+                diag_coulomb_mats,
+                orbital_rotations,
+                orbital_rotations.conj(),
+                orbital_rotations,
+                orbital_rotations.conj(),
+                # optimize="greedy"
+            )[:nocc, :nocc, nocc:, nocc:]
+        )
+    diff = reconstructed - t2
+    return 0.5 * np.sum(np.abs(diff) ** 2)
 
 print("Done loading data.")
 

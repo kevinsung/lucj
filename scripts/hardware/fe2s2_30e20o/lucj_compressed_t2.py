@@ -42,12 +42,12 @@ n_batches = 3
 energy_tol = 1e-8
 occupancies_tol = 1e-5
 carryover_threshold = 1e-4
-max_iterations = 10
+max_iterations = 20
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
-entropy = 0
+entropies = list(range(1, 11))
 
-max_dim = 2500
+max_dim = 2000
 samples_per_batch = max_dim
 
 tasks = [
@@ -76,6 +76,7 @@ tasks = [
         max_dim=max_dim,
     )
     for n_reps in n_reps_range
+    for entropy in entropies
 ]
 if MAX_PROCESSES == 1:
     for task in tqdm(tasks):
