@@ -22,19 +22,19 @@ os.makedirs(plots_dir, exist_ok=True)
 
 bond_distance_range = [1.2, 2.4]
 
-n_reps_range = [1]
+n_reps = 1
 
 shots = 100_000
 n_batches = 3
 energy_tol = 1e-8
 occupancies_tol = 1e-5
 carryover_threshold = 1e-4
-max_iterations = 100
+max_iterations = 20
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
-entropy = 0
+entropies = list(range(1, 11))
 
-max_dim = 4000
+max_dim = 1000
 samples_per_batch = max_dim
 
 tasks_compressed_t2 = [
@@ -62,8 +62,8 @@ tasks_compressed_t2 = [
         entropy=entropy,
         max_dim=max_dim,
     )
-    for n_reps in n_reps_range
-    for d in bond_distance_range]
+    for d in bond_distance_range
+    for entropy in entropies]
 
 
 tasks_random = [
@@ -89,8 +89,8 @@ tasks_random = [
             entropy=entropy,
             max_dim=max_dim,
         )
-        for n_reps in n_reps_range
-        for d in bond_distance_range]
+        for d in bond_distance_range
+        for entropy in entropies]
 
 tasks_truncated_t2 = [
         HardwareSQDEnergyTask(
@@ -115,8 +115,8 @@ tasks_truncated_t2 = [
             entropy=entropy,
             max_dim=max_dim,
         )
-        for n_reps in n_reps_range
-        for d in bond_distance_range]
+        for d in bond_distance_range
+        for entropy in entropies]
 
 
 def load_data(filepath):
@@ -144,14 +144,6 @@ results_truncated_t2 = {}
 for task in tasks_truncated_t2:
     filepath = DATA_ROOT / task.dirpath / "hardware_sqd_data.pickle"
     results_truncated_t2[task] = load_data(filepath)
-    if not os.path.exists(filepath):
-        results_truncated_t2[task] = {
-                                        "energy": -108.84253632343973,
-                                        "error": -108.84253632343973 + 108.8426834772777,
-                                        "spin_squared": 0,
-                                        "sci_vec_shape": (2755, 2755),
-                                        "n_reps": 0,
-                                    }
     
 results_compressed_t2 = {}
 for task in tasks_compressed_t2:
@@ -183,6 +175,14 @@ fig, axes = plt.subplots(
 for i, bond_distance in enumerate(bond_distance_range):
 
     # random lucj
+    
+    errors = []
+    errors_min = []
+    errors_max = []
+    sci_vec_shape = []
+    sci_vec_shape_min = []
+    sci_vec_shape_max = []
+
     tasks_random = [
         HardwareSQDEnergyTask(
                 molecule_basename=molecule_basename,
@@ -206,10 +206,23 @@ for i, bond_distance in enumerate(bond_distance_range):
                 entropy=entropy,
                 max_dim=max_dim,
             )
-            for n_reps in n_reps_range]
+            for entropy in entropies]
+    errors_n_reps = [results_random[task]['error'] for task in tasks_random if results_random[task]['error'] > 0 ]
+    sci_vec_shape_n_reps = [results_random[task]["sci_vec_shape"][0] for task in tasks_random if results_random[task]['sci_vec_shape'][0] > 0 ]
+    errors.append(np.average(errors_n_reps))
+    errors_min.append(np.average(errors_n_reps) - np.min(errors_n_reps))
+    errors_max.append(np.max(errors_n_reps) - np.average(errors_n_reps))
+    sci_vec_shape.append(np.average(sci_vec_shape_n_reps))
+    sci_vec_shape_min.append(np.average(sci_vec_shape_n_reps) - np.min(sci_vec_shape_n_reps))
+    sci_vec_shape_max.append(np.max(sci_vec_shape_n_reps) - np.average(sci_vec_shape_n_reps))
 
-    errors = [results_random[task]['error'] for task in tasks_random]
-    sci_vec_shape = [results_random[task]["sci_vec_shape"][0] for task in tasks_random]
+                 
+    axes[row_error, i].errorbar(
+        - width,
+        errors,
+        [errors_min, errors_max],
+        color='black',
+    )
 
     axes[row_error, i].bar(
         - width,
@@ -227,7 +240,22 @@ for i, bond_distance in enumerate(bond_distance_range):
         color=colors["lucj_random"],
     )
 
+
+    axes[row_sci_vec_dim, i].errorbar(
+        - width,
+        sci_vec_shape,
+        [sci_vec_shape_min, sci_vec_shape_max],
+        color='black',
+    )
+
     # LUCJ data
+    errors = []
+    errors_min = []
+    errors_max = []
+    sci_vec_shape = []
+    sci_vec_shape_min = []
+    sci_vec_shape_max = []
+
     tasks_truncated_t2 = [
         HardwareSQDEnergyTask(
                 molecule_basename=molecule_basename,
@@ -251,10 +279,18 @@ for i, bond_distance in enumerate(bond_distance_range):
                 entropy=entropy,
                 max_dim=max_dim,
             )
-            for n_reps in n_reps_range]
+            for entropy in entropies]
     
-    errors = [results_truncated_t2[task]["error"] for task in tasks_truncated_t2]
-    sci_vec_shape = [ results_truncated_t2[task]["sci_vec_shape"][0] for task in tasks_truncated_t2]
+    # errors_n_reps = [results_truncated_t2[task]['error'] for task in tasks_truncated_t2 if results_truncated_t2[task]['error'] > 0 ]
+    # sci_vec_shape_n_reps = [results_truncated_t2[task]["sci_vec_shape"][0] for task in tasks_truncated_t2 if results_truncated_t2[task]['sci_vec_shape'][0] > 0 ]
+    errors_n_reps = [results_truncated_t2[task]['error'] for task in tasks_truncated_t2]
+    sci_vec_shape_n_reps = [results_truncated_t2[task]["sci_vec_shape"][0] for task in tasks_truncated_t2]
+    errors.append(np.average(errors_n_reps))
+    errors_min.append(np.average(errors_n_reps) - np.min(errors_n_reps))
+    errors_max.append(np.max(errors_n_reps) - np.average(errors_n_reps))
+    sci_vec_shape.append(np.average(sci_vec_shape_n_reps))
+    sci_vec_shape_min.append(np.average(sci_vec_shape_n_reps) - np.min(sci_vec_shape_n_reps))
+    sci_vec_shape_max.append(np.max(sci_vec_shape_n_reps) - np.average(sci_vec_shape_n_reps))
 
     axes[row_error, i].bar(
         0,
@@ -263,6 +299,14 @@ for i, bond_distance in enumerate(bond_distance_range):
         label="LUCJ truncated",
         color=colors["lucj_truncated"],
     )
+               
+    axes[row_error, i].errorbar(
+        0,
+        errors,
+        [errors_min, errors_max],
+        color='black',
+    )
+
     axes[row_sci_vec_dim, i].bar(
         0,
         sci_vec_shape,
@@ -271,8 +315,21 @@ for i, bond_distance in enumerate(bond_distance_range):
         color=colors["lucj_truncated"],
     )
 
+    axes[row_sci_vec_dim, i].errorbar(
+        0,
+        sci_vec_shape,
+        [sci_vec_shape_min, sci_vec_shape_max],
+        color='black',
+    )
 
     # compressed_t2
+    errors = []
+    errors_min = []
+    errors_max = []
+    sci_vec_shape = []
+    sci_vec_shape_min = []
+    sci_vec_shape_max = []
+
     tasks_compressed_t2 = [
         HardwareSQDEnergyTask(
                 molecule_basename=molecule_basename,
@@ -298,10 +355,17 @@ for i, bond_distance in enumerate(bond_distance_range):
                 entropy=entropy,
                 max_dim=max_dim,
             )
-            for n_reps in n_reps_range]
+            for entropy in entropies]
     
-    errors = [results_compressed_t2[task]["error"] for task in tasks_compressed_t2]
-    sci_vec_shape = [results_compressed_t2[task]["sci_vec_shape"][0] for task in tasks_compressed_t2]
+    errors_n_reps = [results_compressed_t2[task]['error'] for task in tasks_compressed_t2 if results_compressed_t2[task]['error'] > 0 ]
+    sci_vec_shape_n_reps = [results_compressed_t2[task]["sci_vec_shape"][0] for task in tasks_compressed_t2 if results_compressed_t2[task]['sci_vec_shape'][0] > 0 ]
+    errors.append(np.average(errors_n_reps))
+    errors_min.append(np.average(errors_n_reps) - np.min(errors_n_reps))
+    errors_max.append(np.max(errors_n_reps) - np.average(errors_n_reps))
+    sci_vec_shape.append(np.average(sci_vec_shape_n_reps))
+    sci_vec_shape_min.append(np.average(sci_vec_shape_n_reps) - np.min(sci_vec_shape_n_reps))
+    sci_vec_shape_max.append(np.max(sci_vec_shape_n_reps) - np.average(sci_vec_shape_n_reps))
+
 
     axes[row_error, i].bar(
         width,
@@ -310,6 +374,14 @@ for i, bond_distance in enumerate(bond_distance_range):
         label="LUCJ compressed",
         color=colors["lucj_compressed"],
     )
+           
+    axes[row_error, i].errorbar(
+        width,
+        errors,
+        [errors_min, errors_max],
+        color='black',
+    )
+
     axes[row_sci_vec_dim, i].bar(
         width,
         sci_vec_shape,
@@ -317,6 +389,14 @@ for i, bond_distance in enumerate(bond_distance_range):
         label="LUCJ compressed",
         color=colors["lucj_compressed"],
     )
+    axes[row_sci_vec_dim, i].errorbar(
+        width,
+        sci_vec_shape,
+        [sci_vec_shape_min, sci_vec_shape_max],
+        color='black',
+    )
+
+
 
     axes[row_error, i].set_title(f"R: {bond_distance} Å ")
     axes[row_error, i].set_yscale("log")
