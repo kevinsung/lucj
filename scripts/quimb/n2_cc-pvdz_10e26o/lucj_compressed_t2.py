@@ -31,12 +31,10 @@ MAX_PROCESSES = 1
 OVERWRITE = False
 
 molecule_name = "n2"
-basis = "6-31g"
-nelectron, norb = 10, 16
+basis = "cc-pvdz"
+nelectron, norb = 10, 26
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
-
-bond_distance_range = [1.2, 2.4]
-# bond_distance_range = [1.2]
+bond_distance = 1.2
 
 connectivities = [
     # "square",
@@ -45,40 +43,40 @@ connectivities = [
 ]
 
 n_reps_range = [1]
-shots = 100_000
+shots = 10_000
+samples_per_batch = 4000
+max_dim = samples_per_batch
 n_batches = 10
 energy_tol = 1e-5
 occupancies_tol = 1e-3
 carryover_threshold = 1e-3
 max_iterations = 1
 symmetrize_spin = True
-cobyqa_maxiter = 2
+cobyqa_maxiter = 25
 # TODO set entropy and generate seeds properly
 entropy = 0
 max_bond: int
 max_bonds = [
     # 5,
-    10,
+    # 10,
     # 25,
-    # 50,
+    50,
     # 100,
     # 200,
     # None,
 ]
 cutoffs = [
-    1e-3,
+    # 1e-3,
     # 1e-6,
-    # 1e-10,
+    1e-10,
 ]
 seed = 0
 perm_mps = False
-max_dim = 4000
-samples_per_batch = max_dim
 
 tasks = [
     LUCJSQDQuimbTask(
         molecule_basename=molecule_basename,
-        bond_distance=d,
+        bond_distance=bond_distance,
         lucj_params=LUCJParams(
             connectivity=connectivity,
             n_reps=n_reps,
@@ -109,7 +107,6 @@ tasks = [
     for (connectivity, n_reps, max_bond, cutoff) in itertools.product(
         connectivities, n_reps_range, max_bonds, cutoffs
     )
-    for d in bond_distance_range
 ]
 if MAX_PROCESSES == 1:
     for task in tqdm(tasks):
