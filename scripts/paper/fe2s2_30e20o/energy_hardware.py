@@ -216,11 +216,11 @@ axes[row_sci_vec_dim].set_ylabel("SCI subspace")
 axes[row_sci_vec_dim].set_xticks([])
 
 leg = axes[row_sci_vec_dim].legend(
-    bbox_to_anchor=(0.5, -0.4), loc="upper center", ncol=3
+    bbox_to_anchor=(0.5, -0.05), loc="upper center", ncol=3
 )
 leg.set_in_layout(False)
 plt.tight_layout()
-plt.subplots_adjust(top=0.9,bottom=0.18)
+plt.subplots_adjust(top=0.94,bottom=0.1)
 
 fig.suptitle(
     f"CCSD initial parameters {molecule_name} ({nelectron}e, {norb}o)"

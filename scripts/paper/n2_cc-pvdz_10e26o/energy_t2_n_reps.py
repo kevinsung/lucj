@@ -64,7 +64,7 @@ def load_data(filepath):
     return result
 
 
-def init_loss(n_reps: int, bond_distance):
+def init_loss(n_reps: int, bond_distance, connectivity):
     mol_data = load_molecular_data(
         f"{molecule_basename}_d-{bond_distance:.5f}",
         molecules_catalog_dir=MOLECULES_CATALOG_DIR,
@@ -72,12 +72,12 @@ def init_loss(n_reps: int, bond_distance):
     norb = mol_data.norb
     nelec = mol_data.nelec
     pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
-        task.lucj_params.connectivity, norb
+        connectivity, norb
     )
     operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
         mol_data.ccsd_t2,
-        n_reps=task.lucj_params.n_reps,
-        t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
+        n_reps=n_reps,
+        t1=mol_data.ccsd_t1,
         interaction_pairs=(pairs_aa, pairs_ab),
     )
     diag_coulomb_mats = operator.diag_coulomb_mats

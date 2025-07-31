@@ -8,7 +8,12 @@ from lucj.params import LUCJParams, CompressedT2Params
 from lucj.sqd_energy_task.lucj_compressed_t2_task import SQDEnergyTask
 from lucj.sqd_energy_task.lucj_random_t2_task import RandomSQDEnergyTask
 import json
+from molecules_catalog.util import load_molecular_data
+from ffsim.variational.util import interaction_pairs_spin_balanced
+import ffsim
 import numpy as np
+from opt_einsum import contract
+import pyscf
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
@@ -67,6 +72,50 @@ linestyles = ["--", ":"]
 with open("scripts/paper/color.json", "r") as file:
     colors = json.load(file)
 
+
+mol_data = load_molecular_data(
+    f"{molecule_basename}",
+    molecules_catalog_dir=MOLECULES_CATALOG_DIR,
+)
+norb = mol_data.norb
+nelec = mol_data.nelec
+
+def init_loss(n_reps: int, connectivity):
+    pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
+        connectivity, norb
+    )
+    c0, c1, c2 = pyscf.ci.cisd.cisdvec_to_amplitudes(
+        mol_data.cisd_vec, norb, nelec[0]
+    )
+    assert abs(c0) > 1e-8
+    t1 = c1 / c0
+    t2 = c2 / c0 - np.einsum("ia,jb->ijab", t1, t1)
+    operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
+        t2,
+        t1=t1,
+        n_reps=n_reps,
+        interaction_pairs=(pairs_aa, pairs_ab)
+    ) 
+    diag_coulomb_mats = operator.diag_coulomb_mats
+    orbital_rotations = operator.orbital_rotations
+    diag_coulomb_mats = np.unstack(diag_coulomb_mats, axis=1)[0]
+    nocc, _, _, _ = t2.shape
+    reconstructed = (
+            1j
+            * contract(
+                "mpq,map,mip,mbq,mjq->ijab",
+                diag_coulomb_mats,
+                orbital_rotations,
+                orbital_rotations.conj(),
+                orbital_rotations,
+                orbital_rotations.conj(),
+                # optimize="greedy"
+            )[:nocc, :nocc, nocc:, nocc:]
+        )
+    diff = reconstructed - t2
+    return 0.5 * np.sum(np.abs(diff) ** 2)
+
+
 task = RandomSQDEnergyTask(
     molecule_basename=molecule_basename,
     bond_distance=None,
@@ -87,7 +136,7 @@ result_random = load_data(filepath)
 
 
 fig, axes = plt.subplots(
-    2,
+    3,
     len(connectivities),
     figsize=(10, 5),  # , layout="constrained"
 )
@@ -353,6 +402,11 @@ for i, connectivity in enumerate(connectivities):
             # print(error_max[-1])
             # input()
 
+            # if color_key == "lucj_compressed":
+            #     print(energy_avg)
+            #     print(np.min(results["history_energy"]))
+            #     input()
+
         axes[0, i].plot(
             n_reps_range,
             error_avg,
@@ -383,6 +437,27 @@ for i, connectivity in enumerate(connectivities):
             color=colors[color_key],
         )
 
+        list_loss = [[], []]
+
+        for n_reps in n_reps_range:
+            list_loss[0].append(init_loss(n_reps, connectivity))
+
+        for task in tasks_compressed_t2:
+            filepath = DATA_ROOT / task.operatorpath / "opt_data.pickle"
+            results = load_data(filepath)
+            list_loss[1].append(results["final_loss"])
+        
+        color_keys = ["lucj_truncated", "lucj_compressed"]
+        labels = ["LUCJ-truncated", "LUCJ-compressed"]
+        for loss, color_key, label in zip(list_loss, color_keys, labels):
+            axes[2, i].plot(
+                n_reps_range,
+                loss,
+                f"{markers[0]}{linestyles[0]}",
+                label=label,
+                color=colors[color_key],
+            )
+
     axes[0, i].set_title(connectivity)
     axes[0, i].set_yscale("log")
     # axes[0, i].axhline(1.6e-3, linestyle="--", color="gray")
@@ -393,8 +468,14 @@ for i, connectivity in enumerate(connectivities):
     axes[1, i].set_ylabel("SCI subspace")
     axes[1, i].set_xlabel("Repetitions")
     axes[1, i].set_xticks(n_reps_range)
+    axes[1, i].set_yticks([2000, 4000])
 
-    leg = axes[1, 1].legend(bbox_to_anchor=(-0.3, -0.28), loc="upper center", ncol=5)
+    axes[2, i].set_ylabel("Operator loss")
+    axes[2, i].set_xlabel("Repetitions")
+    axes[2, i].set_xticks(n_reps_range)
+    axes[2, i].set_yscale("log")
+
+    leg = axes[2, 1].legend(bbox_to_anchor=(-0.2, -0.52), loc="upper center", ncol=5)
     leg.set_in_layout(False)
     plt.tight_layout()
     plt.subplots_adjust(bottom=0.16)
