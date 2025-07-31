@@ -149,12 +149,16 @@ def double_factorized_t2_compress(
     interaction_pairs: tuple[list[tuple[int, int]] | None, list[tuple[int, int]] | None]
     | None = None,
     multi_stage_optimization: bool = True,
+    regularization: bool = False,
+    regularization_option: int = 0,
+    regularization_factor: float | None = None,
     begin_reps: int | None = None,
     step: int = 2
 ) -> tuple[np.ndarray, np.ndarray, float, float]:
     diag_coulomb_mats, orbital_rotations = ffsim.linalg.double_factorized_t2(
         t2, tol=tol
     )
+    ori_diag_coulomb_mats = diag_coulomb_mats
     _, _, norb, _ = orbital_rotations.shape
     orbital_rotations = orbital_rotations.reshape(-1, norb, norb)
     n_reps_full, norb, _ = orbital_rotations.shape
@@ -164,7 +168,7 @@ def double_factorized_t2_compress(
         n_reps_full = n_reps
     if begin_reps is None:
         begin_reps = n_reps_full
-
+    # print(begin_reps)
     pairs_aa, pairs_ab = interaction_pairs
     # Zero out diagonal coulomb matrix entries
     pairs = []
@@ -184,7 +188,10 @@ def double_factorized_t2_compress(
     diag_coulomb_mask = np.triu(diag_coulomb_mask)
     list_init_loss = []
     list_final_loss = []
-    list_reps = list(range(begin_reps, n_reps - 1, -step)) + [n_reps]
+    list_reps = [i for i in range(begin_reps, n_reps, -step)] + [n_reps]
+    # coefficient for regularization
+    if regularization_factor is None:
+        regularization_factor = 1e-4
     for n_tensors in list_reps:
         diag_coulomb_mats = diag_coulomb_mats[:n_tensors]
         orbital_rotations = orbital_rotations[:n_tensors]
@@ -253,7 +260,21 @@ def double_factorized_t2_compress(
                 )[:nocc, :nocc, nocc:, nocc:]
             )
             diff = reconstructed - t2
-            return 0.5 * jnp.sum(jnp.abs(diff) ** 2)
+
+            # regularization term
+            regularization_cost = 0
+            if regularization:
+                for diag_coulomb_mat in diag_coulomb_mats:
+                    regularization_cost += jnp.sum(jnp.abs(diag_coulomb_mat) ** 2) 
+                if regularization_option == 1:
+                    for ori_diag_coulomb_mat in ori_diag_coulomb_mats:
+                        regularization_cost -= jnp.sum(jnp.abs(ori_diag_coulomb_mat) ** 2) 
+                if regularization_option == 2:
+                    regularization_cost = 0
+                    for reps in range(n_reps):
+                        regularization_cost += (jnp.sum(jnp.abs(ori_diag_coulomb_mats[reps] - diag_coulomb_mats[reps]) ** 2) )
+
+            return 0.5 * jnp.sum(jnp.abs(diff) ** 2) + regularization_factor * jnp.abs(regularization_cost)
 
         # value_and_grad_func = jax.value_and_grad(fun_jax, argnums=(0, 1), holomorphic=True)
         value_and_grad_func = jax.value_and_grad(fun_jax, argnums=(0, 1))
@@ -284,7 +305,7 @@ def double_factorized_t2_compress(
         # method = "trust-constr"
         # method = "COBYQA"
         # method = "COBYLA"
-        options = {"maxiter": 100}
+        options = {"maxiter": 200}
 
 
         x0 = _df_tensors_to_params(diag_coulomb_mats, orbital_rotations, diag_coulomb_mask)
@@ -305,7 +326,7 @@ def double_factorized_t2_compress(
             result.x, n_tensors, norb, diag_coulomb_mask
         )
         final_loss, _ = fun_jac(result.x)
-        print(f"final loss: {final_loss}")
+        print(f"final_loss: {final_loss}")
         list_final_loss.append(final_loss)
     
     # stack here without dealing with interaction constraint for Jaa, Jab
@@ -322,9 +343,12 @@ def from_t_amplitudes_compressed(
     | None = None,
     tol: float = 1e-8,
     optimize: bool = False,
-    multi_stage_optimization: bool | None = True,
+    multi_stage_optimization: bool | None = False,
     begin_reps: int | None = None,
-    step: int | None = 2
+    step: int | None = 2,
+    regularization: bool = False,
+    regularization_option: int = 0,
+    regularization_factor: float | None = None,
 ) -> ffsim.UCJOpSpinBalanced:
     if interaction_pairs is None:
         interaction_pairs = (None, None)
@@ -342,7 +366,10 @@ def from_t_amplitudes_compressed(
                 nocc=nocc,
                 multi_stage_optimization=multi_stage_optimization,
                 begin_reps=begin_reps,
-                step=step
+                step=step,
+                regularization = regularization,
+                regularization_option = regularization_option,
+                regularization_factor = regularization_factor
             )
         )
     else:
@@ -393,11 +420,11 @@ def from_t_amplitudes_compressed(
         init_loss,
         final_loss,
     )
-'''
-molecule_name = "n2"
-basis = "sto-6g"
-nelectron, norb = 10, 8
 
+
+molecule_name = "n2"
+basis = "cc-pvdz"
+nelectron, norb = 10, 26
 
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
@@ -433,7 +460,9 @@ operator, init_loss, final_loss = from_t_amplitudes_compressed(
     interaction_pairs=(pairs_aa, pairs_ab),
     optimize=True,
     multi_stage_optimization=True,
-    step=5
+    begin_reps=50,
+    step=2
+
 )
 
 import pickle 
@@ -456,5 +485,4 @@ with open(f"scratch/operator_n2_sto_6g_n_reps_{n_reps}_circuit.qpy", "wb") as fi
 
 print(f"init loss: {init_loss}")
 print(f"final loss: {final_loss}")
-'''
 

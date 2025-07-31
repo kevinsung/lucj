@@ -20,14 +20,14 @@ os.makedirs(plots_dir, exist_ok=True)
 
 shots = 100_000
 n_batches = 3
-energy_tol = 1e-5
-occupancies_tol = 1e-3
-carryover_threshold = 1e-3
-max_iterations = 100
+energy_tol = 1e-8
+occupancies_tol = 1e-5
+carryover_threshold = 1e-4
+max_iterations = 10
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
-samples_per_batch = 4000
+samples_per_batch = 2500
 max_dim = samples_per_batch
 dmrg_energy = -116.6056091 #ref: https://github.com/jrm874/sqd_data_repository/blob/main/classical_reference_energies/2Fe-2S/classical_methods_energies.txt
 
@@ -216,11 +216,11 @@ axes[row_sci_vec_dim].set_ylabel("SCI subspace")
 axes[row_sci_vec_dim].set_xticks([])
 
 leg = axes[row_sci_vec_dim].legend(
-    bbox_to_anchor=(0.5, -0.4), loc="upper center", ncol=3
+    bbox_to_anchor=(0.5, -0.05), loc="upper center", ncol=3
 )
 leg.set_in_layout(False)
 plt.tight_layout()
-plt.subplots_adjust(top=0.9,bottom=0.18)
+plt.subplots_adjust(top=0.94,bottom=0.1)
 
 fig.suptitle(
     f"CCSD initial parameters {molecule_name} ({nelectron}e, {norb}o)"

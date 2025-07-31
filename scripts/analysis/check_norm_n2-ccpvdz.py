@@ -29,8 +29,8 @@ MAX_PROCESSES = 8
 OVERWRITE = False
 
 molecule_name = "n2"
-basis = "6-31g"
-nelectron, norb = 10, 16
+basis = "cc-pvdz"
+nelectron, norb = 10, 26
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 bond_distance_range = [1.2, 2.4]
@@ -40,7 +40,7 @@ connectivities = [
     # "square",
     "all-to-all",
 ]
-n_reps_range = list(range(2, 14, 2))
+n_reps_range = list(range(1, 11, 1))
 
 markers = ["o", "s", "v", "D", "p", "*", "P", "X"]
 prop_cycle = plt.rcParams["axes.prop_cycle"]
@@ -141,7 +141,7 @@ for connectivity in connectivities:
                                     ),
                                     compressed_t2_params=CompressedT2Params(
                                         multi_stage_optimization=True,
-                                        begin_reps=20,
+                                        begin_reps=50,
                                         step=2
                                     ),
                                     regularization=False
@@ -165,11 +165,11 @@ for connectivity in connectivities:
                 ),
                 compressed_t2_params=CompressedT2Params(
                     multi_stage_optimization=True,
-                    begin_reps=20,
-                    step=2
+                    begin_reps=40,
+                    step=4
                 ),
-                regularization=True,
-                regularization_option=1
+                regularization=False,
+                regularization_option=0
             )
             operator_filename = DATA_DIR / task_compressed_t2_reg.dirpath / "operator.npz"
             operator = np.load(operator_filename)
@@ -178,23 +178,6 @@ for connectivity in connectivities:
             opt_data_filename = DATA_DIR / task_compressed_t2_reg.dirpath / "opt_data.pickle"
             t2_loss = loss(diag_coulomb_mats_compressed_t2_reg, orbital_rotations_compressed_t2_reg, mol_data.ccsd_t2)
             list_loss_compression_reg.append(t2_loss)
-
-            if connectivity != 'all-to-all':
-                task_compressed_t2_connectivity = LUCJCompressedT2Task(
-                                        molecule_basename=molecule_basename,
-                                        bond_distance=d,
-                                        lucj_params=LUCJParams(
-                                            connectivity=connectivity,
-                                            n_reps=n_reps,
-                                            with_final_orbital_rotation=True,
-                                        ),
-                                        compressed_t2_params=None,
-                                        connectivity_opt=True,
-                                    )
-                operator_filename = DATA_DIR / task_compressed_t2_connectivity.dirpath / "operator.npz"
-                operator = np.load(operator_filename)
-                diag_coulomb_mats_compressed_t2_connectivity = operator["diag_coulomb_mats"]
-                orbital_rotations_compressed_t2_connectivity = operator["orbital_rotations"]
 
             # print(f"\nconnectivity: {connectivity}, d: {d}, n_reps: {n_reps}")
             norm_reference_diagonal_coulumb = []
@@ -234,14 +217,6 @@ for connectivity in connectivities:
                 norm_compressed_orbital_rotation_reg.append(np.sum(np.abs(orbital_rotations_compressed_t2_reg[layer]) ** 2))
                 diff_norm_compressed_orbital_rotation_reg.append(np.sum(np.abs(diff_orbital_rotations_reg) ** 2))
                 
-                if connectivity != "all-to-all":
-                    diff_diag_coulomb_mats_c = diag_coulomb_mats_compressed_t2_connectivity[layer] - diag_coulomb_mats_reference[layer]
-                    diff_orbital_rotations_c = orbital_rotations_compressed_t2_connectivity[layer] - orbital_rotations_reference[layer]
-                    norm_compressed_connectivity_diagonal_coulumb.append(np.sum(np.abs(diag_coulomb_mats_compressed_t2_connectivity[layer]) ** 2))
-                    diff_norm_compressed_connectivity_diagonal_coulumb.append(np.sum(np.abs(diff_diag_coulomb_mats_c) ** 2))
-                    
-                    norm_compressed_connectivity_orbital_rotation.append(np.sum(np.abs(orbital_rotations_compressed_t2_connectivity[layer]) ** 2))
-                    diff_norm_compressed_connectivity_orbital_rotation.append(np.sum(np.abs(diff_orbital_rotations_c) ** 2))
                 # print("coulumb matrices")
                 # print(f"norm of reference   : {np.sum(np.abs(diag_coulomb_mats_reference[layer]) ** 2):.4f}")
                 # print(f"norm of compressed  : {np.sum(np.abs(diag_coulomb_mats_compressed_t2[layer]) ** 2):.4f}")
@@ -266,12 +241,6 @@ for connectivity in connectivities:
             list_average_diff_norm_compressed_diagonal_coulumb_reg.append(np.average(diff_norm_compressed_diagonal_coulumb_reg))
             list_average_norm_compressed_orbital_rotation_reg.append(np.average(norm_compressed_orbital_rotation_reg))
             list_average_diff_norm_compressed_orbital_rotation_reg.append(np.average(diff_norm_compressed_orbital_rotation_reg))
-            
-            if connectivity != "all-to-all":
-                list_average_norm_compressed_connectivity_diagonal_coulumb.append(np.average(norm_compressed_connectivity_diagonal_coulumb))
-                list_average_diff_norm_compressed_connectivity_diagonal_coulumb.append(np.average(diff_norm_compressed_connectivity_diagonal_coulumb))
-                list_average_norm_compressed_connectivity_orbital_rotation.append(np.average(norm_compressed_connectivity_orbital_rotation))
-                list_average_diff_norm_compressed_connectivity_orbital_rotation.append(np.average(diff_norm_compressed_connectivity_orbital_rotation))
         
         # diag coulumn norm
         axes[0, i].axhline(
@@ -294,7 +263,7 @@ for connectivity in connectivities:
             n_reps_range,
             list_average_norm_compressed_diagonal_coulumb,
             f"{markers[0]}{linestyles[0]}",
-            label="LUCJ compressed",
+            label="LUCJ compressed-50/2",
             color=colors[5],
         )
 
@@ -302,42 +271,27 @@ for connectivity in connectivities:
             n_reps_range,
             list_average_norm_compressed_diagonal_coulumb_reg,
             f"{markers[1]}{linestyles[0]}",
-            label="LUCJ compressed-reg0",
+            label="LUCJ compressed-40/4",
             color=colors[5],
             alpha=alphas[0],
         )
 
-        if connectivity != "all-to-all":
-            axes[0, i].plot(
-                n_reps_range,
-                list_average_norm_compressed_connectivity_diagonal_coulumb,
-                f"{markers[0]}{linestyles[0]}",
-                label="LUCJ compressed-c",
-                color=colors[6],
-            )
+        
         # diag coulumn norm diff
         axes[1, i].plot(
             n_reps_range,
             list_average_diff_norm_compressed_diagonal_coulumb,
             f"{markers[0]}{linestyles[0]}",
-            label="LUCJ compressed",
+            label="LUCJ compressed-50/2",
             color=colors[5],
         )
 
-        if connectivity != "all-to-all":
-            axes[1, i].plot(
-                n_reps_range,
-                list_average_diff_norm_compressed_connectivity_diagonal_coulumb,
-                f"{markers[0]}{linestyles[0]}",
-                label="LUCJ compressed-c",
-                color=colors[6],
-            )
 
         axes[1, i].plot(
             n_reps_range,
             list_average_diff_norm_compressed_diagonal_coulumb_reg,
             f"{markers[1]}{linestyles[0]}",
-            label="LUCJ compressed-reg0",
+            label="LUCJ compressed-40/4",
             color=colors[5],
             alpha=alphas[0],
         )
@@ -363,24 +317,15 @@ for connectivity in connectivities:
             n_reps_range,
             list_average_norm_compressed_orbital_rotation,
             f"{markers[0]}{linestyles[0]}",
-            label="LUCJ compressed",
+            label="LUCJ compressed-50/2",
             color=colors[5],
         )
-
-        if connectivity != "all-to-all":
-            axes[2, i].plot(
-                n_reps_range,
-                list_average_norm_compressed_connectivity_orbital_rotation,
-                f"{markers[0]}{linestyles[0]}",
-                label="LUCJ compressed-c",
-                color=colors[6],
-            )
         
         axes[2, i].plot(
             n_reps_range,
             list_average_norm_compressed_orbital_rotation_reg,
             f"{markers[1]}{linestyles[0]}",
-            label="LUCJ compressed-reg0",
+            label="LUCJ compressed-40/4",
             color=colors[5],
             alpha=alphas[0],
         )
@@ -390,23 +335,15 @@ for connectivity in connectivities:
             n_reps_range,
             list_average_diff_norm_compressed_orbital_rotation,
             f"{markers[0]}{linestyles[0]}",
-            label="LUCJ compressed",
+            label="LUCJ compressed-50/2",
             color=colors[5],
         )
-        if connectivity != "all-to-all":
-            axes[3, i].plot(
-                n_reps_range,
-                list_average_diff_norm_compressed_connectivity_orbital_rotation,
-                f"{markers[0]}{linestyles[0]}",
-                label="LUCJ compressed-c",
-                color=colors[6],
-            )
 
         axes[3, i].plot(
             n_reps_range,
             list_average_diff_norm_compressed_orbital_rotation_reg,
             f"{markers[1]}{linestyles[0]}",
-            label="LUCJ compressed-reg0",
+            label="LUCJ compressed-40/4",
             color=colors[5],
             alpha=alphas[0],
         )
@@ -416,17 +353,9 @@ for connectivity in connectivities:
             n_reps_range,
             list_loss_compression,
             f"{markers[0]}{linestyles[0]}",
-            label="LUCJ compressed",
+            label="LUCJ compressed-50/2",
             color=colors[5],
         )
-        if connectivity != "all-to-all":
-            axes[4, i].plot(
-                [],
-                [],
-                f"{markers[0]}{linestyles[0]}",
-                label="LUCJ compressed-c",
-                color=colors[6],
-            )  
 
         print("list_loss_compression_reg0")
         print(list_loss_compression_reg)
@@ -435,7 +364,7 @@ for connectivity in connectivities:
             n_reps_range,
             list_loss_compression_reg,
             f"{markers[1]}{linestyles[0]}",
-            label="LUCJ compressed-reg0",
+            label="LUCJ compressed-40/4",
             color=colors[5],
             alpha=alphas[0],
         )

@@ -6,19 +6,16 @@ from pathlib import Path
 import pyscf
 import ffsim
 import numpy as np
-import scipy.stats
 from molecules_catalog.util import load_molecular_data
 from ffsim.variational.util import interaction_pairs_spin_balanced
 from lucj.params import LUCJParams, CompressedT2Params
 
 from qiskit.primitives import BitArray
-from qiskit_addon_sqd.fermion import SCIResult, diagonalize_fermionic_hamiltonian, solve_sci_batch
-from functools import partial
 
 logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True, kw_only=True)
-class SQDEnergyTask:
+class StateVecTask:
     molecule_basename: str
     bond_distance: float | None
     lucj_params: LUCJParams
@@ -27,7 +24,6 @@ class SQDEnergyTask:
     random_op: bool = False
     regularization: bool = False
     regularization_option: int | None = None
-    regularization_factor: float | None = None
     shots: int
     samples_per_batch: int
     n_batches: int
@@ -48,10 +44,7 @@ class SQDEnergyTask:
         elif self.compressed_t2_params is not None:
             compress_option = self.compressed_t2_params.dirpath
             if self.regularization:
-                if self.regularization_factor is None:
-                    compress_option = f"{compress_option}/regularization_{self.regularization_option}"
-                else:
-                    compress_option = f"{compress_option}/regularization_{self.regularization_option}_{self.regularization_factor:.6f}"
+                compress_option = f"{compress_option}/regularization_{self.regularization_option}"
         else:
             compress_option = "truncated"
         return (
@@ -84,10 +77,7 @@ class SQDEnergyTask:
         elif self.compressed_t2_params is not None:
             compress_option = self.compressed_t2_params.dirpath
             if self.regularization:
-                if self.regularization_factor is None:
-                    compress_option = f"{compress_option}/regularization_{self.regularization_option}"
-                else:
-                    compress_option = f"{compress_option}/regularization_{self.regularization_option}_{self.regularization_factor:.6f}"
+                compress_option = f"{compress_option}/regularization_{self.regularization_option}"
         else:
             compress_option = "truncated"
         return (
@@ -102,7 +92,7 @@ class SQDEnergyTask:
         )
 
 
-def load_operator(task: SQDEnergyTask, data_dir: str, mol_data):
+def load_operator(task: StateVecTask, data_dir: str, mol_data):
     if task.random_op:
         logging.info(f"Generate random operator for {task}.\n")
         norb = mol_data.norb
@@ -178,21 +168,22 @@ def load_operator(task: SQDEnergyTask, data_dir: str, mol_data):
             )
     return operator
 
-def run_sqd_energy_task(
-    task: SQDEnergyTask,
+def run_state_vec_task(
+    task: StateVecTask,
     *,
     data_dir: Path,
     molecules_catalog_dir: Path | None = None,
     overwrite: bool = True,
-) -> SQDEnergyTask:
+) -> StateVecTask:
     logging.info(f"{task} Starting...\n")
     os.makedirs(data_dir / task.dirpath, exist_ok=True)
 
-    data_filename = data_dir / task.dirpath / "sqd_data.pickle"
-    if (not overwrite) and os.path.exists(data_filename):
+    sample_filename = data_dir / task.operatorpath / "sample.pickle"
+    state_vector_filename = data_dir / task.operatorpath / "state_vector.npy"
+
+    if (not overwrite) and os.path.exists(state_vector_filename):
         logging.info(f"Data for {task} already exists. Skipping...\n")
         return task
-    
 
     # Get molecular data and molecular Hamiltonian
     if task.molecule_basename == "fe2s2_30e20o":
@@ -207,16 +198,11 @@ def run_sqd_energy_task(
         )
     norb = mol_data.norb
     nelec = mol_data.nelec
-    mol_hamiltonian = mol_data.hamiltonian
 
     # Initialize Hamiltonian, initial state, and LUCJ parameters
-    hamiltonian = ffsim.linear_operator(mol_hamiltonian, norb=norb, nelec=nelec)
     reference_state = ffsim.hartree_fock_state(norb, nelec)
 
     # use CCSD to initialize parameters
-    vqe_filename = data_dir / task.operatorpath / "data.pickle"
-    sample_filename = data_dir / task.operatorpath / "sample.pickle"
-    state_vector_filename = data_dir / task.operatorpath / "state_vector.npy"
     
     rng = np.random.default_rng(task.entropy)
     
@@ -231,35 +217,10 @@ def run_sqd_energy_task(
             
             # Compute final state
             if not os.path.exists(state_vector_filename):
+                logging.info(f"{task} compute state vector...\n")
                 final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
                 with open(state_vector_filename, "wb") as f:
                     np.save(f, final_state)
-        
-        # record vqe energy
-        if task.molecule_basename != "fe2s2_30e20o":
-            logging.info(f"{task} Computing VQE data...\n")
-            energy = np.vdot(final_state, hamiltonian @ final_state).real
-            if mol_data.fci_energy is None:
-                error = energy - mol_data.sci_energy
-            else:
-                error = energy - mol_data.fci_energy
-            spin_squared = ffsim.spin_square(
-                final_state, norb=mol_data.norb, nelec=mol_data.nelec
-            )
-            probs = np.abs(final_state) ** 2
-            entropy = scipy.stats.entropy(probs)
-
-            data = {
-                "energy": energy,
-                "error": error,
-                "spin_squared": spin_squared,
-                "entropy": entropy,
-            }
-
-            logging.info(f"{task} Saving VQE data...\n")
-            with open(vqe_filename, "wb") as f:
-                pickle.dump(data, f)
-
 
         logging.info(f"{task} Sampling...\n")
         samples = ffsim.sample_state_vector(
@@ -280,83 +241,3 @@ def run_sqd_energy_task(
         with open(sample_filename, "rb") as f:
             bit_array_count = pickle.load(f)
             bit_array = BitArray.from_counts(bit_array_count)
-    
-    array = bit_array.to_bool_array()
-
-    # Generate n unique random integers from the specified range
-    unique_integers = np.random.choice(np.arange(0, array.shape[0]), size=task.shots, replace=False)
-    array = array[unique_integers]
-    bit_array = BitArray.from_bool_array(array)
-    
-
-    # Run SQD
-    logging.info(f"{task} Running SQD...\n")
-    sci_solver = partial(solve_sci_batch, spin_sq=0.0)
-
-    result_history_energy = []
-    result_history_subspace_dim = []
-    result_history = []
-    
-    def callback(results: list[SCIResult]):
-        result_energy = []
-        result_subspace_dim = []
-        iteration = len(result_history)
-        result_history.append(results)
-        logging.info(f"Iteration {iteration}")
-        for i, result in enumerate(results):
-            result_energy.append(result.energy + mol_data.core_energy)
-            result_subspace_dim.append(result.sci_state.amplitudes.shape)
-            logging.info(f"\tSubsample {i}")
-            logging.info(f"\t\tEnergy: {result.energy + mol_data.core_energy}")
-            logging.info(
-                f"\t\tSubspace dimension: {np.prod(result.sci_state.amplitudes.shape)}"
-            )
-        result_history_energy.append(result_energy)
-        result_history_subspace_dim.append(result_subspace_dim)
-
-    result = diagonalize_fermionic_hamiltonian(
-        mol_hamiltonian.one_body_tensor,
-        mol_hamiltonian.two_body_tensor,
-        bit_array,
-        samples_per_batch=task.samples_per_batch,
-        norb=norb,
-        nelec=nelec,
-        num_batches=task.n_batches,
-        energy_tol=task.energy_tol,
-        occupancies_tol=task.occupancies_tol,
-        max_iterations=task.max_iterations,
-        sci_solver=sci_solver,
-        symmetrize_spin=task.symmetrize_spin,
-        carryover_threshold=task.carryover_threshold,
-        seed=rng,
-        callback=callback,
-        max_dim=task.max_dim
-    )
-    energy = result.energy + mol_data.core_energy
-    sci_state = result.sci_state
-    spin_squared = sci_state.spin_square()
-    if mol_data.fci_energy is not None:
-        error = energy - mol_data.fci_energy
-    elif mol_data.sci_energy is not None:
-        error = energy - mol_data.sci_energy
-    else:
-        error = -1
-
-    # Save data
-    data = {
-        "energy": energy,
-        "error": error,
-        "spin_squared": spin_squared,
-        "sci_vec_shape": sci_state.amplitudes.shape,
-        "history_energy": result_history_energy,
-        "history_sci_vec_shape": result_history_subspace_dim
-    }
-    
-    logging.info(f"{task} Saving SQD data...\n")
-    with open(data_filename, "wb") as f:
-        pickle.dump(data, f)
-
-
-
-
-

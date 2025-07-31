@@ -8,10 +8,10 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from lucj.params import LUCJParams, CompressedT2Params
-from lucj.hardware_sqd_task.lucj_compressed_t2_task_sci import (
-    HardwareSQDEnergyTask,
-    run_hardware_sqd_energy_task,
+from lucj.params import LUCJParams, CompressedT2Params, COBYQAParams
+from lucj.quimb_task.lucj_sqd_quimb_task import (
+    LUCJSQDQuimbTask,
+    run_lucj_sqd_quimb_task,
 )
 
 filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}.log"
@@ -27,44 +27,68 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 8
+MAX_PROCESSES = 1
 OVERWRITE = False
 
 molecule_name = "n2"
-basis = "6-31g"
-nelectron, norb = 10, 16
+basis = "cc-pvdz"
+nelectron, norb = 10, 26
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
+bond_distance = 1.2
 
-bond_distance_range = [1.2, 2.4]
-# bond_distance_range = [1.2]
+connectivities = [
+    # "square",
+    # "all-to-all",
+    "heavy-hex"
+]
 
 n_reps_range = [1]
-
-shots = 100_000
-n_batches = 3
-energy_tol = 1e-8
-occupancies_tol = 1e-5
-carryover_threshold = 1e-4
-max_iterations = 20
+shots = 10_000
+samples_per_batch = 4000
+max_dim = samples_per_batch
+n_batches = 10
+energy_tol = 1e-5
+occupancies_tol = 1e-3
+carryover_threshold = 1e-3
+max_iterations = 1
 symmetrize_spin = True
+cobyqa_maxiter = 25
 # TODO set entropy and generate seeds properly
-entropies = list(range(1, 11))
-
-max_dim = 1000
-samples_per_batch = max_dim
+entropy = 0
+max_bond: int
+max_bonds = [
+    # 5,
+    # 10,
+    # 25,
+    50,
+    # 100,
+    # 200,
+    # None,
+]
+cutoffs = [
+    # 1e-3,
+    # 1e-6,
+    1e-10,
+]
+seed = 0
+perm_mps = False
 
 tasks = [
-    HardwareSQDEnergyTask(
+    LUCJSQDQuimbTask(
         molecule_basename=molecule_basename,
-        bond_distance=d,
+        bond_distance=bond_distance,
         lucj_params=LUCJParams(
-            connectivity="heavy-hex",
+            connectivity=connectivity,
             n_reps=n_reps,
             with_final_orbital_rotation=True,
         ),
-        compressed_t2_params=None,
-        connectivity_opt=False,
-        random_op =True,
+        compressed_t2_params=CompressedT2Params(
+            multi_stage_optimization=True,
+            begin_reps=20,
+            step=2
+        ),
+        regularization=False,
+        cobyqa_params=COBYQAParams(maxiter=cobyqa_maxiter),
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
@@ -74,15 +98,19 @@ tasks = [
         max_iterations=max_iterations,
         symmetrize_spin=symmetrize_spin,
         entropy=entropy,
-        max_dim=max_dim,
+        max_bond = max_bond,
+        perm_mps = perm_mps,
+        cutoff = cutoff,
+        seed = seed,
+        max_dim = max_dim,
     )
-    for n_reps in n_reps_range
-    for d in bond_distance_range
-    for entropy in entropies
+    for (connectivity, n_reps, max_bond, cutoff) in itertools.product(
+        connectivities, n_reps_range, max_bonds, cutoffs
+    )
 ]
 if MAX_PROCESSES == 1:
     for task in tqdm(tasks):
-        run_hardware_sqd_energy_task(
+        run_lucj_sqd_quimb_task(
             task,
             data_dir=DATA_DIR,
             molecules_catalog_dir=MOLECULES_CATALOG_DIR,
@@ -93,7 +121,7 @@ else:
         with ProcessPoolExecutor(MAX_PROCESSES) as executor:
             for task in tasks:
                 future = executor.submit(
-                    run_hardware_sqd_energy_task,
+                    run_lucj_sqd_quimb_task,
                     task,
                     data_dir=DATA_DIR,
                     molecules_catalog_dir=MOLECULES_CATALOG_DIR,

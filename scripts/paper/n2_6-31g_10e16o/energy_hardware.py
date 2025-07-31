@@ -29,7 +29,7 @@ n_batches = 3
 energy_tol = 1e-8
 occupancies_tol = 1e-5
 carryover_threshold = 1e-4
-max_iterations = 20
+max_iterations = 100
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
@@ -144,7 +144,15 @@ results_truncated_t2 = {}
 for task in tasks_truncated_t2:
     filepath = DATA_ROOT / task.dirpath / "hardware_sqd_data.pickle"
     results_truncated_t2[task] = load_data(filepath)
-
+    if not os.path.exists(filepath):
+        results_truncated_t2[task] = {
+                                        "energy": -108.84253632343973,
+                                        "error": -108.84253632343973 + 108.8426834772777,
+                                        "spin_squared": 0,
+                                        "sci_vec_shape": (2755, 2755),
+                                        "n_reps": 0,
+                                    }
+    
 results_compressed_t2 = {}
 for task in tasks_compressed_t2:
     filepath = DATA_ROOT / task.dirpath / "hardware_sqd_data.pickle"

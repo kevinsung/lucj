@@ -14,7 +14,7 @@ from lucj.quimb_task.lucj_sqd_quimb_task import (
     run_lucj_sqd_quimb_task,
 )
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}.log"
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_maxbond_100.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -34,8 +34,6 @@ molecule_name = "fe2s2"
 nelectron, norb = 30, 20
 molecule_basename = f"{molecule_name}_{nelectron}e{norb}o"
 
-bond_distance_range = [None]
-# bond_distance_range = [1.2]
 
 connectivities = [
     # "square",
@@ -43,14 +41,15 @@ connectivities = [
     "heavy-hex"
 ]
 
-n_reps_range = [1]
+n_reps_range = [10]
 shots = 10_000
-samples_per_batch = 1000
-n_batches = 3
+samples_per_batch = 4000
+max_dim = samples_per_batch
+n_batches = 10
 energy_tol = 1e-5
 occupancies_tol = 1e-3
 carryover_threshold = 1e-3
-max_iterations = 10
+max_iterations = 1
 symmetrize_spin = True
 cobyqa_maxiter = 25
 # TODO set entropy and generate seeds properly
@@ -58,77 +57,73 @@ entropy = 0
 max_bond: int
 max_bonds = [
     # 5,
-    10,
+    # 10,
     # 25,
     # 50,
-    # 100,
+    100,
     # 200,
     # None,
 ]
 cutoffs = [
-    1e-3,
+    # 1e-3,
     # 1e-6,
-    # 1e-10,
+    1e-10,
 ]
 seed = 0
-perm_mps = True
-max_dim_range = [500]
+perm_mps = False
 
-for max_dim in max_dim_range:
-    tasks = [
-        LUCJSQDQuimbTask(
-            molecule_basename=molecule_basename,
-            bond_distance=d,
-            lucj_params=LUCJParams(
-                connectivity=connectivity,
-                n_reps=n_reps,
-                with_final_orbital_rotation=True,
-            ),
-            compressed_t2_params=CompressedT2Params(
-                multi_stage_optimization=True,
-                begin_reps=20,
-                step=2
-            ),
-            regularization=False,
-            cobyqa_params=COBYQAParams(maxiter=cobyqa_maxiter),
-            shots=shots,
-            samples_per_batch=samples_per_batch,
-            n_batches=n_batches,
-            energy_tol=energy_tol,
-            occupancies_tol=occupancies_tol,
-            carryover_threshold=carryover_threshold,
-            max_iterations=max_iterations,
-            symmetrize_spin=symmetrize_spin,
-            entropy=entropy,
-            max_bond = max_bond,
-            perm_mps = perm_mps,
-            cutoff = cutoff,
-            seed = seed,
-            max_dim = max_dim,
+tasks = [
+    LUCJSQDQuimbTask(
+        molecule_basename=molecule_basename,
+        bond_distance=None,
+        lucj_params=LUCJParams(
+            connectivity=connectivity,
+            n_reps=n_reps,
+            with_final_orbital_rotation=True,
+        ),
+        compressed_t2_params=CompressedT2Params(
+            multi_stage_optimization=True,
+            begin_reps=20,
+            step=2
+        ),
+        regularization=False,
+        cobyqa_params=COBYQAParams(maxiter=cobyqa_maxiter),
+        shots=shots,
+        samples_per_batch=samples_per_batch,
+        n_batches=n_batches,
+        energy_tol=energy_tol,
+        occupancies_tol=occupancies_tol,
+        carryover_threshold=carryover_threshold,
+        max_iterations=max_iterations,
+        symmetrize_spin=symmetrize_spin,
+        entropy=entropy,
+        max_bond = max_bond,
+        perm_mps = perm_mps,
+        cutoff = cutoff,
+        seed = seed,
+        max_dim = max_dim,
+    )
+    for (connectivity, n_reps, max_bond, cutoff) in itertools.product(
+        connectivities, n_reps_range, max_bonds, cutoffs
+    )
+]
+if MAX_PROCESSES == 1:
+    for task in tqdm(tasks):
+        run_lucj_sqd_quimb_task(
+            task,
+            data_dir=DATA_DIR,
+            molecules_catalog_dir=MOLECULES_CATALOG_DIR,
+            overwrite=OVERWRITE,
         )
-        for (connectivity, n_reps, max_bond, cutoff) in itertools.product(
-            connectivities, n_reps_range, max_bonds, cutoffs
-        )
-        for max_dim in max_dim_range
-        for d in bond_distance_range
-    ]
-    if MAX_PROCESSES == 1:
-        for task in tqdm(tasks):
-            run_lucj_sqd_quimb_task(
-                task,
-                data_dir=DATA_DIR,
-                molecules_catalog_dir=MOLECULES_CATALOG_DIR,
-                overwrite=OVERWRITE,
-            )
-    else:
-        with tqdm(total=len(tasks)) as progress:
-            with ProcessPoolExecutor(MAX_PROCESSES) as executor:
-                for task in tasks:
-                    future = executor.submit(
-                        run_lucj_sqd_quimb_task,
-                        task,
-                        data_dir=DATA_DIR,
-                        molecules_catalog_dir=MOLECULES_CATALOG_DIR,
-                        overwrite=OVERWRITE,
-                    )
-                    future.add_done_callback(lambda _: progress.update())
+else:
+    with tqdm(total=len(tasks)) as progress:
+        with ProcessPoolExecutor(MAX_PROCESSES) as executor:
+            for task in tasks:
+                future = executor.submit(
+                    run_lucj_sqd_quimb_task,
+                    task,
+                    data_dir=DATA_DIR,
+                    molecules_catalog_dir=MOLECULES_CATALOG_DIR,
+                    overwrite=OVERWRITE,
+                )
+                future.add_done_callback(lambda _: progress.update())
