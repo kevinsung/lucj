@@ -27,7 +27,7 @@ connectivities = [
 
 n_reps_range = list(range(1, 11))
 
-dmrg_energy = -116.6056091 #ref: https://github.com/jrm874/sqd_data_repository/blob/main/classical_reference_energies/2Fe-2S/classical_methods_energies.txt
+dmrg_energy = -116.6056091  # ref: https://github.com/jrm874/sqd_data_repository/blob/main/classical_reference_energies/2Fe-2S/classical_methods_energies.txt
 
 
 shots = 100_000
@@ -64,7 +64,7 @@ print("Done loading data.")
 markers = ["o", "s", "v", "D", "p", "*", "P", "X"]
 linestyles = ["--", ":"]
 
-with open('scripts/paper/color.json', 'r') as file:
+with open("scripts/paper/color.json", "r") as file:
     colors = json.load(file)
 
 task = RandomSQDEnergyTask(
@@ -94,14 +94,13 @@ fig, axes = plt.subplots(
 
 
 for i, connectivity in enumerate(connectivities):
+    error_avg = np.average(result_random["history_energy"]) - dmrg_energy
+    error_min = np.min(result_random["history_energy"]) - dmrg_energy
+    error_max = np.max(result_random["history_energy"]) - dmrg_energy
 
-    error_avg = np.average(result_random['history_energy']) - dmrg_energy
-    error_min = np.min(result_random['history_energy']) - dmrg_energy
-    error_max = np.max(result_random['history_energy']) - dmrg_energy
-
-    sci_vec_shape_avg = np.average(result_random['history_sci_vec_shape'][0]) 
-    sci_vec_shape_min = np.min(result_random['history_sci_vec_shape'][0]) 
-    sci_vec_shape_max = np.max(result_random['history_sci_vec_shape'][0]) 
+    sci_vec_shape_avg = np.average(result_random["history_sci_vec_shape"][0])
+    sci_vec_shape_min = np.min(result_random["history_sci_vec_shape"][0])
+    sci_vec_shape_max = np.max(result_random["history_sci_vec_shape"][0])
 
     axes[0, i].axhline(
         error_avg,
@@ -115,7 +114,7 @@ for i, connectivity in enumerate(connectivities):
         linestyle="--",
         # label="Rand bitstr",
         color=colors["random_bit_string"],
-        alpha=0.7
+        alpha=0.7,
     )
 
     axes[0, i].axhline(
@@ -123,7 +122,14 @@ for i, connectivity in enumerate(connectivities):
         linestyle="--",
         # label="Rand bitstr",
         color=colors["random_bit_string"],
-        alpha=0.7
+        alpha=0.7,
+    )
+
+    axes[0, i].axhspan(
+        error_min,
+        error_max,
+        color=colors["random_bit_string"],
+        alpha=0.5,
     )
 
     axes[1, i].axhline(
@@ -138,7 +144,7 @@ for i, connectivity in enumerate(connectivities):
         linestyle="--",
         # label="Rand bitstr",
         color=colors["random_bit_string"],
-        alpha=0.7
+        alpha=0.7,
     )
 
     axes[1, i].axhline(
@@ -146,7 +152,14 @@ for i, connectivity in enumerate(connectivities):
         linestyle="--",
         # label="Rand bitstr",
         color=colors["random_bit_string"],
-        alpha=0.7
+        alpha=0.7,
+    )
+
+    axes[1, i].axhspan(
+        sci_vec_shape_min,
+        sci_vec_shape_max,
+        color=colors["random_bit_string"],
+        alpha=0.5,
     )
 
     task_lucj_full = SQDEnergyTask(
@@ -174,13 +187,13 @@ for i, connectivity in enumerate(connectivities):
 
     filepath = DATA_ROOT / task_lucj_full.dirpath / "sqd_data.pickle"
     results = load_data(filepath)
-    error_avg = np.average(results['history_energy']) - dmrg_energy
-    error_min = np.min(results['history_energy']) - dmrg_energy
-    error_max = np.max(results['history_energy']) - dmrg_energy
+    error_avg = np.average(results["history_energy"]) - dmrg_energy
+    error_min = np.min(results["history_energy"]) - dmrg_energy
+    error_max = np.max(results["history_energy"]) - dmrg_energy
 
-    sci_vec_shape_avg = np.average(results['history_sci_vec_shape'][0]) 
-    sci_vec_shape_min = np.min(results['history_sci_vec_shape'][0]) 
-    sci_vec_shape_max = np.max(results['history_sci_vec_shape'][0]) 
+    sci_vec_shape_avg = np.average(results["history_sci_vec_shape"][0])
+    sci_vec_shape_min = np.min(results["history_sci_vec_shape"][0])
+    sci_vec_shape_max = np.max(results["history_sci_vec_shape"][0])
 
     # print(error_avg)
     # print(error_min)
@@ -198,7 +211,7 @@ for i, connectivity in enumerate(connectivities):
         linestyle="--",
         # label="LUCJ-full",
         color=colors["lucj_full"],
-        alpha=0.7
+        alpha=0.7,
     )
 
     axes[0, i].axhline(
@@ -206,8 +219,16 @@ for i, connectivity in enumerate(connectivities):
         linestyle="--",
         # label="LUCJ-full",
         color=colors["lucj_full"],
-        alpha=0.7
+        alpha=0.7,
     )
+
+    axes[0, i].axhspan(
+        error_min,
+        error_max,
+        color=colors["lucj_full"],
+        alpha=0.5,
+    )
+
 
     axes[1, i].axhline(
         sci_vec_shape_avg,
@@ -221,7 +242,7 @@ for i, connectivity in enumerate(connectivities):
         linestyle="--",
         # label="LUCJ-full",
         color=colors["lucj_full"],
-        alpha=0.7
+        alpha=0.7,
     )
 
     axes[1, i].axhline(
@@ -229,9 +250,16 @@ for i, connectivity in enumerate(connectivities):
         linestyle="--",
         # label="LUCJ-full",
         color=colors["lucj_full"],
-        alpha=0.7
+        alpha=0.7,
     )
-    
+
+    axes[1, i].axhspan(
+        sci_vec_shape_min,
+        sci_vec_shape_max,
+        color=colors["lucj_full"],
+        alpha=0.5,
+    )
+
 
     tasks_compressed_t2 = [
         SQDEnergyTask(
@@ -243,9 +271,7 @@ for i, connectivity in enumerate(connectivities):
                 with_final_orbital_rotation=True,
             ),
             compressed_t2_params=CompressedT2Params(
-                multi_stage_optimization=True,
-                begin_reps=20,
-                step=2
+                multi_stage_optimization=True, begin_reps=20, step=2
             ),
             regularization=False,
             regularization_option=None,
@@ -303,26 +329,30 @@ for i, connectivity in enumerate(connectivities):
         sci_vec_shape_avg = []
         sci_vec_shape_min = []
         sci_vec_shape_max = []
-        
+
         for task in tasks:
             filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
             results = load_data(filepath)
-            energy_avg = np.average(results['history_energy'])
+            energy_avg = np.average(results["history_energy"])
             error_avg.append(energy_avg - dmrg_energy)
-            error_min.append(energy_avg - np.min(results['history_energy']))
-            error_max.append(np.max(results['history_energy']) - energy_avg)
+            error_min.append(energy_avg - np.min(results["history_energy"]))
+            error_max.append(np.max(results["history_energy"]) - energy_avg)
 
-            svs_avg = np.average(results['history_sci_vec_shape'][0])
+            svs_avg = np.average(results["history_sci_vec_shape"][0])
             sci_vec_shape_avg.append(svs_avg)
-            sci_vec_shape_min.append(svs_avg - np.min(results['history_sci_vec_shape'][0]))
-            sci_vec_shape_max.append(np.max(results['history_sci_vec_shape'][0]) - svs_avg)
+            sci_vec_shape_min.append(
+                svs_avg - np.min(results["history_sci_vec_shape"][0])
+            )
+            sci_vec_shape_max.append(
+                np.max(results["history_sci_vec_shape"][0]) - svs_avg
+            )
 
             # print(task.dirpath)
             # print(results)
             # print(error_min[-1])
             # print(error_max[-1])
             # input()
-        
+
         axes[0, i].plot(
             n_reps_range,
             error_avg,
@@ -353,7 +383,6 @@ for i, connectivity in enumerate(connectivities):
             color=colors[color_key],
         )
 
-
     axes[0, i].set_title(connectivity)
     axes[0, i].set_yscale("log")
     # axes[0, i].axhline(1.6e-3, linestyle="--", color="gray")
@@ -365,16 +394,12 @@ for i, connectivity in enumerate(connectivities):
     axes[1, i].set_xlabel("Repetitions")
     axes[1, i].set_xticks(n_reps_range)
 
-    leg = axes[1, 1].legend(
-        bbox_to_anchor=(-0.3, -0.28), loc="upper center", ncol=5
-    )
+    leg = axes[1, 1].legend(bbox_to_anchor=(-0.3, -0.28), loc="upper center", ncol=5)
     leg.set_in_layout(False)
     plt.tight_layout()
     plt.subplots_adjust(bottom=0.16)
 
-    fig.suptitle(
-        f"CCSD initial parameters {molecule_name} ({nelectron}e, {norb}o)"
-    )
+    fig.suptitle(f"CCSD initial parameters {molecule_name} ({nelectron}e, {norb}o)")
 
 filepath = os.path.join(
     plots_dir,

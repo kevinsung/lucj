@@ -65,12 +65,10 @@ tasks = [
         ),
         compressed_t2_params=CompressedT2Params(
             multi_stage_optimization=True,
-            begin_reps=20,
+            begin_reps=50,
             step=2
         ),
         regularization=False,
-        regularization_option=None,
-        regularization_factor=None,
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
@@ -87,30 +85,23 @@ tasks = [
     for n_reps in n_reps_range
 ]
 
-run_sqd_energy_task(
-            tasks[0],
+if MAX_PROCESSES == 1:
+    for task in tqdm(tasks):
+        run_sqd_energy_task(
+            task,
             data_dir=DATA_DIR,
             molecules_catalog_dir=MOLECULES_CATALOG_DIR,
             overwrite=OVERWRITE,
         )
-
-# if MAX_PROCESSES == 1:
-#     for task in tqdm(tasks):
-#         run_sqd_energy_task(
-#             task,
-#             data_dir=DATA_DIR,
-#             molecules_catalog_dir=MOLECULES_CATALOG_DIR,
-#             overwrite=OVERWRITE,
-#         )
-# else:
-#     with tqdm(total=len(tasks)) as progress:
-#         with ProcessPoolExecutor(MAX_PROCESSES) as executor:
-#             for task in tasks:
-#                 future = executor.submit(
-#                     run_sqd_energy_task,
-#                     task,
-#                     data_dir=DATA_DIR,
-#                     molecules_catalog_dir=MOLECULES_CATALOG_DIR,
-#                     overwrite=OVERWRITE,
-#                 )
-#                 future.add_done_callback(lambda _: progress.update())
+else:
+    with tqdm(total=len(tasks)) as progress:
+        with ProcessPoolExecutor(MAX_PROCESSES) as executor:
+            for task in tasks:
+                future = executor.submit(
+                    run_sqd_energy_task,
+                    task,
+                    data_dir=DATA_DIR,
+                    molecules_catalog_dir=MOLECULES_CATALOG_DIR,
+                    overwrite=OVERWRITE,
+                )
+                future.add_done_callback(lambda _: progress.update())

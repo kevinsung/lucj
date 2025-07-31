@@ -20,14 +20,14 @@ os.makedirs(plots_dir, exist_ok=True)
 
 shots = 100_000
 n_batches = 3
-energy_tol = 1e-5
-occupancies_tol = 1e-3
-carryover_threshold = 1e-3
-max_iterations = 100
+energy_tol = 1e-8
+occupancies_tol = 1e-5
+carryover_threshold = 1e-4
+max_iterations = 10
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
-samples_per_batch = 4000
+samples_per_batch = 2500
 max_dim = samples_per_batch
 dmrg_energy = -116.6056091 #ref: https://github.com/jrm874/sqd_data_repository/blob/main/classical_reference_energies/2Fe-2S/classical_methods_energies.txt
 

@@ -105,9 +105,9 @@ fig, axes = plt.subplots(
 
 for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distance_range, connectivities)):
 
-    error_avg = np.average(results_random[bond_distance]['history_energy']) - mol_data.fci_energy
-    error_min = np.min(results_random[bond_distance]['history_energy']) - mol_data.fci_energy
-    error_max = np.max(results_random[bond_distance]['history_energy']) - mol_data.fci_energy
+    error_avg = np.average(results_random[bond_distance]['history_energy']) - mol_data.sci_energy
+    error_min = np.min(results_random[bond_distance]['history_energy']) - mol_data.sci_energy
+    error_max = np.max(results_random[bond_distance]['history_energy']) - mol_data.sci_energy
 
     sci_vec_shape_avg = np.average(results_random[bond_distance]['history_sci_vec_shape'][0]) 
     sci_vec_shape_min = np.min(results_random[bond_distance]['history_sci_vec_shape'][0]) 
@@ -186,9 +186,9 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     filepath = DATA_ROOT / task_lucj_full.dirpath / "sqd_data.pickle"
     results = load_data(filepath)
 
-    error_avg = np.average(results['history_energy']) - mol_data.fci_energy
-    error_min = np.min(results['history_energy']) - mol_data.fci_energy
-    error_max = np.max(results['history_energy']) - mol_data.fci_energy
+    error_avg = np.average(results['history_energy']) - mol_data.sci_energy
+    error_min = np.min(results['history_energy']) - mol_data.sci_energy
+    error_max = np.max(results['history_energy']) - mol_data.sci_energy
 
     sci_vec_shape_avg = np.average(results['history_sci_vec_shape'][0]) 
     sci_vec_shape_min = np.min(results['history_sci_vec_shape'][0]) 
@@ -257,8 +257,8 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
             ),
             compressed_t2_params=CompressedT2Params(
                 multi_stage_optimization=True,
-                begin_reps=40,
-                step=4
+                begin_reps=50,
+                step=2
             ),
             regularization=False,
             regularization_option=None,
@@ -320,15 +320,23 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         for task in tasks:
             filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
             results = load_data(filepath)
-            energy_avg = np.average(results['history_energy'])
-            error_avg.append(energy_avg - mol_data.fci_energy)
-            error_min.append(energy_avg - np.min(results['history_energy']))
-            error_max.append(np.max(results['history_energy']) - energy_avg)
 
             svs_avg = np.average(results['history_sci_vec_shape'][0])
             sci_vec_shape_avg.append(svs_avg)
             sci_vec_shape_min.append(svs_avg - np.min(results['history_sci_vec_shape'][0]))
             sci_vec_shape_max.append(np.max(results['history_sci_vec_shape'][0]) - svs_avg)
+
+            if svs_avg > 0:
+                energy_avg = np.average(results['history_energy'])
+                error_avg.append(energy_avg - mol_data.sci_energy)
+                error_min.append(energy_avg - np.min(results['history_energy']))
+                error_max.append(np.max(results['history_energy']) - energy_avg)
+                # print(energy_avg)
+            else:
+                error_avg.append(0)
+                error_min.append(0)
+                error_max.append(0)
+            
         
         axes[0, i].plot(
             n_reps_range,

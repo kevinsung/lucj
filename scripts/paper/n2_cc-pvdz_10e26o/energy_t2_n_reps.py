@@ -174,26 +174,6 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         label="LUCJ-full",
         color=colors["lucj_full"],
     )
-
-    if connectivity == "all-to-all":
-        # UCCSD
-        tasks_uccsd_compressed_t2 = [UCCSDCompressedTask(
-                molecule_basename=molecule_basename,
-                bond_distance=bond_distance,
-                lucj_params=LUCJParams(
-                    connectivity=connectivity,
-                    n_reps=n_reps,
-                    with_final_orbital_rotation=True,
-                ),
-                compressed_t2_params=CompressedT2Params(
-                    multi_stage_optimization=True,
-                    begin_reps=20,
-                    step=2
-                ),
-                regularization=False
-            )
-            for n_reps in n_reps_range
-        ]
     
     tasks_compressed_t2 = [
         SQDEnergyTask(
@@ -282,15 +262,10 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         )
         for n_reps in n_reps_range
     ]
-
-    if connectivity == "all-to-all":
-        list_tasks = [tasks_uccsd_compressed_t2, tasks_truncated, tasks_compressed_t2, tasks_compressed_t2_40]
-        color_keys = ["uccsd-compressed", "lucj_truncated", "lucj_compressed", "lucj_compressed_1stg"]
-        labels = ["UCCSD-compressed t2", "LUCJ-truncated", "LUCJ-compressed-50/2", "lucj_compressed-40/4"]
-    else:
-        list_tasks = [tasks_truncated, tasks_compressed_t2, tasks_compressed_t2_40]
-        color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_1stg"]
-        labels = ["LUCJ-truncated", "LUCJ-compressed", "lucj_compressed-40/4"]
+    
+    list_tasks = [tasks_truncated, tasks_compressed_t2, tasks_compressed_t2_40]
+    color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_1stg"]
+    labels = ["LUCJ-truncated", "LUCJ-compressed", "lucj_compressed-40/4"]
 
     for tasks, color_key, label in zip(list_tasks, color_keys, labels):
         results = {}
