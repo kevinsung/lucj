@@ -10,7 +10,11 @@ from lucj.sqd_energy_task.lucj_compressed_t2_task import SQDEnergyTask
 from lucj.sqd_energy_task.lucj_random_t2_task import RandomSQDEnergyTask
 from molecules_catalog.util import load_molecular_data
 import json
-import numpy as np 
+from ffsim.variational.util import interaction_pairs_spin_balanced
+import ffsim
+import numpy as np
+from opt_einsum import contract
+import pyscf
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
@@ -63,6 +67,43 @@ def load_data(filepath):
     return result
 
 
+
+def init_loss(n_reps: int, bond_distance: float, connectivity):
+    mol_data = load_molecular_data(
+        f"{molecule_basename}_d-{bond_distance:.5f}",
+        molecules_catalog_dir=MOLECULES_CATALOG_DIR,
+    )
+    norb = mol_data.norb
+    nelec = mol_data.nelec
+    pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
+        connectivity, norb
+    )
+    operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
+        mol_data.ccsd_t2,
+        n_reps=n_reps,
+        t1=mol_data.ccsd_t1,
+        interaction_pairs=(pairs_aa, pairs_ab),
+    )
+    diag_coulomb_mats = operator.diag_coulomb_mats
+    orbital_rotations = operator.orbital_rotations
+    t2 = mol_data.ccsd_t2
+    nocc, _, _, _ = t2.shape
+    diag_coulomb_mats = np.unstack(diag_coulomb_mats, axis=1)[0]
+    reconstructed = (
+            1j
+            * contract(
+                "mpq,map,mip,mbq,mjq->ijab",
+                diag_coulomb_mats,
+                orbital_rotations,
+                orbital_rotations.conj(),
+                orbital_rotations,
+                orbital_rotations.conj(),
+                # optimize="greedy"
+            )[:nocc, :nocc, nocc:, nocc:]
+        )
+    diff = reconstructed - t2
+    return 0.5 * np.sum(np.abs(diff) ** 2)
+
 print("Done loading data.")
 
 markers = ["o", "s", "v", "D", "p", "*", "P", "X"]
@@ -98,16 +139,20 @@ for d in bond_distance_range:
 
 
 fig, axes = plt.subplots(
-    2,
+    3,
     len(bond_distance_range) * len(connectivities),
     figsize=(10, 5),  # , layout="constrained"
 )
 
 for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distance_range, connectivities)):
+    if bond_distance == 1.2:
+        energy_ground_truth = -109.20854905
+    else:
+        energy_ground_truth = -108.94168735
 
-    error_avg = np.average(results_random[bond_distance]['history_energy']) - mol_data.fci_energy
-    error_min = np.min(results_random[bond_distance]['history_energy']) - mol_data.fci_energy
-    error_max = np.max(results_random[bond_distance]['history_energy']) - mol_data.fci_energy
+    error_avg = np.average(results_random[bond_distance]['history_energy']) - energy_ground_truth
+    error_min = np.min(results_random[bond_distance]['history_energy']) - energy_ground_truth
+    error_max = np.max(results_random[bond_distance]['history_energy']) - energy_ground_truth
 
     sci_vec_shape_avg = np.average(results_random[bond_distance]['history_sci_vec_shape'][0]) 
     sci_vec_shape_min = np.min(results_random[bond_distance]['history_sci_vec_shape'][0]) 
@@ -136,6 +181,13 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         alpha=0.7
     )
 
+    axes[0, i].axhspan(
+        error_min,
+        error_max,
+        color=colors["random_bit_string"],
+        alpha=0.5,
+    )
+
     axes[1, i].axhline(
         sci_vec_shape_avg,
         linestyle="--",
@@ -159,6 +211,12 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         alpha=0.7
     )
     
+    axes[1, i].axhspan(
+        sci_vec_shape_min,
+        sci_vec_shape_max,
+        color=colors["random_bit_string"],
+        alpha=0.5,
+    )
 
     task_lucj_full = SQDEnergyTask(
         molecule_basename=molecule_basename,
@@ -186,17 +244,21 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     filepath = DATA_ROOT / task_lucj_full.dirpath / "sqd_data.pickle"
     results = load_data(filepath)
 
-    error_avg = np.average(results['history_energy']) - mol_data.fci_energy
-    error_min = np.min(results['history_energy']) - mol_data.fci_energy
-    error_max = np.max(results['history_energy']) - mol_data.fci_energy
+    error_avg = np.average(results['history_energy']) - energy_ground_truth
+    error_min = np.min(results['history_energy']) - energy_ground_truth
+    error_max = np.max(results['history_energy']) - energy_ground_truth
 
     sci_vec_shape_avg = np.average(results['history_sci_vec_shape'][0]) 
     sci_vec_shape_min = np.min(results['history_sci_vec_shape'][0]) 
     sci_vec_shape_max = np.max(results['history_sci_vec_shape'][0]) 
 
-    # print(error_avg)
-    # print(error_min)
-    # print(error_max)
+    print("lucj full")
+    print(bond_distance)
+    print(connectivity)
+    print(np.average(results['history_energy']))
+    print(error_avg)
+    print(error_min)
+    print(error_max)
 
     axes[0, i].axhline(
         error_avg,
@@ -219,6 +281,13 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         # label="LUCJ-full",
         color=colors["lucj_full"],
         alpha=0.7
+    )
+
+    axes[0, i].axhspan(
+        error_min,
+        error_max,
+        color=colors["lucj_full"],
+        alpha=0.5,
     )
 
     axes[1, i].axhline(
@@ -244,6 +313,12 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         alpha=0.7
     )
     
+    axes[1, i].axhspan(
+        sci_vec_shape_min,
+        sci_vec_shape_max,
+        color=colors["lucj_full"],
+        alpha=0.5,
+    )
     
 
     tasks_compressed_t2 = [
@@ -257,8 +332,8 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
             ),
             compressed_t2_params=CompressedT2Params(
                 multi_stage_optimization=True,
-                begin_reps=40,
-                step=4
+                begin_reps=50,
+                step=2
             ),
             regularization=False,
             regularization_option=None,
@@ -320,15 +395,28 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         for task in tasks:
             filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
             results = load_data(filepath)
-            energy_avg = np.average(results['history_energy'])
-            error_avg.append(energy_avg - mol_data.fci_energy)
-            error_min.append(energy_avg - np.min(results['history_energy']))
-            error_max.append(np.max(results['history_energy']) - energy_avg)
+            
+            # energy_avg = np.average(results['history_energy'])
+            # error_avg.append(energy_avg - energy_ground_truth)
+            # error_min.append(energy_avg - np.min(results['history_energy']))
+            # error_max.append(np.max(results['history_energy']) - energy_avg)
 
             svs_avg = np.average(results['history_sci_vec_shape'][0])
             sci_vec_shape_avg.append(svs_avg)
             sci_vec_shape_min.append(svs_avg - np.min(results['history_sci_vec_shape'][0]))
             sci_vec_shape_max.append(np.max(results['history_sci_vec_shape'][0]) - svs_avg)
+
+            if svs_avg > 0:
+                energy_avg = np.average(results['history_energy'])
+                error_avg.append(energy_avg - mol_data.sci_energy)
+                error_min.append(energy_avg - np.min(results['history_energy']))
+                error_max.append(np.max(results['history_energy']) - energy_avg)
+                # print(energy_avg)
+            else:
+                error_avg.append(0)
+                error_min.append(0)
+                error_max.append(0)
+            
         
         axes[0, i].plot(
             n_reps_range,
@@ -360,6 +448,27 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
             color=colors[color_key],
         )
 
+        list_loss = [[], []]
+
+        for n_reps in n_reps_range:
+            list_loss[0].append(init_loss(n_reps, bond_distance, connectivity))
+
+        for task in tasks_compressed_t2:
+            filepath = DATA_ROOT / task.operatorpath / "opt_data.pickle"
+            results = load_data(filepath)
+            list_loss[1].append(results["final_loss"])
+        
+        color_keys = ["lucj_truncated", "lucj_compressed"]
+        labels = ["LUCJ-truncated", "LUCJ-compressed"]
+        for loss, color_key, label in zip(list_loss, color_keys, labels):
+            axes[2, i].plot(
+                n_reps_range,
+                loss,
+                f"{markers[0]}{linestyles[0]}",
+                label=label,
+                color=colors[color_key],
+            )
+
 
     axes[0, i].set_title(f"R={bond_distance} Å / {connectivity}")
     axes[0, i].set_yscale("log")
@@ -372,9 +481,13 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     axes[1, i].set_xlabel("Repetitions")
     axes[1, i].set_xticks(n_reps_range)
 
-    leg = axes[1, 2].legend(
-        bbox_to_anchor=(-0.3, -0.28), loc="upper center", ncol=5
-    )
+    axes[2, i].set_ylabel("Operator loss")
+    axes[2, i].set_xlabel("Repetitions")
+    axes[2, i].set_xticks(n_reps_range)
+    axes[2, i].set_yscale("log")
+
+    leg = axes[2, 2].legend(bbox_to_anchor=(-0.2, -0.52), loc="upper center", ncol=5)
+
     leg.set_in_layout(False)
     plt.tight_layout()
     plt.subplots_adjust(bottom=0.16)

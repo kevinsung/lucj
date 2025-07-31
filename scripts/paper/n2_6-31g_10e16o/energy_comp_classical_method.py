@@ -77,7 +77,7 @@ ccsd_energies_reference = np.array(
 )
 ccsd_errors_reference = np.array(
     [
-        mol_data.ccsd_energy - mol_data.fci_energy
+        abs(mol_data.ccsd_energy - mol_data.fci_energy)
         for mol_data in mol_datas_reference.values()
     ]
 )

@@ -227,8 +227,10 @@ def run_sqd_energy_task(
     sample_filename = data_dir / task.operatorpath / "sample.pickle"
     state_vector_filename = data_dir / task.operatorpath / "state_vector.npy"
     
-    if task.molecule_basename == "n2_cc-pvdz_10e26o" and task.lucj_params.connectivity == "all-to-all":
+    if task.molecule_basename == "n2_cc-pvdz_10e26o" and task.compressed_t2_params is None and task.lucj_params.connectivity == "all-to-all" and task.lucj_params.n_reps in [1, 2, 3, None] :
+        logging.info(f"{task} load state vector from lucj_ccsd_state_vector...\n")
         state_vector_filename = f"/media/storage/WanHsuan.Lin/lucj/lucj_ccsd_state_vector/n2_cc-pvdz_10e26o/bond_distance-{task.bond_distance:.5f}/connectivity-all-to-all/n_reps-{task.lucj_params.n_reps}/with_final_orbital_rotation-True/state_vector.npy"
+        
 
     rng = np.random.default_rng(task.entropy)
     
@@ -243,12 +245,14 @@ def run_sqd_energy_task(
             
             # Compute final state
             if not os.path.exists(state_vector_filename):
+                logging.info(f"{task} compute state vector...\n")
                 final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
                 with open(state_vector_filename, "wb") as f:
                     np.save(f, final_state)
         
         # record vqe energy
-        if task.molecule_basename != "fe2s2_30e20o":
+        # if task.molecule_basename != "fe2s2_30e20o":
+        if task.molecule_basename == "n2_6-31g_10e16o":
             logging.info(f"{task} Computing VQE data...\n")
             energy = np.vdot(final_state, hamiltonian @ final_state).real
             if mol_data.fci_energy is None:
