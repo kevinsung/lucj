@@ -207,8 +207,8 @@ for i, bond_distance in enumerate(bond_distance_range):
                 max_dim=max_dim,
             )
             for entropy in entropies]
-    errors_n_reps = [results_random[task]['error'] for task in tasks_random if results_random[task]['error'] > 0 ]
-    sci_vec_shape_n_reps = [results_random[task]["sci_vec_shape"][0] for task in tasks_random if results_random[task]['sci_vec_shape'][0] > 0 ]
+    errors_n_reps = [results_random[task]['error'] for task in tasks_random]
+    sci_vec_shape_n_reps = [results_random[task]["sci_vec_shape"][0] for task in tasks_random]
     errors.append(np.average(errors_n_reps))
     errors_min.append(np.average(errors_n_reps) - np.min(errors_n_reps))
     errors_max.append(np.max(errors_n_reps) - np.average(errors_n_reps))
@@ -281,10 +281,10 @@ for i, bond_distance in enumerate(bond_distance_range):
             )
             for entropy in entropies]
     
-    # errors_n_reps = [results_truncated_t2[task]['error'] for task in tasks_truncated_t2 if results_truncated_t2[task]['error'] > 0 ]
-    # sci_vec_shape_n_reps = [results_truncated_t2[task]["sci_vec_shape"][0] for task in tasks_truncated_t2 if results_truncated_t2[task]['sci_vec_shape'][0] > 0 ]
     errors_n_reps = [results_truncated_t2[task]['error'] for task in tasks_truncated_t2]
     sci_vec_shape_n_reps = [results_truncated_t2[task]["sci_vec_shape"][0] for task in tasks_truncated_t2]
+    # errors_n_reps = [results_truncated_t2[task]['error'] for task in tasks_truncated_t2]
+    # sci_vec_shape_n_reps = [results_truncated_t2[task]["sci_vec_shape"][0] for task in tasks_truncated_t2]
     errors.append(np.average(errors_n_reps))
     errors_min.append(np.average(errors_n_reps) - np.min(errors_n_reps))
     errors_max.append(np.max(errors_n_reps) - np.average(errors_n_reps))
@@ -357,8 +357,8 @@ for i, bond_distance in enumerate(bond_distance_range):
             )
             for entropy in entropies]
     
-    errors_n_reps = [results_compressed_t2[task]['error'] for task in tasks_compressed_t2 if results_compressed_t2[task]['error'] > 0 ]
-    sci_vec_shape_n_reps = [results_compressed_t2[task]["sci_vec_shape"][0] for task in tasks_compressed_t2 if results_compressed_t2[task]['sci_vec_shape'][0] > 0 ]
+    errors_n_reps = [results_compressed_t2[task]['error'] for task in tasks_compressed_t2]
+    sci_vec_shape_n_reps = [results_compressed_t2[task]["sci_vec_shape"][0] for task in tasks_compressed_t2]
     errors.append(np.average(errors_n_reps))
     errors_min.append(np.average(errors_n_reps) - np.min(errors_n_reps))
     errors_max.append(np.max(errors_n_reps) - np.average(errors_n_reps))

@@ -23,15 +23,15 @@ n_batches = 3
 energy_tol = 1e-8
 occupancies_tol = 1e-5
 carryover_threshold = 1e-4
-max_iterations = 10
+max_iterations = 20
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
-entropy = 0
+entropies = list(range(1, 11))
 samples_per_batch = 2500
 max_dim = samples_per_batch
 dmrg_energy = -116.6056091 #ref: https://github.com/jrm874/sqd_data_repository/blob/main/classical_reference_energies/2Fe-2S/classical_methods_energies.txt
 
-task_compressed_t2 = HardwareSQDEnergyTask(
+tasks_compressed_t2 = [HardwareSQDEnergyTask(
         molecule_basename=molecule_basename,
         bond_distance=None,
         lucj_params=LUCJParams(
@@ -55,9 +55,11 @@ task_compressed_t2 = HardwareSQDEnergyTask(
         entropy=entropy,
         max_dim=max_dim,
     )
+    for entropy in entropies
+]
 
 
-task_random = HardwareSQDEnergyTask(
+tasks_random = [HardwareSQDEnergyTask(
             molecule_basename=molecule_basename,
             bond_distance=None,
             lucj_params=LUCJParams(
@@ -79,8 +81,9 @@ task_random = HardwareSQDEnergyTask(
             entropy=entropy,
             max_dim=max_dim,
         )
+    for entropy in entropies ]
 
-task_truncated_t2 = HardwareSQDEnergyTask(
+tasks_truncated_t2 = [HardwareSQDEnergyTask(
             molecule_basename=molecule_basename,
             bond_distance=None,
             lucj_params=LUCJParams(
@@ -102,6 +105,7 @@ task_truncated_t2 = HardwareSQDEnergyTask(
             entropy=entropy,
             max_dim=max_dim,
         )
+    for entropy in entropies]
 
 def load_data(filepath):
     if not os.path.exists(filepath):
@@ -119,14 +123,29 @@ def load_data(filepath):
 
 print("Loading data")
 
-filepath = DATA_ROOT / task_random.dirpath / "hardware_sqd_data.pickle"
-result_random = load_data(filepath)
+energies_random = []
+sci_vec_shape_random = []
+for task in tasks_random:
+    filepath = DATA_ROOT / tasks_random.dirpath / "hardware_sqd_data.pickle"
+    result = load_data(filepath)
+    energies_random.append(result['energy'])
+    sci_vec_shape_random.append(result['sci_vec_shape'][0])
 
-filepath = DATA_ROOT / task_truncated_t2.dirpath / "hardware_sqd_data.pickle"
-result_truncated_t2 = load_data(filepath)
+energies_truncated = []
+sci_vec_shape_truncated = []
+for task in tasks_truncated_t2:
+    filepath = DATA_ROOT / task.dirpath / "hardware_sqd_data.pickle"
+    result = load_data(filepath)
+    energies_truncated.append(result['energy'])
+    sci_vec_shape_truncated.append(result['sci_vec_shape'][0])
 
-filepath = DATA_ROOT / task_compressed_t2.dirpath / "hardware_sqd_data.pickle"
-result_compressed_t2 = load_data(filepath)
+energies_compressed = []
+sci_vec_shape_compressed = []
+for task in tasks_compressed_t2:
+    filepath = DATA_ROOT / task.dirpath / "hardware_sqd_data.pickle"
+    result = load_data(filepath)    
+    energies_compressed.append(result['energy'])
+    sci_vec_shape_compressed.append(result['sci_vec_shape'][0])
 
 print("Done loading data.")
 
@@ -148,8 +167,12 @@ fig, axes = plt.subplots(
 )
 
 # random lucj
-errors = result_random['energy'] - dmrg_energy 
-sci_vec_shape = result_random["sci_vec_shape"][0] 
+errors = np.average(energies_random) - dmrg_energy 
+errors_min = errors - np.min(energies_random)
+errors_max = np.max(energies_random) - errors
+sci_vec_shape = np.average(sci_vec_shape_random)
+sci_vec_shape_min = sci_vec_shape - np.min(sci_vec_shape_random)
+sci_vec_shape_max = np.max(sci_vec_shape_random) - sci_vec_shape
 
 axes[row_error].bar(
     - width,
@@ -157,18 +180,37 @@ axes[row_error].bar(
     width=width,
     label="LUCJ random",
     color=colors["lucj_random"],
+)                 
+axes[row_error].errorbar(
+    - width,
+    errors,
+    [errors_min, errors_max],
+    color='black',
 )
+
 axes[row_sci_vec_dim].bar(
     - width,
     sci_vec_shape,
     width=width,
     label="LUCJ random",
     color=colors["lucj_random"],
+)
+
+axes[row_sci_vec_dim].errorbar(
+    - width,
+    sci_vec_shape,
+    [sci_vec_shape_min, sci_vec_shape_max],
+    color='black',
 )
 
 # LUCJ data
-errors = result_truncated_t2["energy"] - dmrg_energy
-sci_vec_shape = result_truncated_t2["sci_vec_shape"][0]
+errors = np.average(energies_truncated) - dmrg_energy 
+errors_min = errors - np.min(energies_truncated)
+errors_max = np.max(energies_truncated) - errors
+sci_vec_shape = np.average(sci_vec_shape_truncated)
+sci_vec_shape_min = sci_vec_shape - np.min(sci_vec_shape_truncated)
+sci_vec_shape_max = np.max(sci_vec_shape_truncated) - sci_vec_shape
+
 
 axes[row_error].bar(
     0,
@@ -177,19 +219,37 @@ axes[row_error].bar(
     label="LUCJ truncated",
     color=colors["lucj_truncated"],
 )
+
+axes[row_error].errorbar(
+    0,
+    errors,
+    [errors_min, errors_max],
+    color='black',
+)
+
 axes[row_sci_vec_dim].bar(
     0,
     sci_vec_shape,
     width=width,
     label="LUCJ truncated",
     color=colors["lucj_truncated"],
+)
+
+axes[row_sci_vec_dim].errorbar(
+    0,
+    sci_vec_shape,
+    [sci_vec_shape_min, sci_vec_shape_max],
+    color='black',
 )
 
 
 # compressed_t2
-
-errors = result_compressed_t2["energy"] - dmrg_energy 
-sci_vec_shape = result_compressed_t2["sci_vec_shape"][0]
+errors = np.average(energies_compressed) - dmrg_energy 
+errors_min = errors - np.min(energies_compressed)
+errors_max = np.max(energies_compressed) - errors
+sci_vec_shape = np.average(sci_vec_shape_compressed)
+sci_vec_shape_min = sci_vec_shape - np.min(sci_vec_shape_compressed)
+sci_vec_shape_max = np.max(sci_vec_shape_compressed) - sci_vec_shape
 
 axes[row_error].bar(
     width,
@@ -199,12 +259,26 @@ axes[row_error].bar(
     color=colors["lucj_compressed"],
 )
 
+axes[row_error].errorbar(
+    width,
+    errors,
+    [errors_min, errors_max],
+    color='black',
+)
+
 axes[row_sci_vec_dim].bar(
     width,
     sci_vec_shape,
     width=width,
     label="LUCJ compressed",
     color=colors["lucj_compressed"],
+)
+
+axes[row_sci_vec_dim].errorbar(
+    width,
+    sci_vec_shape,
+    [sci_vec_shape_min, sci_vec_shape_max],
+    color='black',
 )
 
 axes[row_error].set_yscale("log")
