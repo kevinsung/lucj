@@ -67,7 +67,6 @@ def load_data(filepath):
     return result
 
 
-
 def init_loss(n_reps: int, bond_distance: float, connectivity):
     mol_data = load_molecular_data(
         f"{molecule_basename}_d-{bond_distance:.5f}",
