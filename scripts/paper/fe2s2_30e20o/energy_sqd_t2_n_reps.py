@@ -475,7 +475,7 @@ for i, connectivity in enumerate(connectivities):
     axes[2, i].set_xticks(n_reps_range)
     axes[2, i].set_yscale("log")
 
-    leg = axes[2, 1].legend(bbox_to_anchor=(-0.2, -0.52), loc="upper center", ncol=5)
+    leg = axes[1, 1].legend(bbox_to_anchor=(-0.2, -2.3), loc="upper center", ncol=5)
     leg.set_in_layout(False)
     plt.tight_layout()
     plt.subplots_adjust(bottom=0.16)
