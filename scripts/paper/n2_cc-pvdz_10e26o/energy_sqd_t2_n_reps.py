@@ -14,7 +14,6 @@ from ffsim.variational.util import interaction_pairs_spin_balanced
 import ffsim
 import numpy as np
 from opt_einsum import contract
-import pyscf
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
@@ -72,6 +71,10 @@ def init_loss(n_reps: int, bond_distance: float, connectivity):
         f"{molecule_basename}_d-{bond_distance:.5f}",
         molecules_catalog_dir=MOLECULES_CATALOG_DIR,
     )
+
+    # print(mol_data)
+    # input()
+
     norb = mol_data.norb
     nelec = mol_data.nelec
     pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
@@ -135,7 +138,6 @@ for d in bond_distance_range:
     )
     filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
     results_random[d] = load_data(filepath)
-
 
 fig, axes = plt.subplots(
     3,

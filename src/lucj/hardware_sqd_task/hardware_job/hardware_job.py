@@ -17,11 +17,13 @@ def constrcut_lucj_circuit(norb, nelec, operator):
     return circuit
 
 def run_on_hardware(circuit: QuantumCircuit, norb, shots):
-    service = QiskitRuntimeService()
+    service = QiskitRuntimeService(name="wanhsuan-lucj")
+    # service = QiskitRuntimeService(name="wanhsuan-lucj-internal")
     # backend = service.least_busy(
     #     operational=True, simulator=False, min_num_qubits=127
     # )
-    backend = service.backend("alt_pittsburgh")
+    # backend = service.backend("alt_pittsburgh")
+    backend = service.backend("ibm_pittsburgh")
 
     initial_layout, _ = get_zigzag_physical_layout(norb, backend=backend)
  
