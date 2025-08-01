@@ -9,7 +9,7 @@ from pathlib import Path
 from tqdm import tqdm
 
 from lucj.params import LUCJParams
-from lucj.hardware_sqd_task.lucj_compressed_t2_task_sci import (
+from lucj.hardware_sqd_task.lucj_compressed_t2_task import (
     HardwareSQDEnergyTask,
     run_hardware_sqd_energy_task,
 )
@@ -31,11 +31,12 @@ MAX_PROCESSES = 1
 OVERWRITE = False
 
 molecule_name = "n2"
-basis = "6-31g"
-nelectron, norb = 10, 16
+basis = "cc-pvdz"
+nelectron, norb = 10, 26
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-bond_distance_range = [1.2, 2.4]
+# bond_distance_range = [1.2, 2.4]
+bond_distance_range = [1.2]
 
 n_reps_range = [1]
 
@@ -47,9 +48,10 @@ carryover_threshold = 1e-4
 max_iterations = 20
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
-entropies = list(range(1, 11))
+# entropies = list(range(1, 11))
+entropies = [1]
 
-max_dim = 1000
+max_dim = 2500
 samples_per_batch = max_dim
 
 tasks = [
@@ -63,7 +65,7 @@ tasks = [
         ),
         compressed_t2_params=None,
         connectivity_opt=False,
-        random_op =False,
+        random_op =True,
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
