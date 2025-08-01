@@ -9,12 +9,12 @@ from pathlib import Path
 from tqdm import tqdm
 
 from lucj.params import LUCJParams, CompressedT2Params, COBYQAParams
-from lucj.quimb_task.lucj_sqd_quimb_task import (
+from lucj.quimb_task.lucj_sqd_quimb_task_sci import (
     LUCJSQDQuimbTask,
     run_lucj_sqd_quimb_task,
 )
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}.log"
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_shots_10_000.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -27,7 +27,7 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 1
+MAX_PROCESSES = 8
 OVERWRITE = False
 
 molecule_name = "n2"
@@ -44,31 +44,32 @@ connectivities = [
     "heavy-hex"
 ]
 
-n_reps_range = [1]
-shots = 100_000
+n_reps_range = list(range(1, 11))
+# n_reps_range = [10]
+shots = 10_000
 n_batches = 10
 energy_tol = 1e-5
 occupancies_tol = 1e-3
 carryover_threshold = 1e-3
 max_iterations = 1
 symmetrize_spin = True
-cobyqa_maxiter = 2
+cobyqa_maxiter = 25
 # TODO set entropy and generate seeds properly
 entropy = 0
 max_bond: int
 max_bonds = [
     # 5,
-    10,
+    # 10,
     # 25,
     # 50,
-    # 100,
+    100,
     # 200,
     # None,
 ]
 cutoffs = [
-    1e-3,
+    # 1e-3,
     # 1e-6,
-    # 1e-10,
+    1e-10,
 ]
 seed = 0
 perm_mps = False
