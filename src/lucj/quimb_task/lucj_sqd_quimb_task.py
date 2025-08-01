@@ -17,15 +17,16 @@ from ffsim.variational.util import (
 )
 from molecules_catalog.util import load_molecular_data
 from qiskit.primitives import BitArray
-from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, solve_sci_batch
+from qiskit_addon_sqd.fermion import SCIResult, diagonalize_fermionic_hamiltonian
 from lucj.tasks.lucj_compressed_t2_task_ffsim.compressed_t2 import from_t_amplitudes_compressed
 from lucj.params import COBYQAParams, LUCJParams, CompressedT2Params
-
+from qiskit_addon_dice_solver import solve_sci_batch
 from qiskit.circuit import QuantumCircuit, QuantumRegister
 import quimb.tensor
 from qiskit_quimb import quimb_circuit
 
 import pyscf
+import jax
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +78,7 @@ class LUCJSQDQuimbTask:
             )
             / self.lucj_params.dirpath
             / compress_option
+            / "quimb"
             / self.cobyqa_params.dirpath
             / f"shots-{self.shots}"
             / f"samples_per_batch-{self.samples_per_batch}"
@@ -193,6 +195,11 @@ def load_operator(task: LUCJSQDQuimbTask, data_dir: str, mol_data):
             )
     return operator
 
+def to_backend(x):
+    # return jnp(x, dtype=torch.complex64, device="cuda")
+    return jax.device_put(x)
+
+
 def run_lucj_sqd_quimb_task(
     task: LUCJSQDQuimbTask,
     *,
@@ -260,17 +267,21 @@ def run_lucj_sqd_quimb_task(
             max_bond=task.max_bond,
             cutoff=task.cutoff,
             progbar=True,
+            # to_backend=to_backend,
         )
+        # assert(0)
         logger.info(f"{task}\n\tSampling circuit...")
         t0 = timeit.default_timer()
+        # quimb_circ.apply_to_arrays(lambda x: x.cpu().numpy())
+        # samples = list(quimb_circ.sample(task.shots, seed=task.seed, backend='jax'))
         samples = list(quimb_circ.sample(task.shots, seed=task.seed))
         t1 = timeit.default_timer()
         time = t1 - t0
         logger.info(f"{task}\n\tDone sampling circuit in {time} seconds.")
         samples = [sample[::-1] for sample in samples]
-        
+        # assert(0)
         bit_array = BitArray.from_samples(samples, num_bits=2 * norb)
-        sci_solver = partial(solve_sci_batch, spin_sq=0.0)
+        # sci_solver = partial(solve_sci_batch, spin_sq=0.0)
         result = diagonalize_fermionic_hamiltonian(
             mol_ham.one_body_tensor,
             mol_ham.two_body_tensor,
@@ -282,7 +293,7 @@ def run_lucj_sqd_quimb_task(
             energy_tol=task.energy_tol,
             occupancies_tol=task.occupancies_tol,
             max_iterations=task.max_iterations,
-            sci_solver=sci_solver,
+            sci_solver=solve_sci_batch,
             symmetrize_spin=task.symmetrize_spin,
             carryover_threshold=task.carryover_threshold,
             seed=rng,
@@ -361,3 +372,102 @@ def run_lucj_sqd_quimb_task(
         pickle.dump(result, f)
     with open(info_filename, "wb") as f:
         pickle.dump(info, f)
+
+    # continue to run sqd
+    logging.info(f"{task} Computing state vector\n")
+    operator = ffsim.UCJOpSpinBalanced.from_parameters(
+        result.x,
+        norb=norb,
+        n_reps=task.lucj_params.n_reps,
+        interaction_pairs=(pairs_aa, pairs_ab),
+        with_final_orbital_rotation=task.lucj_params.with_final_orbital_rotation,
+    )
+    reference_state = ffsim.hartree_fock_state(norb, nelec)
+    final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
+    state_vector_filename = data_dir / task.dirpath / "state_vector.npy"
+    sample_filename = data_dir / task.dirpath / "sample.pickle"
+    sqd_result_filename = data_dir / task.dirpath / "sqd_data.pickle"
+    with open(state_vector_filename, "wb") as f:
+        np.save(f, final_state)
+    logging.info(f"{task} Sampling...\n")
+    samples = ffsim.sample_state_vector(
+        final_state,
+        norb=norb,
+        nelec=nelec,
+        shots=1_000_000,
+        seed=rng,
+        bitstring_type=ffsim.BitstringType.INT,
+    )
+    bit_array = BitArray.from_samples(samples, num_bits=2 * norb)
+    bit_array_count = bit_array.get_int_counts()
+    with open(sample_filename, "wb") as f:
+        pickle.dump(bit_array_count, f)
+    # Run SQD
+    logging.info(f"{task} Running SQD...\n")
+    # sci_solver = partial(solve_sci_batch, spin_sq=0.0)
+
+    result_history_energy = []
+    result_history_subspace_dim = []
+    result_history = []
+    def callback(results: list[SCIResult]):
+        result_energy = []
+        result_subspace_dim = []
+        iteration = len(result_history)
+        result_history.append(results)
+        logging.info(f"Iteration {iteration}")
+        for i, result in enumerate(results):
+            result_energy.append(result.energy + mol_data.core_energy)
+            result_subspace_dim.append(result.sci_state.amplitudes.shape)
+            logging.info(f"\tSubsample {i}")
+            logging.info(f"\t\tEnergy: {result.energy + mol_data.core_energy}")
+            logging.info(
+                f"\t\tSubspace dimension: {np.prod(result.sci_state.amplitudes.shape)}"
+            )
+        result_history_energy.append(result_energy)
+        result_history_subspace_dim.append(result_subspace_dim)
+
+
+
+    result = diagonalize_fermionic_hamiltonian(
+        mol_ham.one_body_tensor,
+        mol_ham.two_body_tensor,
+        bit_array,
+        samples_per_batch=task.samples_per_batch,
+        norb=norb,
+        nelec=nelec,
+        num_batches=task.n_batches,
+        energy_tol=task.energy_tol,
+        occupancies_tol=task.occupancies_tol,
+        max_iterations=task.max_iterations,
+        sci_solver=solve_sci_batch,
+        symmetrize_spin=task.symmetrize_spin,
+        carryover_threshold=task.carryover_threshold,
+        seed=rng,
+        callback=callback,
+        max_dim=task.max_dim
+    )
+    logging.info(f"{task} Finish SQD\n")
+    energy = result.energy + mol_data.core_energy
+    sci_state = result.sci_state
+    spin_squared = sci_state.spin_square()
+    if mol_data.fci_energy is not None:
+        error = energy - mol_data.fci_energy
+    elif mol_data.sci_energy is not None:
+        error = energy - mol_data.sci_energy
+    else:
+        error = -1
+
+    # Save data
+    data = {
+        "energy": energy,
+        "error": error,
+        "spin_squared": spin_squared,
+        "sci_vec_shape": sci_state.amplitudes.shape,
+        "history_energy": result_history_energy,
+        "history_sci_vec_shape": result_history_subspace_dim
+    }
+
+    logger.info(f"{task} Saving SQD data...\n")
+    with open(sqd_result_filename, "wb") as f:
+        pickle.dump(data, f)
+
