@@ -218,6 +218,11 @@ def get_important_bit_string(sci_vec, tol = 1e-5):
                 important_btrstr.append("".join((strings_b[j], strings_a[i])))
     return important_amplitude, important_btrstr
 
+def construct_quimb_circuit(circuit: QuantumCircuit):
+    pass
+
+def constrcut_target_tn(important_amplitude, important_bitstr):
+    pass
     
 def to_backend(x):
     # return jnp(x, dtype=torch.complex64, device="cuda")
@@ -272,26 +277,12 @@ def run_lucj_sqd_quimb_task(
     # compute SCI vec
     sci_filename = data_dir / molecule_basename / "sci_vec.pickle"
     sci_vec = get_sci_vec(sci_filename, mol_data, use_dice)
-    important_bit_string_amplitude, important_bit_string = get_important_bit_string(sci_vec, tol=1e-3)
+    important_amplitude, important_bitstr = get_important_bit_string(sci_vec, tol=1e-3)
 
     rng = np.random.default_rng(task.entropy)
 
     def fun(x: np.ndarray) -> float:
-        operator = ffsim.UCJOpSpinBalanced.from_parameters(
-            x,
-            norb=norb,
-            n_reps=task.lucj_params.n_reps,
-            interaction_pairs=(pairs_aa, pairs_ab),
-            with_final_orbital_rotation=task.lucj_params.with_final_orbital_rotation,
-        )
-        # Construct Qiskit circuit
-        qubits = QuantumRegister(2 * norb)
-        circuit = QuantumCircuit(qubits)
-        circuit.append(ffsim.qiskit.PrepareHartreeFockJW(norb, nelec), qubits)
-        circuit.append(ffsim.qiskit.UCJOpSpinBalancedJW(operator), qubits)
-        # change to quimb
-        # Sample using quimb
-        decomposed = circuit.decompose(reps=2)
+        
         quimb_circ = quimb_circuit(
             decomposed,
             quimb_circuit_class=quimb.tensor.CircuitPermMPS
@@ -347,6 +338,22 @@ def run_lucj_sqd_quimb_task(
         logger.info(f"{task} Optimizing ansatz...\n")
         info = defaultdict(list)
         info["nit"] = 0
+        
+        # Construct Qiskit circuit
+        qubits = QuantumRegister(2 * norb)
+        qubit_number = 2 * norb
+        circuit = QuantumCircuit(qubits)
+        circuit.append(ffsim.qiskit.PrepareHartreeFockJW(norb, nelec), qubits)
+        circuit.append(ffsim.qiskit.UCJOpSpinBalancedJW(operator), qubits)
+        # change to quimb
+        decomposed = circuit.decompose(reps=2)
+        quimb_circuit = construct_quimb_circuit(circuit)
+
+        # construct target TN
+        target_tn = constrcut_target_tn(important_amplitude, important_bitstr)
+        
+        def loss(quimb_circuit, target_tn):
+            pass
 
         def callback(intermediate_result: scipy.optimize.OptimizeResult):
             logger.info(f"Task {task} is on iteration {info['nit']}.\n")
@@ -360,17 +367,21 @@ def run_lucj_sqd_quimb_task(
                 if (abs(info["fun"][-1] - info["fun"][-2]) < 1e-5) and (abs(info["fun"][-2] - info["fun"][-3]) < 1e-5):
                     raise StopIteration("Objective function value does not decrease for two iterations.")
 
-
+        tnopt = quimb.tensor.TNOptimizer(
+                quimb_circuit,                              # the tensor network we want to optimize
+                loss,                                       # the function we want to minimize
+                loss_constants={'target_tn': target_tn},    # supply U to the loss function as a constant TN
+                # tags=['U3'],                                # only optimize U3 tensors
+                autodiff_backend='jax',                     # use 'autograd' for non-compiled optimization
+                optimizer='L-BFGS-B',                       # the optimization algorithm
+            )
+        
         t0 = timeit.default_timer()
-        result = scipy.optimize.minimize(
-            fun,
-            x0=params,
-            method="COBYQA",
-            options=dataclasses.asdict(task.cobyqa_params),
-            callback=callback,
-        )
+        # allow 10 hops with 500 steps in each 'basin'
+        quimb_circuit_opt = tnopt.optimize_basinhopping(n=500, nhop=10)
         t1 = timeit.default_timer()
         logger.info(f"{task} Done optimizing ansatz in {t1 - t0} seconds.\n")
+        quimb_circuit.update_params_from(quimb_circuit_opt)
 
         logger.info(f"{task} Saving data...\n")
         with open(result_filename, "wb") as f:
