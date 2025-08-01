@@ -67,7 +67,6 @@ def load_data(filepath):
     return result
 
 
-
 def init_loss(n_reps: int, bond_distance: float, connectivity):
     mol_data = load_molecular_data(
         f"{molecule_basename}_d-{bond_distance:.5f}",
@@ -145,11 +144,12 @@ fig, axes = plt.subplots(
 )
 
 for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distance_range, connectivities)):
-    if bond_distance == 1.2:
-        energy_ground_truth = -109.20854905
-    else:
-        energy_ground_truth = -108.94168735
-
+    mol_data = load_molecular_data(
+        f"{molecule_basename}_d-{bond_distance:.5f}",
+        molecules_catalog_dir=MOLECULES_CATALOG_DIR,
+    )
+    energy_ground_truth = mol_data.sci_energy
+    
     error_avg = np.average(results_random[bond_distance]['history_energy']) - energy_ground_truth
     error_min = np.min(results_random[bond_distance]['history_energy']) - energy_ground_truth
     error_max = np.max(results_random[bond_distance]['history_energy']) - energy_ground_truth
@@ -252,13 +252,13 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     sci_vec_shape_min = np.min(results['history_sci_vec_shape'][0]) 
     sci_vec_shape_max = np.max(results['history_sci_vec_shape'][0]) 
 
-    print("lucj full")
-    print(bond_distance)
-    print(connectivity)
-    print(np.average(results['history_energy']))
-    print(error_avg)
-    print(error_min)
-    print(error_max)
+    # print("lucj full")
+    # print(bond_distance)
+    # print(connectivity)
+    # print(np.average(results['history_energy']))
+    # print(error_avg)
+    # print(error_min)
+    # print(error_max)
 
     axes[0, i].axhline(
         error_avg,
