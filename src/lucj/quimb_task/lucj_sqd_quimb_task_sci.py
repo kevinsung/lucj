@@ -17,10 +17,9 @@ from ffsim.variational.util import (
 )
 from molecules_catalog.util import load_molecular_data
 from qiskit.primitives import BitArray
-from qiskit_addon_sqd.fermion import SCIResult, diagonalize_fermionic_hamiltonian
+from qiskit_addon_sqd.fermion import SCIResult, diagonalize_fermionic_hamiltonian, solve_sci_batch
 from lucj.tasks.lucj_compressed_t2_task_ffsim.compressed_t2 import from_t_amplitudes_compressed
 from lucj.params import COBYQAParams, LUCJParams, CompressedT2Params
-from qiskit_addon_dice_solver import solve_sci_batch
 from qiskit.circuit import QuantumCircuit, QuantumRegister
 import quimb.tensor
 from qiskit_quimb import quimb_circuit
@@ -488,4 +487,3 @@ def run_lucj_sqd_quimb_task(
     logger.info(f"{task} Saving SQD data...\n")
     with open(sqd_result_filename, "wb") as f:
         pickle.dump(data, f)
-

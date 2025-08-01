@@ -41,7 +41,7 @@ connectivities = [
     "heavy-hex"
 ]
 
-n_reps_range = [10]
+n_reps_range = list(range(1, 11))
 shots = 10_000
 samples_per_batch = 4000
 max_dim = samples_per_batch

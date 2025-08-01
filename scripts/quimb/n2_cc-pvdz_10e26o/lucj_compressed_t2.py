@@ -42,7 +42,7 @@ connectivities = [
     "heavy-hex"
 ]
 
-n_reps_range = [1]
+n_reps_range = list(range(1, 11))
 shots = 10_000
 samples_per_batch = 4000
 max_dim = samples_per_batch
@@ -60,8 +60,8 @@ max_bonds = [
     # 5,
     # 10,
     # 25,
-    50,
-    # 100,
+    # 50,
+    100,
     # 200,
     # None,
 ]
@@ -84,7 +84,7 @@ tasks = [
         ),
         compressed_t2_params=CompressedT2Params(
             multi_stage_optimization=True,
-            begin_reps=20,
+            begin_reps=50,
             step=2
         ),
         regularization=False,

@@ -26,8 +26,7 @@ from lucj.params import COBYQAParams, LUCJParams, CompressedT2Params
 from qiskit.circuit import QuantumCircuit, QuantumRegister
 import quimb.tensor
 import quimb.tensor.belief_propagation
-from qiskit_quimb import quimb_gates
-
+from qiskit_quimb import quimb_gates, quimb_circuit
 import pyscf
 import tqdm
 
@@ -35,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, kw_only=True)
-class LUCJSQDQuimbPEPSTask:
+class LUCJSQDQuimbCircuitTask:
     molecule_basename: str
     bond_distance: float | None
     lucj_params: LUCJParams
@@ -94,7 +93,6 @@ class LUCJSQDQuimbPEPSTask:
             / f"max_iterations-{self.max_iterations}"
             / f"symmetrize_spin-{self.symmetrize_spin}"
             / f"entropy-{self.entropy}"
-            / "peps"
             / f"max_dim-{self.max_dim}"
             / f"max_bond-{self.max_bond}"
             / f"cutoff-{self.cutoff}"
@@ -127,7 +125,7 @@ class LUCJSQDQuimbPEPSTask:
         )
 
 
-def load_operator(task: LUCJSQDQuimbPEPSTask, data_dir: str, mol_data):
+def load_operator(task: LUCJSQDQuimbCircuitTask, data_dir: str, mol_data):
     if task.random_op:
         logging.info(f"Generate random operator for {task}.\n")
         norb = mol_data.norb
@@ -209,14 +207,14 @@ def load_operator(task: LUCJSQDQuimbPEPSTask, data_dir: str, mol_data):
 
 
 def run_lucj_sqd_quimb_task(
-    task: LUCJSQDQuimbPEPSTask,
+    task: LUCJSQDQuimbCircuitTask,
     *,
     data_dir: Path,
     molecules_catalog_dir: Path | None = None,
-    bootstrap_task: LUCJSQDQuimbPEPSTask | None = None,
+    bootstrap_task: LUCJSQDQuimbCircuitTask | None = None,
     bootstrap_data_dir: Path | None = None,
     overwrite: bool = True,
-) -> LUCJSQDQuimbPEPSTask:
+) -> LUCJSQDQuimbCircuitTask:
     logging.info(f"{task} Starting...\n")
     os.makedirs(data_dir / task.dirpath, exist_ok=True)
 
@@ -263,55 +261,17 @@ def run_lucj_sqd_quimb_task(
         circuit.append(ffsim.qiskit.PrepareHartreeFockJW(norb, nelec), qubits)
         circuit.append(ffsim.qiskit.UCJOpSpinBalancedJW(operator), qubits)
         # change to quimb
-        # Sample using quimb
         decomposed = circuit.decompose(reps=2)
+        quimb_circ = quimb_circuit(
+            decomposed,
+            quimb_circuit_class=quimb.tensor.Circuit,
+            # to_backend=to_backend,
+        )
 
-        # vacuum state
-        peps = quimb.tensor.TN_from_sites_product_state(
-            {q: [1.0, 0.0] for q in range(circuit.num_qubits)}
-        )  # type: TensorNetworkGenVector
-
-        # create size 1 bonds
-        for i, j in pairs_aa:
-            peps[i].new_bond(peps[j])
-            peps[i + norb].new_bond(peps[j + norb])
-        for i, j in pairs_ab:
-            peps[i].new_bond(peps[j + norb])
-
-        gauges = {}
-
-        for gate in quimb_gates(decomposed):
-            peps.gate_simple_(
-                gate.array,
-                gate.qubits,
-                gauges=gauges,
-                # this is a crucial paramter - the maximum bond dimension
-                max_bond=task.max_bond,
-                cutoff=task.cutoff,
-                cutoff_mode="rel",
-                renorm=False,
-            )
-
-        # the state normalization gives us an idea of fidelity
-        logger.info(f"{task}\n\tPeps fidelity {peps.normalize_simple(gauges)}")
-
-        # equilibrate gauges
-        peps.gauge_all_simple_(100, tol=1e-9, gauges=gauges, progbar=True)
-
+        # Sample using quimb
         logger.info(f"{task}\n\tSampling circuit...")
         t0 = timeit.default_timer()
-        samples = []
-        for _ in range(task.shots):
-            # config, tn_config, omega = quimb.tensor.belief_propagation.sample_d2bp(peps, seed=task.seed, progbar=False)
-            config, tn_config, omega = quimb.tensor.belief_propagation.sample_hd1bp(peps, seed=task.seed, progbar=False)
-            # config, omega = peps.sample_configuration_cluster(
-            #     gauges=gauges,
-            #     seed=task.seed,
-            #     # single site clusters
-            #     max_distance=0,
-            # )
-            x = "".join(map(str, (config[f"k{i}"] for i in range(circuit.num_qubits))))
-            samples.append(x)
+        samples = list(quimb_circ.sample(task.shots, seed=task.seed, backend='jax'))
         t1 = timeit.default_timer()
         time = t1 - t0
         logger.info(f"{task}\n\tDone sampling circuit in {time} seconds.")
