@@ -8,9 +8,10 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from lucj.params import LUCJParams, CompressedT2Params
-from lucj.hardware_sqd_task.lucj_compressed_t2_task_sci import (
-    HardwareSQDEnergyTask,
+from lucj.params import LUCJParams, CompressedT2Params, COBYQAParams
+from lucj.quimb_task.lucj_sqd_quimb_task_sci import LUCJSQDQuimbTask
+from lucj.hardware_sqd_task.lucj_compressed_t2_quimb_task_sci import (
+    HardwareSQDQuimbEnergyTask,
     run_hardware_sqd_energy_task,
 )
 
@@ -54,18 +55,36 @@ max_dim = 1000
 samples_per_batch = max_dim
 
 tasks = [
-    HardwareSQDEnergyTask(
-        molecule_basename=molecule_basename,
-        bond_distance=d,
-        lucj_params=LUCJParams(
-            connectivity="heavy-hex",
-            n_reps=n_reps,
-            with_final_orbital_rotation=True,
-        ),
-        compressed_t2_params=CompressedT2Params(
-            multi_stage_optimization=True,
-            begin_reps=50,
-            step=2
+    HardwareSQDQuimbEnergyTask(
+        LUCJSQDQuimbTask(
+            molecule_basename=molecule_basename,
+            bond_distance=d,
+            lucj_params=LUCJParams(
+                connectivity="heavy-hex",
+                n_reps=n_reps,
+                with_final_orbital_rotation=True,
+            ),
+            compressed_t2_params=CompressedT2Params(
+                multi_stage_optimization=True,
+                begin_reps=20,
+                step=2
+            ),
+            regularization=False,
+            cobyqa_params=COBYQAParams(maxiter=25),
+            shots=10_000,
+            samples_per_batch=samples_per_batch,
+            n_batches=n_batches,
+            energy_tol=energy_tol,
+            occupancies_tol=occupancies_tol,
+            carryover_threshold=carryover_threshold,
+            max_iterations=max_iterations,
+            symmetrize_spin=symmetrize_spin,
+            entropy=entropy,
+            max_bond = 100,
+            perm_mps = False,
+            cutoff = 1e-10,
+            seed = 0,
+            max_dim = max_dim,
         ),
         shots=shots,
         samples_per_batch=samples_per_batch,

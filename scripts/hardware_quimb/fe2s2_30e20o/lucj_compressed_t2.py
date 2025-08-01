@@ -8,9 +8,10 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from lucj.params import LUCJParams, CompressedT2Params
-from lucj.hardware_sqd_task.lucj_compressed_t2_task_sci import (
-    HardwareSQDEnergyTask,
+from lucj.params import LUCJParams, CompressedT2Params, COBYQAParams
+from lucj.quimb_task.lucj_sqd_quimb_task_sci import LUCJSQDQuimbTask
+from lucj.hardware_sqd_task.lucj_compressed_t2_quimb_task import (
+    HardwareSQDQuimbEnergyTask,
     run_hardware_sqd_energy_task,
 )
 
@@ -27,16 +28,12 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 8
+MAX_PROCESSES = 1
 OVERWRITE = False
 
-molecule_name = "n2"
-basis = "cc-pvdz"
-nelectron, norb = 10, 26
-molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
-
-bond_distance_range = [1.2, 2.4]
-# bond_distance_range = [1.2]
+molecule_name = "fe2s2"
+nelectron, norb = 30, 20
+molecule_basename = f"{molecule_name}_{nelectron}e{norb}o"
 
 n_reps_range = [1]
 
@@ -50,22 +47,40 @@ symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropies = list(range(1, 11))
 
-max_dim = 1000
+max_dim = 2000
 samples_per_batch = max_dim
 
 tasks = [
-    HardwareSQDEnergyTask(
-        molecule_basename=molecule_basename,
-        bond_distance=d,
-        lucj_params=LUCJParams(
-            connectivity="heavy-hex",
-            n_reps=n_reps,
-            with_final_orbital_rotation=True,
-        ),
-        compressed_t2_params=CompressedT2Params(
-            multi_stage_optimization=True,
-            begin_reps=50,
-            step=2
+    HardwareSQDQuimbEnergyTask(
+        LUCJSQDQuimbTask(
+            molecule_basename=molecule_basename,
+            bond_distance=None,
+            lucj_params=LUCJParams(
+                connectivity="heavy-hex",
+                n_reps=n_reps,
+                with_final_orbital_rotation=True,
+            ),
+            compressed_t2_params=CompressedT2Params(
+                multi_stage_optimization=True,
+                begin_reps=20,
+                step=2
+            ),
+            regularization=False,
+            cobyqa_params=COBYQAParams(maxiter=25),
+            shots=10_000,
+            samples_per_batch=samples_per_batch,
+            n_batches=n_batches,
+            energy_tol=energy_tol,
+            occupancies_tol=occupancies_tol,
+            carryover_threshold=carryover_threshold,
+            max_iterations=max_iterations,
+            symmetrize_spin=symmetrize_spin,
+            entropy=entropy,
+            max_bond = 100,
+            perm_mps = False,
+            cutoff = 1e-10,
+            seed = 0,
+            max_dim = max_dim,
         ),
         shots=shots,
         samples_per_batch=samples_per_batch,
@@ -79,7 +94,6 @@ tasks = [
         max_dim=max_dim,
     )
     for n_reps in n_reps_range
-    for d in bond_distance_range
     for entropy in entropies
 ]
 

@@ -31,8 +31,8 @@ MAX_PROCESSES = 8
 OVERWRITE = False
 
 molecule_name = "n2"
-basis = "cc-pvdz"
-nelectron, norb = 10, 26
+basis = "6-31g"
+nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 bond_distance_range = [1.2, 2.4]
@@ -62,11 +62,9 @@ tasks = [
             n_reps=n_reps,
             with_final_orbital_rotation=True,
         ),
-        compressed_t2_params=CompressedT2Params(
-            multi_stage_optimization=True,
-            begin_reps=50,
-            step=2
-        ),
+        compressed_t2_params=None,
+        connectivity_opt=False,
+        random_op =True,
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
@@ -82,7 +80,6 @@ tasks = [
     for d in bond_distance_range
     for entropy in entropies
 ]
-
 if MAX_PROCESSES == 1:
     for task in tqdm(tasks):
         run_hardware_sqd_energy_task(

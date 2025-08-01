@@ -31,8 +31,8 @@ MAX_PROCESSES = 8
 OVERWRITE = False
 
 molecule_name = "n2"
-basis = "6-31g"
-nelectron, norb = 10, 16
+basis = "cc-pvdz"
+nelectron, norb = 10, 26
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 bond_distance_range = [1.2, 2.4]

@@ -31,8 +31,8 @@ MAX_PROCESSES = 8
 OVERWRITE = False
 
 molecule_name = "n2"
-basis = "cc-pvdz"
-nelectron, norb = 10, 26
+basis = "6-31g"
+nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 bond_distance_range = [1.2, 2.4]
@@ -64,7 +64,7 @@ tasks = [
         ),
         compressed_t2_params=CompressedT2Params(
             multi_stage_optimization=True,
-            begin_reps=50,
+            begin_reps=20,
             step=2
         ),
         shots=shots,
