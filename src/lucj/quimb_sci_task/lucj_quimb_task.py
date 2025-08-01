@@ -6,7 +6,6 @@ import timeit
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from functools import partial
 
 import ffsim
 import numpy as np
@@ -15,23 +14,30 @@ from ffsim.variational.util import (
     interaction_pairs_spin_balanced,
     orbital_rotation_to_parameters,
 )
-from molecules_catalog.util import load_molecular_data
+from molecules_catalog.util import load_molecular_data, sci_vec_to_fci_vec
 from qiskit.primitives import BitArray
-from qiskit_addon_sqd.fermion import SCIResult, diagonalize_fermionic_hamiltonian, solve_sci_batch
+from qiskit_addon_sqd.fermion import SCIResult, diagonalize_fermionic_hamiltonian
 from lucj.tasks.lucj_compressed_t2_task_ffsim.compressed_t2 import from_t_amplitudes_compressed
 from lucj.params import COBYQAParams, LUCJParams, CompressedT2Params
+from qiskit_addon_dice_solver import solve_sci_batch, solve_hci
 from qiskit.circuit import QuantumCircuit, QuantumRegister
 import quimb.tensor
 from qiskit_quimb import quimb_circuit
 
+import pyscf.ci
+import pyscf.fci
+from pyscf.fci.selected_ci import _as_SCIvector
+from pyscf.fci import cistring
+
 import pyscf
 import jax
+from ffsim.states.bitstring import convert_bitstring_type, concatenate_bitstrings
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, kw_only=True)
-class LUCJSQDQuimbTask:
+class LUCJQuimbTask:
     molecule_basename: str
     bond_distance: float | None
     lucj_params: LUCJParams
@@ -41,20 +47,10 @@ class LUCJSQDQuimbTask:
     random_op: bool = False
     regularization: bool = False,
     regularization_option: int = 0,
-    shots: int
-    samples_per_batch: int
-    n_batches: int
-    energy_tol: float
-    occupancies_tol: float
-    carryover_threshold: float
-    max_iterations: int
-    symmetrize_spin: bool
-    entropy: int | None
     max_bond: int
     perm_mps: bool
     cutoff: int
     seed: int
-    max_dim: int
 
     @property
     def dirpath(self) -> Path:
@@ -77,24 +73,15 @@ class LUCJSQDQuimbTask:
             )
             / self.lucj_params.dirpath
             / compress_option
-            / "quimb"
+            / "quimb_sci"
             / self.cobyqa_params.dirpath
             / f"shots-{self.shots}"
-            / f"samples_per_batch-{self.samples_per_batch}"
-            / f"n_batches-{self.n_batches}"
-            / f"energy_tol-{self.energy_tol}"
-            / f"occupancies_tol-{self.occupancies_tol}"
-            / f"carryover_threshold-{self.carryover_threshold}"
-            / f"max_iterations-{self.max_iterations}"
-            / f"symmetrize_spin-{self.symmetrize_spin}"
-            / f"entropy-{self.entropy}"
-            / f"max_dim-{self.max_dim}"
             / f"max_bond-{self.max_bond}"
             / f"cutoff-{self.cutoff}"
             / f"perm_mps-{self.perm_mps}"
             / f"seed-{self.seed}"
         )
-    
+
     @property
     def operatorpath(self) -> Path:
         if self.random_op:
@@ -119,95 +106,134 @@ class LUCJSQDQuimbTask:
         )
 
 
-def load_operator(task: LUCJSQDQuimbTask, data_dir: str, mol_data):
-    if task.random_op:
-        logging.info(f"Generate random operator for {task}.\n")
-        norb = mol_data.norb
-        pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
-            task.lucj_params.connectivity, norb
-        )
-        operator = ffsim.random.random_ucj_op_spin_balanced(
-            norb,
-            n_reps=task.lucj_params.n_reps,
-            interaction_pairs=(pairs_aa, pairs_ab),
-            with_final_orbital_rotation=True
-        )
-    elif task.connectivity_opt or task.compressed_t2_params is not None:
-        operator_filename = data_dir / task.operatorpath / "operator.npz"
-        if not os.path.exists(operator_filename):
-            logging.info(f"Operator for {task} does not exists.\n")
-            return None
-        logging.info(f"Load operator for {task}.\n")
-        operator = np.load(operator_filename)
-        diag_coulomb_mats = operator["diag_coulomb_mats"]
-        orbital_rotations = operator["orbital_rotations"]
+def load_operator(task: LUCJQuimbTask, data_dir: str, mol_data):
+    operator_filename = data_dir / task.operatorpath / "operator.npz"
+    if not os.path.exists(operator_filename):
+        logging.info(f"Operator for {task} does not exists.\n")
+        return None
+    logging.info(f"Load operator for {task}.\n")
+    operator = np.load(operator_filename)
+    diag_coulomb_mats = operator["diag_coulomb_mats"]
+    orbital_rotations = operator["orbital_rotations"]
 
-        final_orbital_rotation = None
-        if mol_data.ccsd_t1 is not None:
-            final_orbital_rotation = (
-                ffsim.variational.util.orbital_rotation_from_t1_amplitudes(mol_data.ccsd_t1)
-            )
-        elif mol_data.ccsd_t2 is None:
-            nelec = mol_data.nelec
-            norb = mol_data.norb
-            c0, c1, c2 = pyscf.ci.cisd.cisdvec_to_amplitudes(
-                mol_data.cisd_vec, norb, nelec[0]
-            )
-            assert abs(c0) > 1e-8
-            t1 = c1 / c0
-            final_orbital_rotation = (
-                ffsim.variational.util.orbital_rotation_from_t1_amplitudes(t1)
-            )
-        operator = ffsim.UCJOpSpinBalanced(
-            diag_coulomb_mats=diag_coulomb_mats,
-            orbital_rotations=orbital_rotations,
-            final_orbital_rotation=final_orbital_rotation,
+    final_orbital_rotation = None
+    if mol_data.ccsd_t1 is not None:
+        final_orbital_rotation = (
+            ffsim.variational.util.orbital_rotation_from_t1_amplitudes(mol_data.ccsd_t1)
         )
-    else:
-        logging.info(f"Generate truncated operator for {task}.\n")
-        norb = mol_data.norb
+    elif mol_data.ccsd_t2 is None:
         nelec = mol_data.nelec
-        pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
-            task.lucj_params.connectivity, norb
+        norb = mol_data.norb
+        c0, c1, c2 = pyscf.ci.cisd.cisdvec_to_amplitudes(
+            mol_data.cisd_vec, norb, nelec[0]
         )
-        if mol_data.ccsd_t2 is None:
-            c0, c1, c2 = pyscf.ci.cisd.cisdvec_to_amplitudes(
-                mol_data.cisd_vec, norb, nelec[0]
-            )
-            assert abs(c0) > 1e-8
-            t1 = c1 / c0
-            t2 = c2 / c0 - np.einsum("ia,jb->ijab", t1, t1)
-            operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
-                t2,
-                t1=t1,
-                n_reps=task.lucj_params.n_reps,
-                interaction_pairs=interaction_pairs_spin_balanced(
-                    connectivity=task.lucj_params.connectivity, norb=norb
-                ),
-            ) 
-        else:
-            operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
-                mol_data.ccsd_t2,
-                n_reps=task.lucj_params.n_reps,
-                t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
-                interaction_pairs=(pairs_aa, pairs_ab),
-            )
+        assert abs(c0) > 1e-8
+        t1 = c1 / c0
+        final_orbital_rotation = (
+            ffsim.variational.util.orbital_rotation_from_t1_amplitudes(t1)
+        )
+    operator = ffsim.UCJOpSpinBalanced(
+        diag_coulomb_mats=diag_coulomb_mats,
+        orbital_rotations=orbital_rotations,
+        final_orbital_rotation=final_orbital_rotation,
+    )
     return operator
 
+def get_sci_vec(filepath: str, mol_data, dice_solver):
+    if not os.path.exists(filepath):
+        if dice_solver:
+            logger.debug("\tRunning SCI using Dice solver...")
+            t0 = timeit.default_timer()
+            sci_energy, sci_state, _ = solve_hci(
+                hcore=mol_data.one_body_integrals,
+                eri=mol_data.two_body_integrals,
+                norb=mol_data.norb,
+                nelec=mol_data.nelec,
+                # ci_strs=previous_sci_strings,
+                select_cutoff=1e-4,
+                clean_temp_dir=True,
+                mpirun_options=["--quiet", "-n", "8"],
+            )
+            t1 = timeit.default_timer()
+            logger.debug(f"\tFinished running SCI in {t1 - t0} seconds.")
+            mol_data.sci_energy = sci_energy + mol_data.core_energy
+            mol_data.sci_vec = (
+                sci_state.amplitudes,
+                sci_state.ci_strs_a,
+                sci_state.ci_strs_b,
+            )
+            # previous_sci_strings = sci_strings
+        else:
+            logger.debug("\tRunning SCI using PySCF solver...")
+            scf = mol_data.scf.run()
+            sci = pyscf.fci.SCI(scf)
+            ci0 = None
+            t0 = timeit.default_timer()
+            sci.select_cutoff = 1e-4
+            sci_energy, sci_vec = sci.kernel(
+                mol_data.one_body_integrals,
+                mol_data.two_body_integrals,
+                norb=mol_data.norb,
+                nelec=mol_data.nelec,
+                ci0=ci0,
+            )
+            t1 = timeit.default_timer()
+            logger.debug(f"\tFinished running SCI in {t1 - t0} seconds.")
+            if sci.converged:
+                mol_data.sci_energy = sci_energy + mol_data.core_energy
+                mol_data.sci_vec = (sci_vec, *(sci_vec._strs))
+            else:
+                logger.info("SCI did not converge.")
+        with open(filepath, "wb") as f:
+            pickle.dump(mol_data.sci_vec, f)
+        return mol_data.sci_vec
+    else:
+        with open(filepath, "rb") as f:
+            sci_vec = pickle.load(f)
+        return sci_vec
+
+def get_important_bit_string(sci_vec, tol = 1e-5):
+    amplitude = sci_vec[0]
+    strs_a = sci_vec[1]
+    strs_b = sci_vec[2]
+    strings_a = convert_bitstring_type(
+        [s for s in strs_a],
+        input_type=ffsim.BitstringType.INT,
+        output_type=ffsim.BitstringType.STRING,
+        length=norb,
+    )
+    strings_b = convert_bitstring_type(
+        [s for s in strs_b],
+        input_type=ffsim.BitstringType.INT,
+        output_type=ffsim.BitstringType.STRING,
+        length=norb,
+    )
+    r, c = amplitude.shape
+    important_amplitude = []
+    important_btrstr = []
+    for i in range(r):
+        for j in range(c):
+            if abs(amplitude[i][j]) - tol > 1e-8:
+                important_amplitude.append(abs(amplitude[i][j]))
+                important_btrstr.append("".join((strings_b[j], strings_a[i])))
+    return important_amplitude, important_btrstr
+
+    
 def to_backend(x):
     # return jnp(x, dtype=torch.complex64, device="cuda")
     return jax.device_put(x)
 
 
 def run_lucj_sqd_quimb_task(
-    task: LUCJSQDQuimbTask,
+    task: LUCJQuimbTask,
     *,
     data_dir: Path,
     molecules_catalog_dir: Path | None = None,
-    bootstrap_task: LUCJSQDQuimbTask | None = None,
+    bootstrap_task: LUCJQuimbTask | None = None,
     bootstrap_data_dir: Path | None = None,
     overwrite: bool = True,
-) -> LUCJSQDQuimbTask:
+    use_dice: bool = False
+) -> LUCJQuimbTask:
     logging.info(f"{task} Starting...\n")
     os.makedirs(data_dir / task.dirpath, exist_ok=True)
 
@@ -215,13 +241,11 @@ def run_lucj_sqd_quimb_task(
     info_filename = data_dir / task.dirpath / "info.pickle"
     state_vector_filename = data_dir / task.dirpath / "state_vector.npy"
     sample_filename = data_dir / task.dirpath / "sample.pickle"
-    sqd_result_filename = data_dir / task.dirpath / "sqd_data.pickle"
-    
+
     if (
         (not overwrite)
         and os.path.exists(result_filename)
         and os.path.exists(info_filename)
-        and os.path.exists(sqd_result_filename)
     ):
         logger.info(f"Data for {task} already exists. Skipping...\n")
         return task
@@ -244,6 +268,11 @@ def run_lucj_sqd_quimb_task(
     pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
         task.lucj_params.connectivity, norb
     )
+
+    # compute SCI vec
+    sci_filename = data_dir / molecule_basename / "sci_vec.pickle"
+    sci_vec = get_sci_vec(sci_filename, mol_data, use_dice)
+    important_bit_string_amplitude, important_bit_string = get_important_bit_string(sci_vec, tol=1e-3)
 
     rng = np.random.default_rng(task.entropy)
 
@@ -273,37 +302,6 @@ def run_lucj_sqd_quimb_task(
             progbar=True,
             # to_backend=to_backend,
         )
-        # assert(0)
-        logger.info(f"{task}\n\tSampling circuit...")
-        t0 = timeit.default_timer()
-        # quimb_circ.apply_to_arrays(lambda x: x.cpu().numpy())
-        # samples = list(quimb_circ.sample(task.shots, seed=task.seed, backend='jax'))
-        samples = list(quimb_circ.sample(task.shots, seed=task.seed))
-        t1 = timeit.default_timer()
-        time = t1 - t0
-        logger.info(f"{task}\n\tDone sampling circuit in {time} seconds.")
-        samples = [sample[::-1] for sample in samples]
-        # assert(0)
-        bit_array = BitArray.from_samples(samples, num_bits=2 * norb)
-        # sci_solver = partial(solve_sci_batch, spin_sq=0.0)
-        result = diagonalize_fermionic_hamiltonian(
-            mol_ham.one_body_tensor,
-            mol_ham.two_body_tensor,
-            bit_array,
-            samples_per_batch=task.samples_per_batch,
-            norb=norb,
-            nelec=nelec,
-            num_batches=task.n_batches,
-            energy_tol=task.energy_tol,
-            occupancies_tol=task.occupancies_tol,
-            max_iterations=task.max_iterations,
-            sci_solver=solve_sci_batch,
-            symmetrize_spin=task.symmetrize_spin,
-            carryover_threshold=task.carryover_threshold,
-            seed=rng,
-            max_dim=task.max_dim
-        )
-        return result.energy + mol_data.core_energy
 
     if not os.path.exists(result_filename) and not os.path.exists(info_filename):
         # Generate initial parameters
@@ -318,6 +316,8 @@ def run_lucj_sqd_quimb_task(
                     interaction_pairs=(pairs_aa, pairs_ab),
                     optimize=True,
                 )
+                logging.info(f"No operator is found for {task}.\n")
+                return
             params = operator.to_parameters(interaction_pairs=(pairs_aa, pairs_ab))
         else:
             bootstrap_result_filename = os.path.join(
@@ -399,91 +399,49 @@ def run_lucj_sqd_quimb_task(
         with open(state_vector_filename, "rb") as f:
             final_state = np.load(f)
 
-    if not os.path.exists(sample_filename):        
-        logging.info(f"{task} Sampling...\n")
-        samples = ffsim.sample_state_vector(
-            final_state,
-            norb=norb,
-            nelec=nelec,
-            shots=100_000,
-            seed=rng,
-            bitstring_type=ffsim.BitstringType.INT,
-        )
-        bit_array = BitArray.from_samples(samples, num_bits=2 * norb)
-        bit_array_count = bit_array.get_int_counts()
-        with open(sample_filename, "wb") as f:
-            pickle.dump(bit_array_count, f)
-    else:
-        logging.info(f"{task} load sample...\n")
-        with open(sample_filename, "rb") as f:
-            bit_array_count = pickle.load(f)
-            bit_array = BitArray.from_counts(bit_array_count)
-        
-    # Run SQD
-    logging.info(f"{task} Running SQD...\n")
-    # sci_solver = partial(solve_sci_batch, spin_sq=0.0)
-
-    result_history_energy = []
-    result_history_subspace_dim = []
-    result_history = []
-    def callback(results: list[SCIResult]):
-        result_energy = []
-        result_subspace_dim = []
-        iteration = len(result_history)
-        result_history.append(results)
-        logging.info(f"Iteration {iteration}")
-        for i, result in enumerate(results):
-            result_energy.append(result.energy + mol_data.core_energy)
-            result_subspace_dim.append(result.sci_state.amplitudes.shape)
-            logging.info(f"\tSubsample {i}")
-            logging.info(f"\t\tEnergy: {result.energy + mol_data.core_energy}")
-            logging.info(
-                f"\t\tSubspace dimension: {np.prod(result.sci_state.amplitudes.shape)}"
-            )
-        result_history_energy.append(result_energy)
-        result_history_subspace_dim.append(result_subspace_dim)
-
-
-
-    result = diagonalize_fermionic_hamiltonian(
-        mol_ham.one_body_tensor,
-        mol_ham.two_body_tensor,
-        bit_array,
-        samples_per_batch=task.samples_per_batch,
+    logging.info(f"{task} Sampling...\n")
+    samples = ffsim.sample_state_vector(
+        final_state,
         norb=norb,
         nelec=nelec,
-        num_batches=task.n_batches,
-        energy_tol=task.energy_tol,
-        occupancies_tol=task.occupancies_tol,
-        max_iterations=task.max_iterations,
-        sci_solver=solve_sci_batch,
-        symmetrize_spin=task.symmetrize_spin,
-        carryover_threshold=task.carryover_threshold,
+        shots=100_000,
         seed=rng,
-        callback=callback,
-        max_dim=task.max_dim
+        bitstring_type=ffsim.BitstringType.INT,
     )
-    logging.info(f"{task} Finish SQD\n")
-    energy = result.energy + mol_data.core_energy
-    sci_state = result.sci_state
-    spin_squared = sci_state.spin_square()
-    if mol_data.fci_energy is not None:
-        error = energy - mol_data.fci_energy
-    elif mol_data.sci_energy is not None:
-        error = energy - mol_data.sci_energy
-    else:
-        error = -1
+    bit_array = BitArray.from_samples(samples, num_bits=2 * norb)
+    bit_array_count = bit_array.get_int_counts()
+    with open(sample_filename, "wb") as f:
+        pickle.dump(bit_array_count, f)
 
-    # Save data
-    data = {
-        "energy": energy,
-        "error": error,
-        "spin_squared": spin_squared,
-        "sci_vec_shape": sci_state.amplitudes.shape,
-        "history_energy": result_history_energy,
-        "history_sci_vec_shape": result_history_subspace_dim
-    }
 
-    logger.info(f"{task} Saving SQD data...\n")
-    with open(sqd_result_filename, "wb") as f:
-        pickle.dump(data, f)
+molecule_name = "n2"
+basis = "sto-6g"
+nelectron, norb = 6, 6
+bond_distance = 1.2
+molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o_d-{bond_distance:.5f}"
+mol_data = load_molecular_data(
+    molecule_basename,
+    molecules_catalog_dir="/home/WanHsuan.Lin/molecules-catalog",
+)
+
+sci_vec = get_sci_vec("scratch/test_sci.pickle", mol_data, True)
+
+fci = sci_vec_to_fci_vec(
+    sci_vec[0],
+    sci_vec[1],
+    sci_vec[2],
+    norb=norb,
+    nelec=(nelectron//3, nelectron//3))
+
+amp, bitstr = get_important_bit_string(sci_vec)
+# print(amp)
+# print(bitstr)
+
+# print("fci")
+# print(fci)
+
+# strings = ffsim.addresses_to_strings(
+#     fci, norb=norb, nelec=(nelectron//3, nelectron//3), bitstring_type=ffsim.BitstringType.STRING
+# )
+
+# print(strings)
