@@ -14,11 +14,11 @@ from ffsim.variational.util import (
     interaction_pairs_spin_balanced,
     orbital_rotation_to_parameters,
 )
-from molecules_catalog.util import load_molecular_data, sci_vec_to_fci_vec
+from molecules_catalog.util import load_molecular_data
 from qiskit.primitives import BitArray
 from qiskit_addon_sqd.fermion import SCIResult, diagonalize_fermionic_hamiltonian
 from lucj.tasks.lucj_compressed_t2_task_ffsim.compressed_t2 import from_t_amplitudes_compressed
-from lucj.params import COBYQAParams, LUCJParams, CompressedT2Params
+from lucj.params import LBFGSBParams, LUCJParams, CompressedT2Params
 from qiskit_addon_dice_solver import solve_sci_batch, solve_hci
 from qiskit.circuit import QuantumCircuit, QuantumRegister
 import quimb.tensor
@@ -26,12 +26,22 @@ from qiskit_quimb import quimb_circuit
 
 import pyscf.ci
 import pyscf.fci
-from pyscf.fci.selected_ci import _as_SCIvector
-from pyscf.fci import cistring
 
 import pyscf
 import jax
-from ffsim.states.bitstring import convert_bitstring_type, concatenate_bitstrings
+from ffsim.states.bitstring import convert_bitstring_type
+import jax.numpy as jnp
+
+# remove later
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}.log"
+os.makedirs(os.path.dirname(filename), exist_ok=True)
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S %z",
+    filename=filename,
+)
+####
 
 logger = logging.getLogger(__name__)
 
@@ -41,15 +51,15 @@ class LUCJQuimbTask:
     molecule_basename: str
     bond_distance: float | None
     lucj_params: LUCJParams
-    cobyqa_params: COBYQAParams
+    lbfgsb_params: LBFGSBParams
     compressed_t2_params: CompressedT2Params | None
     connectivity_opt: bool = False
     random_op: bool = False
     regularization: bool = False,
     regularization_option: int = 0,
-    max_bond: int
-    perm_mps: bool
-    cutoff: int
+    # max_bond: int
+    # perm_mps: bool
+    # cutoff: int
     seed: int
 
     @property
@@ -74,11 +84,7 @@ class LUCJQuimbTask:
             / self.lucj_params.dirpath
             / compress_option
             / "quimb_sci"
-            / self.cobyqa_params.dirpath
-            / f"shots-{self.shots}"
-            / f"max_bond-{self.max_bond}"
-            / f"cutoff-{self.cutoff}"
-            / f"perm_mps-{self.perm_mps}"
+            / self.lbfgsb_params.dirpath
             / f"seed-{self.seed}"
         )
 
@@ -193,6 +199,8 @@ def get_sci_vec(filepath: str, mol_data, dice_solver):
         return sci_vec
 
 def get_important_bit_string(sci_vec, tol = 1e-5):
+    half_hf_state = "0" * (norb - nelectron // 2) + "1" * (nelectron // 2)
+    hf_state = half_hf_state + half_hf_state
     amplitude = sci_vec[0]
     strs_a = sci_vec[1]
     strs_b = sci_vec[2]
@@ -209,17 +217,31 @@ def get_important_bit_string(sci_vec, tol = 1e-5):
         length=norb,
     )
     r, c = amplitude.shape
-    important_amplitude = []
-    important_btrstr = []
+    important_amp_bitstr = []
     for i in range(r):
         for j in range(c):
             if abs(amplitude[i][j]) - tol > 1e-8:
-                important_amplitude.append(abs(amplitude[i][j]))
-                important_btrstr.append("".join((strings_b[j], strings_a[i])))
-    return important_amplitude, important_btrstr
+                bitstr = "".join((strings_b[j], strings_a[i]))
+                if bitstr != hf_state:
+                    important_amp_bitstr.append((abs(amplitude[i][j]), bitstr))
+    return important_amp_bitstr
 
 def construct_quimb_circuit(circuit: QuantumCircuit):
-    pass
+    # quimb_circ = quimb_circuit(
+    #     circuit,
+    #     quimb_circuit_class=quimb.tensor.Circuit,
+    #     # to_backend=to_backend,
+    # )
+
+    quimb_circ = quimb_circuit(
+            circuit,
+            quimb_circuit_class=quimb.tensor.CircuitMPS,
+            max_bond=100,
+            cutoff=1e-10,
+            progbar=True,
+            # to_backend=to_backend,
+        )
+    return quimb_circ
 
 def constrcut_target_tn(important_amplitude, important_bitstr):
     pass
@@ -237,7 +259,8 @@ def run_lucj_sqd_quimb_task(
     bootstrap_task: LUCJQuimbTask | None = None,
     bootstrap_data_dir: Path | None = None,
     overwrite: bool = True,
-    use_dice: bool = False
+    use_dice: bool = False,
+    run_sqd: bool = False
 ) -> LUCJQuimbTask:
     logging.info(f"{task} Starting...\n")
     os.makedirs(data_dir / task.dirpath, exist_ok=True)
@@ -266,33 +289,20 @@ def run_lucj_sqd_quimb_task(
         molecule_basename,
         molecules_catalog_dir=molecules_catalog_dir,
     )
-    mol_ham = mol_data.hamiltonian
+    
     norb = mol_data.norb
     nelec = mol_data.nelec
-
+    mol_ham = mol_data.hamiltonian
     pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
         task.lucj_params.connectivity, norb
     )
 
     # compute SCI vec
-    sci_filename = data_dir / molecule_basename / "sci_vec.pickle"
+    sci_filename = f"{data_dir}/{molecule_basename}/sci_vec.pickle"
     sci_vec = get_sci_vec(sci_filename, mol_data, use_dice)
-    important_amplitude, important_bitstr = get_important_bit_string(sci_vec, tol=1e-3)
+    important_amp_bitstr = get_important_bit_string(sci_vec, tol=1e-3)
 
-    rng = np.random.default_rng(task.entropy)
-
-    def fun(x: np.ndarray) -> float:
-        
-        quimb_circ = quimb_circuit(
-            decomposed,
-            quimb_circuit_class=quimb.tensor.CircuitPermMPS
-            if task.perm_mps
-            else quimb.tensor.CircuitMPS,
-            max_bond=task.max_bond,
-            cutoff=task.cutoff,
-            progbar=True,
-            # to_backend=to_backend,
-        )
+    rng = np.random.default_rng(task.seed)
 
     if not os.path.exists(result_filename) and not os.path.exists(info_filename):
         # Generate initial parameters
@@ -339,21 +349,59 @@ def run_lucj_sqd_quimb_task(
         info = defaultdict(list)
         info["nit"] = 0
         
-        # Construct Qiskit circuit
-        qubits = QuantumRegister(2 * norb)
-        qubit_number = 2 * norb
-        circuit = QuantumCircuit(qubits)
-        circuit.append(ffsim.qiskit.PrepareHartreeFockJW(norb, nelec), qubits)
-        circuit.append(ffsim.qiskit.UCJOpSpinBalancedJW(operator), qubits)
-        # change to quimb
-        decomposed = circuit.decompose(reps=2)
-        quimb_circuit = construct_quimb_circuit(circuit)
+        # half_hf_state = "0" * (norb - nelectron // 2) + "1" * (nelectron // 2)
+        # hf_state = half_hf_state + half_hf_state
+        important_amp_bitstr.sort(reverse=True)
+        # print(len(important_amp_bitstr))
+        # print(important_amp_bitstr[1000])
+        # input()
+        def loss(x):
+            # optional: minimize amp of hf state
 
-        # construct target TN
-        target_tn = constrcut_target_tn(important_amplitude, important_bitstr)
-        
-        def loss(quimb_circuit, target_tn):
-            pass
+            operator = ffsim.UCJOpSpinBalanced.from_parameters(
+                x,
+                norb=norb,
+                n_reps=task.lucj_params.n_reps,
+                interaction_pairs=(pairs_aa, pairs_ab),
+                with_final_orbital_rotation=task.lucj_params.with_final_orbital_rotation,
+            )
+            # Construct Qiskit circuit
+            qubits = QuantumRegister(2 * norb)
+            circuit = QuantumCircuit(qubits)
+            circuit.append(ffsim.qiskit.PrepareHartreeFockJW(norb, nelec), qubits)
+            circuit.append(ffsim.qiskit.UCJOpSpinBalancedJW(operator), qubits)
+            # change to quimb
+            decomposed = circuit.decompose(reps=2)
+            quimb_circuit = construct_quimb_circuit(decomposed)
+
+            loss = 0
+            # print("in loss")
+            # get the full wavefunction simplified
+            ori_psi_b = quimb_circuit.get_psi_simplified()
+            for amp, bitstr in important_amp_bitstr:
+                # amp_cir = quimb_circuit.amplitude(bitstr)
+                # print(bitstr)
+                psi_b = ori_psi_b.copy()
+                # amp_cir = quimb_circuit.amplitude(bitstr, backend=jax) # can add backend
+                # fix the output indices to the correct bitstring
+                for i, x in zip(range(quimb_circuit.N), bitstr):
+                    psi_b.isel_({psi_b.site_ind(i): x})
+
+                # perform a final simplification and cast
+                psi_b.full_simplify_()
+                quimb_circuit._maybe_convert(psi_b, None)
+
+                tree = psi_b.contraction_tree(output_inds=(), optimize="auto-hq")
+
+                # perform the full contraction with the tree found
+                amp_cir = psi_b.contract(
+                    all, output_inds=(), optimize=tree
+                )
+                # print(amp_cir)
+                # print(amp)
+                loss += (jnp.abs(amp_cir - amp))
+            # print(loss)
+            return loss
 
         def callback(intermediate_result: scipy.optimize.OptimizeResult):
             logger.info(f"Task {task} is on iteration {info['nit']}.\n")
@@ -366,22 +414,47 @@ def run_lucj_sqd_quimb_task(
             if info["nit"] > 3:
                 if (abs(info["fun"][-1] - info["fun"][-2]) < 1e-5) and (abs(info["fun"][-2] - info["fun"][-3]) < 1e-5):
                     raise StopIteration("Objective function value does not decrease for two iterations.")
+        t0 = timeit.default_timer()
+        logger.info(f"{task} Optimizing ansatz...\n")
+        info = defaultdict(list)
+        info["nit"] = 0
 
-        tnopt = quimb.tensor.TNOptimizer(
-                quimb_circuit,                              # the tensor network we want to optimize
-                loss,                                       # the function we want to minimize
-                loss_constants={'target_tn': target_tn},    # supply U to the loss function as a constant TN
-                # tags=['U3'],                                # only optimize U3 tensors
-                autodiff_backend='jax',                     # use 'autograd' for non-compiled optimization
-                optimizer='L-BFGS-B',                       # the optimization algorithm
-            )
+        # result = scipy.optimize.minimize(
+        #     fun,
+        #     x0=params,
+        #     method="COBYQA",
+        #     options=dataclasses.asdict(task.cobyqa_params),
+        #     callback=callback,
+        # )
+        result = scipy.optimize.differential_evolution(
+            loss,
+            scipy.optimize.Bounds(),
+            callback=callback,
+            x0=params,
+            maxiter=task.cobyqa_params.maxiter
+            # workers=2,
+        )
+        t1 = timeit.default_timer()
+        logger.info(f"{task} Done optimizing ansatz in {t1 - t0} seconds.\n")
+        # print(loss(quimb_circuit))
+        t1 = timeit.default_timer()
+        logger.info(f"{task} Compute loss in {t1 - t0} seconds.\n")
+        # input()
+        # tnopt = quimb.tensor.TNOptimizer(
+        #         quimb_circuit,                              # the tensor network we want to optimize
+        #         loss,                                       # the function we want to minimize
+        #         # loss_constants={'target_tn': target_tn},    # supply U to the loss function as a constant TN
+        #         # tags=['U3'],                                # only optimize U3 tensors
+        #         autodiff_backend='jax',                     # use 'autograd' for non-compiled optimization
+        #         optimizer='L-BFGS-B',                       # the optimization algorithm
+        #     )
         
         t0 = timeit.default_timer()
         # allow 10 hops with 500 steps in each 'basin'
-        quimb_circuit_opt = tnopt.optimize_basinhopping(n=500, nhop=10)
+        # quimb_circuit_opt = tnopt.optimize_basinhopping(n=500, nhop=10)
         t1 = timeit.default_timer()
         logger.info(f"{task} Done optimizing ansatz in {t1 - t0} seconds.\n")
-        quimb_circuit.update_params_from(quimb_circuit_opt)
+        # quimb_circuit.update_params_from(quimb_circuit_opt)
 
         logger.info(f"{task} Saving data...\n")
         with open(result_filename, "wb") as f:
@@ -425,26 +498,104 @@ def run_lucj_sqd_quimb_task(
         pickle.dump(bit_array_count, f)
 
 
+    # Run SQD
+    if run_sqd:
+        logging.info(f"{task} Running SQD...\n")
+        # sci_solver = partial(solve_sci_batch, spin_sq=0.0)
+
+        result_history_energy = []
+        result_history_subspace_dim = []
+        result_history = []
+
+        def callback(results: list[SCIResult]):
+            result_energy = []
+            result_subspace_dim = []
+            iteration = len(result_history)
+            result_history.append(results)
+            logging.info(f"Iteration {iteration}")
+            for i, result in enumerate(results):
+                result_energy.append(result.energy + mol_data.core_energy)
+                result_subspace_dim.append(result.sci_state.amplitudes.shape)
+                logging.info(f"\tSubsample {i}")
+                logging.info(f"\t\tEnergy: {result.energy + mol_data.core_energy}")
+                logging.info(
+                    f"\t\tSubspace dimension: {np.prod(result.sci_state.amplitudes.shape)}"
+                )
+            result_history_energy.append(result_energy)
+            result_history_subspace_dim.append(result_subspace_dim)
+
+        result = diagonalize_fermionic_hamiltonian(
+            mol_ham.one_body_tensor,
+            mol_ham.two_body_tensor,
+            bit_array,
+            samples_per_batch=2000,
+            norb=norb,
+            nelec=nelec,
+            num_batches=10,
+            energy_tol=1e-5,
+            occupancies_tol=1e-3,
+            max_iterations=1,
+            sci_solver=solve_sci_batch,
+            symmetrize_spin=True,
+            carryover_threshold=1e-3,
+            seed=rng,
+            callback=callback,
+            max_dim=2000,
+        )
+        logging.info(f"{task} Finish SQD\n")
+        energy = result.energy + mol_data.core_energy
+        sci_state = result.sci_state
+        spin_squared = sci_state.spin_square()
+        if mol_data.fci_energy is not None:
+            error = energy - mol_data.fci_energy
+        elif mol_data.sci_energy is not None:
+            error = energy - mol_data.sci_energy
+        else:
+            error = -1
+
+        # Save data
+        data = {
+            "energy": energy,
+            "error": error,
+            "spin_squared": spin_squared,
+            "sci_vec_shape": sci_state.amplitudes.shape,
+            "history_energy": result_history_energy,
+            "history_sci_vec_shape": result_history_subspace_dim,
+        }
+
+        logger.info(f"{task} Saving SQD data...\n")
+        sqd_result_filename = data_dir / task.dirpath / "sqd_data.pickle"
+        with open(sqd_result_filename, "wb") as f:
+            pickle.dump(data, f)
+
+
 molecule_name = "n2"
-basis = "sto-6g"
-nelectron, norb = 6, 6
+basis = "6-31g"
+nelectron, norb = 10, 16
 bond_distance = 1.2
-molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o_d-{bond_distance:.5f}"
-mol_data = load_molecular_data(
-    molecule_basename,
-    molecules_catalog_dir="/home/WanHsuan.Lin/molecules-catalog",
-)
+molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-sci_vec = get_sci_vec("scratch/test_sci.pickle", mol_data, True)
+molecule_name = "fe2s2"
+nelectron, norb = 30, 20
+bond_distance = None
+molecule_basename = f"{molecule_name}_{nelectron}e{norb}o"
+# molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o_d-{bond_distance:.5f}"
+# mol_data = load_molecular_data(
+#     molecule_basename,
+#     molecules_catalog_dir="/home/WanHsuan.Lin/molecules-catalog",
+# )
 
-fci = sci_vec_to_fci_vec(
-    sci_vec[0],
-    sci_vec[1],
-    sci_vec[2],
-    norb=norb,
-    nelec=(nelectron//3, nelectron//3))
+# sci_vec = get_sci_vec("scratch/test_sci.pickle", mol_data, True)
 
-amp, bitstr = get_important_bit_string(sci_vec)
+# fci = sci_vec_to_fci_vec(
+#     sci_vec[0],
+#     sci_vec[1],
+#     sci_vec[2],
+#     norb=norb,
+#     nelec=(nelectron//3, nelectron//3))
+
+# amp, bitstr = get_important_bit_string(sci_vec)
+
 # print(amp)
 # print(bitstr)
 
@@ -456,3 +607,30 @@ amp, bitstr = get_important_bit_string(sci_vec)
 # )
 
 # print(strings)
+
+lucj_quimb_task = LUCJQuimbTask(
+    molecule_basename=molecule_basename,
+    bond_distance=bond_distance,
+    lucj_params=LUCJParams(
+            connectivity="heavy-hex",
+            n_reps=1,
+            with_final_orbital_rotation=True,
+        ),
+    compressed_t2_params=CompressedT2Params(
+        multi_stage_optimization=True,
+        begin_reps=20,
+        step=2
+    ),
+    regularization=False,
+    connectivity_opt = False,
+    lbfgsb_params=LBFGSBParams(maxiter=100),
+    regularization_option = 0,
+    seed=0)
+
+run_lucj_sqd_quimb_task(
+    lucj_quimb_task,
+    data_dir="/media/storage/WanHsuan.Lin/",
+    molecules_catalog_dir="/home/WanHsuan.Lin/molecules-catalog",
+    overwrite=False,
+    run_sqd=True
+)

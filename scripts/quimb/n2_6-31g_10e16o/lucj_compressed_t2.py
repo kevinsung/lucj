@@ -53,7 +53,7 @@ occupancies_tol = 1e-3
 carryover_threshold = 1e-3
 max_iterations = 1
 symmetrize_spin = True
-cobyqa_maxiter = 25
+cobyqa_maxiter = 100 # 25
 # TODO set entropy and generate seeds properly
 entropy = 0
 max_bond: int
