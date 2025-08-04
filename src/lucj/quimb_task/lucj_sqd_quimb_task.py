@@ -319,6 +319,8 @@ def run_lucj_sqd_quimb_task(
                     interaction_pairs=(pairs_aa, pairs_ab),
                     optimize=True,
                 )
+                logging.info(f"No operator is found for {task}.\n")
+                return
             params = operator.to_parameters(interaction_pairs=(pairs_aa, pairs_ab))
         else:
             bootstrap_result_filename = os.path.join(
@@ -406,7 +408,7 @@ def run_lucj_sqd_quimb_task(
             final_state,
             norb=norb,
             nelec=nelec,
-            shots=1_000_000,
+            shots=100_000,
             seed=rng,
             bitstring_type=ffsim.BitstringType.INT,
         )

@@ -405,7 +405,7 @@ def run_lucj_sqd_quimb_task(
             final_state,
             norb=norb,
             nelec=nelec,
-            shots=1_000_000,
+            shots=100_000,
             seed=rng,
             bitstring_type=ffsim.BitstringType.INT,
         )
