@@ -44,6 +44,7 @@ entropy = 0
 max_dim = 4000
 samples_per_batch = max_dim
 
+
 def load_data(filepath):
     if not os.path.exists(filepath):
         result = {
@@ -64,7 +65,7 @@ print("Done loading data.")
 markers = ["o", "s", "v", "D", "p", "*", "P", "X"]
 linestyles = ["--", ":"]
 
-with open('scripts/paper/color.json', 'r') as file:
+with open("scripts/paper/color.json", "r") as file:
     colors = json.load(file)
 
 
@@ -93,9 +94,11 @@ for d in bond_distance_range:
     filepath = DATA_ROOT / task.vqepath / "data.pickle"
     results_uccsd[d] = load_data(filepath)
 
-for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distance_range, connectivities)):
+for i, (bond_distance, connectivity) in enumerate(
+    itertools.product(bond_distance_range, connectivities)
+):
     axes[0, i].axhline(
-        results_uccsd[bond_distance]['error'],
+        results_uccsd[bond_distance]["error"],
         linestyle="--",
         label="UCCSD",
         color=colors["uccsd"],
@@ -128,7 +131,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     results = load_data(filepath)
 
     axes[0, i].axhline(
-        results['error'],
+        results["error"],
         linestyle="--",
         label="LUCJ-full",
         color=colors["lucj_full"],
@@ -136,7 +139,8 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
 
     if connectivity == "all-to-all":
         # UCCSD
-        tasks_uccsd_compressed_t2 = [UCCSDCompressedTask(
+        tasks_uccsd_compressed_t2 = [
+            UCCSDCompressedTask(
                 molecule_basename=molecule_basename,
                 bond_distance=bond_distance,
                 lucj_params=LUCJParams(
@@ -145,15 +149,13 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
                     with_final_orbital_rotation=True,
                 ),
                 compressed_t2_params=CompressedT2Params(
-                    multi_stage_optimization=True,
-                    begin_reps=20,
-                    step=2
+                    multi_stage_optimization=True, begin_reps=20, step=2
                 ),
-                regularization=False
+                regularization=False,
             )
             for n_reps in n_reps_range
         ]
-    
+
     tasks_compressed_t2 = [
         SQDEnergyTask(
             molecule_basename=molecule_basename,
@@ -164,9 +166,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
                 with_final_orbital_rotation=True,
             ),
             compressed_t2_params=CompressedT2Params(
-                multi_stage_optimization=True,
-                begin_reps=20,
-                step=2
+                multi_stage_optimization=True, begin_reps=20, step=2
             ),
             regularization=False,
             regularization_option=None,
@@ -194,9 +194,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
                 with_final_orbital_rotation=True,
             ),
             compressed_t2_params=CompressedT2Params(
-                multi_stage_optimization=False,
-                begin_reps=n_reps,
-                step=2
+                multi_stage_optimization=False, begin_reps=n_reps, step=2
             ),
             regularization=False,
             regularization_option=None,
@@ -243,9 +241,24 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     ]
 
     if connectivity == "all-to-all":
-        list_tasks = [tasks_uccsd_compressed_t2, tasks_truncated, tasks_compressed_t2, tasks_compressed_t2_naive]
-        color_keys = ["uccsd-compressed", "lucj_truncated", "lucj_compressed", "lucj_compressed_1stg"]
-        labels = ["UCCSD-compressed t2", "LUCJ-truncated", "LUCJ-compressed", "LUCJ-compressed-1stg"]
+        list_tasks = [
+            tasks_uccsd_compressed_t2,
+            tasks_truncated,
+            tasks_compressed_t2,
+            tasks_compressed_t2_naive,
+        ]
+        color_keys = [
+            "uccsd-compressed",
+            "lucj_truncated",
+            "lucj_compressed",
+            "lucj_compressed_1stg",
+        ]
+        labels = [
+            "UCCSD-compressed t2",
+            "LUCJ-truncated",
+            "LUCJ-compressed",
+            "LUCJ-compressed-1stg",
+        ]
     else:
         list_tasks = [tasks_truncated, tasks_compressed_t2, tasks_compressed_t2_naive]
         color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_1stg"]
@@ -261,7 +274,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
             results[task] = load_data(filepath)
 
         errors = [results[task]["error"] for task in tasks]
-        
+
         axes[0, i].plot(
             n_reps_range,
             errors,
@@ -306,16 +319,18 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     axes[1, i].set_xticks(n_reps_range)
     axes[1, i].set_yscale("log")
 
-    leg = axes[1, 2].legend(
-        bbox_to_anchor=(-0.3, -0.25), loc="upper center", ncol=5
+    leg = axes[0, 2].legend(
+        bbox_to_anchor=(-0.38, -1.65),
+        loc="upper center",
+        ncol=6,
+        columnspacing=1,
+        handletextpad=0.8,
     )
     leg.set_in_layout(False)
     plt.tight_layout()
     plt.subplots_adjust(bottom=0.15, top=0.88)
 
-    fig.suptitle(
-        f"$N_2$ (6-31g, {nelectron}e, {norb}o)"
-    )
+    fig.suptitle(f"$N_2$ (6-31g, {nelectron}e, {norb}o)")
 
 filepath = os.path.join(
     plots_dir,
