@@ -47,4 +47,3 @@ def run_on_hardware(circuit: QuantumCircuit, norb, shots):
     primitive_result = job.result()
     pub_result = primitive_result[0]
     return pub_result.data.meas
-
