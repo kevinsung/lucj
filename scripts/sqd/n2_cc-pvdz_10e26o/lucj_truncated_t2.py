@@ -79,7 +79,7 @@ tasks = [
     )
     for bond_distance in bond_distance_range
     for connectivity in connectivities
-    for n_reps in n_reps_range
+    for n_reps in reversed(n_reps_range)
 ]
 
 # run_sqd_energy_task(
