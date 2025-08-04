@@ -92,7 +92,7 @@ for d in bond_distance_range:
 
 
 fig, axes = plt.subplots(
-    2,
+    3,
     len(bond_distance_range) * len(connectivities),
     figsize=(10, 5),  # , layout="constrained"
 )
@@ -106,7 +106,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         color=colors["random_bit_string"],
     )
 
-    axes[1, i].axhline(
+    axes[2, i].axhline(
         results_random[bond_distance]['sci_vec_shape'][0],
         linestyle="--",
         label="Rand bitstr",
@@ -147,7 +147,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         color=colors["lucj_full"],
     )
 
-    axes[1, i].axhline(
+    axes[2, i].axhline(
         results['sci_vec_shape'][0],
         linestyle="--",
         label="LUCJ-full",
@@ -281,7 +281,20 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         list_tasks = [tasks_truncated, tasks_compressed_t2, tasks_compressed_t2_naive, tasks_compressed_t2_quimb]
         color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_1stg", "lucj_compressed_quimb"]
         labels = ["LUCJ-truncated", "LUCJ-compressed", "LUCJ-compressed-1stg", "lucj-compressed-tn"]
-    
+        nit = []
+        for task in tasks_compressed_t2_quimb:
+            filepath = DATA_ROOT / task.dirpath / "info.pickle"
+            results = load_data(filepath)
+            nit.append(results['nit'])
+        
+        axes[1, i].plot(
+            n_reps_range,
+            nit,
+            f"{markers[0]}{linestyles[0]}",
+            label="lucj-compressed-tn",
+            color=colors["lucj_compressed_quimb"],
+        )
+        
     else:
         list_tasks = [tasks_truncated, tasks_compressed_t2, tasks_compressed_t2_naive]
         color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_1stg"]
@@ -304,7 +317,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
             color=colors[color_key],
         )
 
-        axes[1, i].plot(
+        axes[2, i].plot(
             n_reps_range,
             sci_vec_shape,
             f"{markers[0]}{linestyles[0]}",
@@ -320,12 +333,17 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     axes[0, i].set_xlabel("Repetitions")
     axes[0, i].set_xticks(n_reps_range)
 
-    axes[1, i].set_ylabel("SCI subspace")
+    axes[1, i].set_ylabel("COBYQA Iter")
     axes[1, i].set_xlabel("Repetitions")
     axes[1, i].set_xticks(n_reps_range)
+    axes[1, i].set_yticks(range(1,12,2))
+    
+    axes[2, i].set_ylabel("SCI subspace")
+    axes[2, i].set_xlabel("Repetitions")
+    axes[2, i].set_xticks(n_reps_range)
 
-    leg = axes[1, 1].legend(
-        bbox_to_anchor=(1.05, -0.28), loc="upper center", ncol=6,
+    leg = axes[2, 1].legend(
+        bbox_to_anchor=(1.05, -0.48), loc="upper center", ncol=6,
         columnspacing=1, handletextpad=0.8
     )
     leg.set_in_layout(False)
