@@ -382,7 +382,7 @@ def run_lucj_sqd_quimb_task(
             result = pickle.load(f)
 
     # continue to run sqd
-    if os.path.exists(state_vector_filename):
+    if not os.path.exists(state_vector_filename):
         logging.info(f"{task} Computing state vector\n")
         operator = ffsim.UCJOpSpinBalanced.from_parameters(
             result.x,
@@ -484,6 +484,6 @@ def run_lucj_sqd_quimb_task(
         "history_sci_vec_shape": result_history_subspace_dim
     }
 
-    logger.info(f"{task} Saving SQD data...\n")
+    logger.info(f"{task} Saving SQD data..\n")
     with open(sqd_result_filename, "wb") as f:
         pickle.dump(data, f)

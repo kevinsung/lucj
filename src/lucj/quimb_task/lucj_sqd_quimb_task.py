@@ -385,7 +385,7 @@ def run_lucj_sqd_quimb_task(
             result = pickle.load(f)
 
     # continue to run sqd
-    if os.path.exists(state_vector_filename):
+    if not os.path.exists(state_vector_filename):
         logging.info(f"{task} Computing state vector\n")
         operator = ffsim.UCJOpSpinBalanced.from_parameters(
             result.x,
