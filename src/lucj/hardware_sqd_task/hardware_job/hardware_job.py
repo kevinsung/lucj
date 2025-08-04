@@ -8,6 +8,8 @@ from qiskit_ibm_runtime import SamplerV2 as Sampler
 
 from lucj.hardware_sqd_task.hardware_job.layout import get_zigzag_physical_layout
 
+
+
 def constrcut_lucj_circuit(norb, nelec, operator):
     qubits = QuantumRegister(2 * norb)
     circuit = QuantumCircuit(qubits)
@@ -16,7 +18,7 @@ def constrcut_lucj_circuit(norb, nelec, operator):
     circuit.measure_all()
     return circuit
 
-def run_on_hardware(circuit: QuantumCircuit, norb, shots):
+def run_on_hardware(circuit: QuantumCircuit, norb, shots, dynamic_decoupling = False):
     service = QiskitRuntimeService(name="wanhsuan-lucj")
     # service = QiskitRuntimeService(name="wanhsuan-lucj-internal")
     # backend = service.least_busy(
@@ -42,6 +44,11 @@ def run_on_hardware(circuit: QuantumCircuit, norb, shots):
     print(f"Gate counts (w/ pre-init passes): {isa_circuit.count_ops()}")
 
     sampler = Sampler(mode=backend)
+
+    if dynamic_decoupling:
+        print("Use dynamic decoupling")
+        sampler.options.dynamical_decoupling.enable = True
+
     job = sampler.run([isa_circuit], shots=shots)
 
     primitive_result = job.result()

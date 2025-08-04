@@ -14,7 +14,7 @@ from lucj.hardware_sqd_task.lucj_compressed_t2_task import (
     run_hardware_sqd_energy_task,
 )
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}.log"
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_dd.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -41,6 +41,7 @@ bond_distance_range = [1.2, 2.4]
 n_reps_range = [1]
 
 shots = 100_000
+# shots = 1_000_000
 n_batches = 3
 energy_tol = 1e-8
 occupancies_tol = 1e-5
@@ -48,8 +49,8 @@ carryover_threshold = 1e-4
 max_iterations = 20
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
-entropies = list(range(1, 11))
-# entropies = [1]
+# entropies = list(range(2, 11))
+entropies = [1]
 
 max_dim = 2500
 samples_per_batch = max_dim
@@ -76,6 +77,7 @@ tasks = [
         symmetrize_spin=symmetrize_spin,
         entropy=entropy,
         max_dim=max_dim,
+        dynamic_decoupling=True
     )
     for n_reps in n_reps_range
     for d in bond_distance_range

@@ -39,6 +39,7 @@ class HardwareSQDEnergyTask:
     symmetrize_spin: bool
     entropy: int | None
     max_dim: int | None
+    dynamic_decoupling: bool = False
 
     @property
     def dirpath(self) -> Path:
@@ -59,6 +60,11 @@ class HardwareSQDEnergyTask:
             )
             / self.lucj_params.dirpath
             / compress_option
+            / (
+                ""
+                if self.dynamic_decoupling is False
+                else "dynamic_decoupling"
+            )
             / f"shots-{self.shots}"
             / f"samples_per_batch-{self.samples_per_batch}"
             / f"n_batches-{self.n_batches}"
@@ -201,7 +207,10 @@ def run_hardware_sqd_energy_task(
     mol_hamiltonian = mol_data.hamiltonian
 
     # use CCSD to initialize parameters
-    sample_filename = data_dir / task.operatorpath / "hardware_sample.pickle"
+    if task.dynamic_decoupling:
+        sample_filename = data_dir / task.operatorpath / "dynamic_decouling/hardware_sample.pickle"
+    else:
+        sample_filename = data_dir / task.operatorpath / "hardware_sample.pickle"
 
     rng = np.random.default_rng(task.entropy)
 
@@ -215,7 +224,7 @@ def run_hardware_sqd_energy_task(
 
         # run on hardware and get the sample
         logging.info(f"{task} Sampling from real device...\n")
-        samples = run_on_hardware(circuit, norb, 1_000_000)
+        samples = run_on_hardware(circuit, norb, 1_000_000, task.dynamic_decoupling)
 
         with open(sample_filename, "wb") as f:
             pickle.dump(samples, f)
