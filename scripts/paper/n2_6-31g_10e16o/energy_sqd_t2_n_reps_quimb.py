@@ -243,7 +243,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         for n_reps in n_reps_range
     ]
 
-    if connectivity == "heavy-hex" and bond_distance == 1.2:
+    if connectivity == "heavy-hex":
         tasks_compressed_t2_quimb = [
             LUCJSQDQuimbTask(
                 molecule_basename=molecule_basename,
@@ -259,7 +259,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
                     step=2
                 ),
                 regularization=False,
-                cobyqa_params=COBYQAParams(maxiter=2),
+                cobyqa_params=COBYQAParams(maxiter=25),
                 shots=10_000,
                 samples_per_batch=samples_per_batch,
                 n_batches=n_batches,
@@ -276,41 +276,9 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
                 max_dim = max_dim,
             )
             for n_reps in n_reps_range]
-        
-        tasks_compressed_t2_quimb_100000 = [
-            LUCJSQDQuimbTask(
-                molecule_basename=molecule_basename,
-                bond_distance=bond_distance,
-                lucj_params=LUCJParams(
-                    connectivity=connectivity,
-                    n_reps=n_reps,
-                    with_final_orbital_rotation=True,
-                ),
-                compressed_t2_params=CompressedT2Params(
-                    multi_stage_optimization=True,
-                    begin_reps=20,
-                    step=2
-                ),
-                regularization=False,
-                cobyqa_params=COBYQAParams(maxiter=2),
-                shots=100_000,
-                samples_per_batch=samples_per_batch,
-                n_batches=n_batches,
-                energy_tol=energy_tol,
-                occupancies_tol=occupancies_tol,
-                carryover_threshold=carryover_threshold,
-                max_iterations=max_iterations,
-                symmetrize_spin=symmetrize_spin,
-                entropy=entropy,
-                max_bond = 100,
-                perm_mps = False,
-                cutoff = 1e-10,
-                seed = 0,
-                max_dim = max_dim,
-            )
-            for n_reps in n_reps_range]
+    
 
-        list_tasks = [tasks_truncated, tasks_compressed_t2, tasks_compressed_t2_naive, tasks_compressed_t2_quimb, tasks_compressed_t2_quimb_100000]
+        list_tasks = [tasks_truncated, tasks_compressed_t2, tasks_compressed_t2_naive, tasks_compressed_t2_quimb]
         color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_1stg", "lucj_compressed_quimb"]
         labels = ["LUCJ-truncated", "LUCJ-compressed", "LUCJ-compressed-1stg", "lucj-compressed-tn"]
     

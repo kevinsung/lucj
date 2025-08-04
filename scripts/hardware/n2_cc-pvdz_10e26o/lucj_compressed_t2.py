@@ -48,8 +48,8 @@ carryover_threshold = 1e-4
 max_iterations = 20
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
-# entropies = list(range(1, 11))
-entropies = [1]
+entropies = list(range(1, 11))
+# entropies = [1]
 
 max_dim = 2500
 samples_per_batch = max_dim
