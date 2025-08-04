@@ -269,6 +269,8 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
             label=label,
             color=colors[color_key],
         )
+        if color_key == "lucj_compressed":
+            print(sci_vec_shape)
 
 
     axes[0, i].set_title(f"R={bond_distance} Å / {connectivity}")

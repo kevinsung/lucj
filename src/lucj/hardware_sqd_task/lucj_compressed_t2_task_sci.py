@@ -6,12 +6,10 @@ from pathlib import Path
 import pyscf
 import ffsim
 import numpy as np
-import scipy.stats
 from molecules_catalog.util import load_molecular_data
 from ffsim.variational.util import interaction_pairs_spin_balanced
 from lucj.params import LUCJParams, CompressedT2Params
 from functools import partial
-from qiskit.primitives import BitArray
 from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, SCIResult, solve_sci_batch
 
 from lucj.hardware_sqd_task.hardware_job.hardware_job import (

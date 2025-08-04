@@ -6,16 +6,12 @@ from pathlib import Path
 import pyscf
 import ffsim
 import numpy as np
-import scipy.stats
 from molecules_catalog.util import load_molecular_data
 from ffsim.variational.util import interaction_pairs_spin_balanced
 from lucj.params import LUCJParams, CompressedT2Params
 
-from qiskit.primitives import BitArray
 from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, SCIResult
 from qiskit_addon_dice_solver import solve_sci_batch
-from qiskit_addon_sqd.subsampling import postselect_by_hamming_right_and_left
-from qiskit_addon_sqd.counts import bit_array_to_arrays
 from lucj.hardware_sqd_task.hardware_job.hardware_job import (
     constrcut_lucj_circuit,
     run_on_hardware,
@@ -215,7 +211,7 @@ def run_hardware_sqd_energy_task(
     rng = np.random.default_rng(task.entropy)
 
     if not os.path.exists(sample_filename):
-        assert 0
+        # assert 0
         operator = load_operator(task, data_dir, mol_data)
         if operator is None:
             return

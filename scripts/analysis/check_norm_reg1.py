@@ -28,7 +28,6 @@ MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 8
 OVERWRITE = False
 
-
 molecule_name = "n2"
 basis = "6-31g"
 nelectron, norb = 10, 16

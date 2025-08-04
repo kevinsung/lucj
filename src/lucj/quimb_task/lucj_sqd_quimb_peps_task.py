@@ -83,6 +83,7 @@ class LUCJSQDQuimbPEPSTask:
             )
             / self.lucj_params.dirpath
             / compress_option
+            / "quimb"
             / self.cobyqa_params.dirpath
             / f"shots-{self.shots}"
             / f"samples_per_batch-{self.samples_per_batch}"
