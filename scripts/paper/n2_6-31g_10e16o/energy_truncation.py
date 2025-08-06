@@ -159,6 +159,8 @@ for plot_type in ["vqe", "sqd"]:
 
         energies = [results[task]["energy"] for task in tasks]
         errors = [results[task]["error"] for task in tasks]
+        # if label == "UCJ":
+        #     print(errors)
         plt.plot(
             n_reps_range + [110],
             errors,

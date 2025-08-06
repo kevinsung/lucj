@@ -208,7 +208,7 @@ def run_hardware_sqd_energy_task(
 
     # use CCSD to initialize parameters
     if task.dynamic_decoupling:
-        sample_filename = data_dir / task.operatorpath / "dynamic_decouling/hardware_sample.pickle"
+        sample_filename = data_dir / task.operatorpath / "dynamic_decoupling/hardware_sample.pickle"
     else:
         sample_filename = data_dir / task.operatorpath / "hardware_sample.pickle"
 
@@ -225,6 +225,7 @@ def run_hardware_sqd_energy_task(
         # run on hardware and get the sample
         logging.info(f"{task} Sampling from real device...\n")
         samples = run_on_hardware(circuit, norb, 1_000_000, task.dynamic_decoupling)
+        logging.info(f"{task} Finish sample\n")
 
         with open(sample_filename, "wb") as f:
             pickle.dump(samples, f)

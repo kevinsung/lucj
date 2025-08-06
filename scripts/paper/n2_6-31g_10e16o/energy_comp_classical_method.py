@@ -314,6 +314,9 @@ for plot_type in ["vqe", "sqd"]:
             label=label,
             color=colors[color_key],
         )
+    
+        # if plot_type == "vqe" and label == "UCJ":
+        #     print(errors[3])
         
     # plt.legend()
     axes[1].set_ylabel("Energy erro (Hartree)")

@@ -10,10 +10,9 @@ from pathlib import Path
 import ffsim
 import numpy as np
 import scipy.optimize
-from ffsim.variational.util import (
-    interaction_pairs_spin_balanced,
-    orbital_rotation_to_parameters,
-)
+from ffsim.variational.util import interaction_pairs_spin_balanced
+from ffsim.linalg.util import unitaries_to_parameters
+
 from molecules_catalog.util import load_molecular_data
 from qiskit.primitives import BitArray
 from qiskit_addon_sqd.fermion import SCIResult, diagonalize_fermionic_hamiltonian
@@ -340,7 +339,7 @@ def run_lucj_sqd_quimb_task(
                 and not bootstrap_task.lucj_params.with_final_orbital_rotation
             ):
                 params = np.concatenate([params, np.zeros(norb**2)])
-                params[-(norb**2) :] = orbital_rotation_to_parameters(
+                params[-(norb**2) :] = unitaries_to_parameters(
                     np.eye(norb, dtype=complex)
                 )
 
