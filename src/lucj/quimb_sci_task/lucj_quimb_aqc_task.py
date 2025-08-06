@@ -10,9 +10,10 @@ from pathlib import Path
 import ffsim
 import numpy as np
 import scipy.optimize
-from ffsim.variational.util import interaction_pairs_spin_balanced
-from ffsim.linalg.util import unitaries_to_parameters
-
+from ffsim.variational.util import (
+    interaction_pairs_spin_balanced,
+    orbital_rotation_to_parameters,
+)
 from molecules_catalog.util import load_molecular_data
 from qiskit.primitives import BitArray
 from qiskit_addon_sqd.fermion import SCIResult, diagonalize_fermionic_hamiltonian
@@ -23,16 +24,20 @@ from qiskit.circuit import QuantumCircuit, QuantumRegister
 import quimb.tensor
 from qiskit_quimb import quimb_circuit
 
+from qiskit_addon_aqc_tensor.objective import MaximizeStateFidelity
+from qiskit_aer import AerSimulator
+from qiskit_addon_aqc_tensor import generate_ansatz_from_circuit
+
 import pyscf.ci
 import pyscf.fci
-
+import autoray
 import pyscf
 import jax
 from ffsim.states.bitstring import convert_bitstring_type
 import jax.numpy as jnp
 
 # remove later
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_sqd.log"
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -82,7 +87,7 @@ class LUCJQuimbTask:
             )
             / self.lucj_params.dirpath
             / compress_option
-            / "quimb_sci"
+            / "quimb_sci_aqc"
             / self.lbfgsb_params.dirpath
             / f"seed-{self.seed}"
         )
@@ -274,7 +279,6 @@ def run_lucj_sqd_quimb_task(
         (not overwrite)
         and os.path.exists(result_filename)
         and os.path.exists(info_filename)
-        and os.path.exists(sample_filename)
     ):
         logger.info(f"Data for {task} already exists. Skipping...\n")
         return task
@@ -298,16 +302,16 @@ def run_lucj_sqd_quimb_task(
         task.lucj_params.connectivity, norb
     )
 
+    # compute SCI vec
+    logger.info(f"{task} Load SCI vectors...\n")
+    sci_filename = f"{data_dir}/{molecule_basename}/sci_vec.pickle"
+    sci_vec = get_sci_vec(sci_filename, mol_data, use_dice)
+    important_amp_bitstr = get_important_bit_string(sci_vec, tol=1e-3)
+    logger.info(f"{task} Finish loading SCI vectors...\n")
+
     rng = np.random.default_rng(task.seed)
 
-    if (not os.path.exists(result_filename) and not os.path.exists(info_filename)):
-        # compute SCI vec
-        logger.info(f"{task} Load SCI vectors...\n")
-        sci_filename = f"{data_dir}/{molecule_basename}/sci_vec.pickle"
-        sci_vec = get_sci_vec(sci_filename, mol_data, use_dice)
-        important_amp_bitstr = get_important_bit_string(sci_vec, tol=1e-3)
-        logger.info(f"{task} Finish loading SCI vectors...\n")
-
+    if overwrite or (not os.path.exists(result_filename) and not os.path.exists(info_filename)):
         # Generate initial parameters
         if bootstrap_task is None:
             # use CCSD to initialize parameters
@@ -343,7 +347,7 @@ def run_lucj_sqd_quimb_task(
                 and not bootstrap_task.lucj_params.with_final_orbital_rotation
             ):
                 params = np.concatenate([params, np.zeros(norb**2)])
-                params[-(norb**2) :] = unitaries_to_parameters(
+                params[-(norb**2) :] = orbital_rotation_to_parameters(
                     np.eye(norb, dtype=complex)
                 )
 
@@ -355,34 +359,28 @@ def run_lucj_sqd_quimb_task(
         # print(len(important_amp_bitstr))
         # print(important_amp_bitstr[1000])
         # input()
-        def loss(x):
-            # optional: minimize amp of hf state
-            logger.info(f"Task {task} Evaluate cost function.\n")
-            operator = ffsim.UCJOpSpinBalanced.from_parameters(
-                x,
-                norb=norb,
-                n_reps=task.lucj_params.n_reps,
-                interaction_pairs=(pairs_aa, pairs_ab),
-                with_final_orbital_rotation=task.lucj_params.with_final_orbital_rotation,
-            )
-            # Construct Qiskit circuit
-            qubits = QuantumRegister(2 * norb)
-            circuit = QuantumCircuit(qubits)
-            circuit.append(ffsim.qiskit.PrepareHartreeFockJW(norb, nelec), qubits)
-            circuit.append(ffsim.qiskit.UCJOpSpinBalancedJW(operator), qubits)
-            # change to quimb
-            decomposed = circuit.decompose(reps=2)
-            quimb_circuit = construct_quimb_circuit(decomposed)
+        operator = ffsim.UCJOpSpinBalanced.from_parameters(
+            params,
+            norb=norb,
+            n_reps=task.lucj_params.n_reps,
+            interaction_pairs=(pairs_aa, pairs_ab),
+            with_final_orbital_rotation=task.lucj_params.with_final_orbital_rotation,
+        )
+        # Construct Qiskit circuit
+        qubits = QuantumRegister(2 * norb)
+        circuit = QuantumCircuit(qubits)
+        circuit.append(ffsim.qiskit.PrepareHartreeFockJW(norb, nelec), qubits)
+        circuit.append(ffsim.qiskit.UCJOpSpinBalancedJW(operator), qubits)
+        # change to quimb
+        decomposed = circuit.decompose(reps=2)
+        quimb_circuit = construct_quimb_circuit(decomposed)
 
+        def loss_mps_bitstr(quimb_circuit):
+            # optional: minimize amp of hf state
             loss = 0
-            # print("in loss")
-            # get the full wavefunction simplified
-            ori_psi_b = quimb_circuit.get_psi_simplified()
+            # we use `autoray.do` to allow arbitrary autodiff backends
             for amp, bitstr in important_amp_bitstr:
-                # amp_cir = quimb_circuit.amplitude(bitstr)
-                # print(bitstr)
-                psi_b = ori_psi_b.copy()
-                # amp_cir = quimb_circuit.amplitude(bitstr, backend=jax) # can add backend
+                psi_b = quimb_circuit.psi.copy()
                 # fix the output indices to the correct bitstring
                 for i, x in zip(range(quimb_circuit.N), bitstr):
                     psi_b.isel_({psi_b.site_ind(i): x})
@@ -399,9 +397,73 @@ def run_lucj_sqd_quimb_task(
                 )
                 # print(amp_cir)
                 # print(amp)
-                loss += (jnp.abs(jnp.abs(amp_cir) - amp))
-            # print(loss)
-            return loss
+                loss += (np.abs(np.abs(amp_cir) - amp))
+            print(loss)
+            return autoray.do("real", loss)
+            # info["x"].append(intermediate_result.x)
+            # info["fun"].append(intermediate_result.fun)
+            # info["nit"] += 1
+            # with open(intermediate_result_filename, "wb") as f:
+            #     pickle.dump(intermediate_result, f)
+            # if info["nit"] > 3:
+            #     if (abs(info["fun"][-1] - info["fun"][-2]) < 1e-5) and (abs(info["fun"][-2] - info["fun"][-3]) < 1e-5):
+            #         raise StopIteration("Objective function value does not decrease for two iterations.")
+        logger.info(f"{task} Optimizing ansatz...\n")
+        t0 = timeit.default_timer()
+        info = defaultdict(list)
+        info["nit"] = 0
+
+        # result = scipy.optimize.minimize(
+        #     fun,
+        #     x0=params,
+        #     method="COBYQA",
+        #     options=dataclasses.asdict(task.cobyqa_params),
+        #     callback=callback,
+        # )
+        # result = scipy.optimize.differential_evolution(
+        #     loss_mps_bitstr,
+        #     [(-1e3, 1e3) for x in params],
+        #     callback=callback,
+        #     x0=params,
+        #     maxiter=task.lbfgsb_params.maxiter
+        #     # workers=2,
+        # )
+        # print(f"init loss: {loss_mps_bitstr(quimb_circuit)}") # 107.377410381147 
+        # tnopt = quimb.tensor.TNOptimizer(
+        #     quimb_circuit,
+        #     loss_mps_bitstr,
+        #     # because we are using dynamic (entry dependent) simplification
+        #     autodiff_backend="autograd",
+        # )
+        # # quimb_circuit = tnopt.optimize(10)
+        # t1 = timeit.default_timer()
+        # logger.info(f"{task} Done optimizing ansatz in {t1 - t0} seconds.\n")
+        # input()
+        # print(loss(quimb_circuit))
+        # input()
+        # tnopt = quimb.tensor.TNOptimizer(
+        #         quimb_circuit,                              # the tensor network we want to optimize
+        #         loss,                                       # the function we want to minimize
+        #         # loss_constants={'target_tn': target_tn},    # supply U to the loss function as a constant TN
+        #         # tags=['U3'],                                # only optimize U3 tensors
+        #         autodiff_backend='jax',                     # use 'autograd' for non-compiled optimization
+        #         optimizer='L-BFGS-B',                       # the optimization algorithm
+        #     )
+        
+
+        # run aqc tensor
+        aqc_ansatz, aqc_initial_parameters = generate_ansatz_from_circuit(
+                decomposed, qubits_initially_zero=True
+        )
+
+        simulator_settings = AerSimulator(
+            method="matrix_product_state",
+            matrix_product_state_max_bond_dimension=100,
+        )
+                
+        objective = MaximizeStateFidelity(
+            quimb_circuit, aqc_ansatz, simulator_settings
+        )
 
         def callback(intermediate_result: scipy.optimize.OptimizeResult):
             logger.info(f"Task {task} is on iteration {info['nit']}.\n")
@@ -414,48 +476,16 @@ def run_lucj_sqd_quimb_task(
             if info["nit"] > 3:
                 if (abs(info["fun"][-1] - info["fun"][-2]) < 1e-5) and (abs(info["fun"][-2] - info["fun"][-3]) < 1e-5):
                     raise StopIteration("Objective function value does not decrease for two iterations.")
-        logger.info(f"{task} Optimizing ansatz...\n")
-        t0 = timeit.default_timer()
-        info = defaultdict(list)
-        info["nit"] = 0
-
+      
         result = scipy.optimize.minimize(
-            loss,
-            x0=params,
-            method="COBYQA",
-            options=dataclasses.asdict(task.lbfgsb_params),
+            objective,
+            aqc_initial_parameters,
+            method="L-BFGS-B",
+            jac=True,
+            options={"maxiter": 100},
             callback=callback,
         )
-        # result = scipy.optimize.differential_evolution(
-        #     loss,
-        #     [(-1e3, 1e3) for x in params],
-        #     callback=callback,
-        #     x0=params,
-        #     maxiter=task.lbfgsb_params.maxiter
-        #     # workers=2,
-        # )
-        t1 = timeit.default_timer()
-        logger.info(f"{task} Done optimizing ansatz in {t1 - t0} seconds.\n")
-        # print(loss(quimb_circuit))
-        t1 = timeit.default_timer()
-        logger.info(f"{task} Compute loss in {t1 - t0} seconds.\n")
-        # input()
-        # tnopt = quimb.tensor.TNOptimizer(
-        #         quimb_circuit,                              # the tensor network we want to optimize
-        #         loss,                                       # the function we want to minimize
-        #         # loss_constants={'target_tn': target_tn},    # supply U to the loss function as a constant TN
-        #         # tags=['U3'],                                # only optimize U3 tensors
-        #         autodiff_backend='jax',                     # use 'autograd' for non-compiled optimization
-        #         optimizer='L-BFGS-B',                       # the optimization algorithm
-        #     )
         
-        t0 = timeit.default_timer()
-        # allow 10 hops with 500 steps in each 'basin'
-        # quimb_circuit_opt = tnopt.optimize_basinhopping(n=500, nhop=10)
-        t1 = timeit.default_timer()
-        logger.info(f"{task} Done optimizing ansatz in {t1 - t0} seconds.\n")
-        # quimb_circuit.update_params_from(quimb_circuit_opt)
-
         logger.info(f"{task} Saving data...\n")
         with open(result_filename, "wb") as f:
             pickle.dump(result, f)
@@ -466,7 +496,7 @@ def run_lucj_sqd_quimb_task(
             result = pickle.load(f)
 
     # continue to run sqd
-    if not os.path.exists(state_vector_filename):
+    if os.path.exists(state_vector_filename):
         logging.info(f"{task} Computing state vector\n")
         operator = ffsim.UCJOpSpinBalanced.from_parameters(
             result.x,
@@ -528,7 +558,7 @@ def run_lucj_sqd_quimb_task(
             mol_ham.one_body_tensor,
             mol_ham.two_body_tensor,
             bit_array,
-            samples_per_batch=4000,
+            samples_per_batch=2000,
             norb=norb,
             nelec=nelec,
             num_batches=10,
@@ -540,7 +570,7 @@ def run_lucj_sqd_quimb_task(
             carryover_threshold=1e-3,
             seed=rng,
             callback=callback,
-            max_dim=4000,
+            max_dim=2000,
         )
         logging.info(f"{task} Finish SQD\n")
         energy = result.energy + mol_data.core_energy

@@ -27,7 +27,7 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 10
+MAX_PROCESSES = 1
 OVERWRITE = False
 
 molecule_name = "n2"
@@ -53,7 +53,7 @@ occupancies_tol = 1e-3
 carryover_threshold = 1e-3
 max_iterations = 1
 symmetrize_spin = True
-cobyqa_maxiter = 100 # 25
+cobyqa_maxiter = 50 # 25
 # TODO set entropy and generate seeds properly
 entropy = 0
 max_bond: int

@@ -360,12 +360,21 @@ def run_lucj_sqd_quimb_task(
 
 
         t0 = timeit.default_timer()
-        result = scipy.optimize.minimize(
+        # result = scipy.optimize.minimize(
+        #     fun,
+        #     x0=params,
+        #     method="COBYQA",
+        #     options=dataclasses.asdict(task.cobyqa_params),
+        #     callback=callback,
+        # )
+        result = scipy.optimize.differential_evolution(
             fun,
-            x0=params,
-            method="COBYQA",
-            options=dataclasses.asdict(task.cobyqa_params),
+            [(-10, 10) for x in params],
             callback=callback,
+            x0=params,
+            popsize=5,
+            maxiter=task.cobyqa_params.maxiter
+            # workers=2,
         )
         t1 = timeit.default_timer()
         logger.info(f"{task} Done optimizing ansatz in {t1 - t0} seconds.\n")
