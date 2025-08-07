@@ -52,7 +52,7 @@ symmetrize_spin = True
 # entropies = list(range(2, 11))
 entropies = [1]
 
-max_dim = 2500
+max_dim = 3000
 samples_per_batch = max_dim
 
 tasks = [

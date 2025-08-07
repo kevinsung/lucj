@@ -7,6 +7,7 @@ import scipy
 import jax
 import jax.numpy as jnp
 import optax
+
 # jax.config.update("jax_enable_x64", True)
 
 def _reshape_grad(
@@ -154,7 +155,7 @@ def double_factorized_t2_compress(
     regularization_factor: float | None = None,
     begin_reps: int | None = None,
     step: int = 2,
-    use_adam: bool = False,
+    use_adam: bool = False
 ) -> tuple[np.ndarray, np.ndarray, float, float]:
     diag_coulomb_mats, orbital_rotations = ffsim.linalg.double_factorized_t2(
         t2, tol=tol
@@ -193,9 +194,17 @@ def double_factorized_t2_compress(
     # coefficient for regularization
     if regularization_factor is None:
         regularization_factor = 1e-4
+    
+    # collect params
+    full_diag_coulomb_mats = diag_coulomb_mats
+    full_orbital_rotations = orbital_rotations
+    diag_coulomb_mats = diag_coulomb_mats[:n_reps]
+    orbital_rotations = orbital_rotations[:n_reps]
+
     for n_tensors in list_reps:
-        diag_coulomb_mats = diag_coulomb_mats[:n_tensors]
-        orbital_rotations = orbital_rotations[:n_tensors]
+        if n_reps < n_tensors:
+            res_diag_coulomb_mats = full_diag_coulomb_mats[n_reps:n_tensors]
+            res_orbital_rotations = full_orbital_rotations[n_reps:n_tensors]
 
         def fun_jax(core_coulomb_params, orbital_rotations_log_tri):
             orbital_rotations_log_real_tri = jnp.real(orbital_rotations_log_tri)
@@ -224,7 +233,7 @@ def double_factorized_t2_compress(
             param_indices = np.nonzero(diag_coulomb_mask)
             param_length = len(param_indices[0])
             list_diag_coulomb_mats = []
-            for i in range(n_tensors):
+            for i in range(n_reps):
                 diag_coulomb_mat = jnp.zeros((norb, norb), complex)
                 diag_coulomb_mat = diag_coulomb_mat.at[param_indices].set(
                     core_coulomb_params[
@@ -248,6 +257,12 @@ def double_factorized_t2_compress(
             orbital_rotations = jnp.einsum(
                 "tij,tj,tkj->tik", vecs, jnp.exp(1j * eigs), vecs.conj()
             )
+            if n_reps < n_tensors:
+                # print(res_diag_coulomb_mats.shape)
+                # print(diag_coulomb_mats.shape)
+                # input()
+                diag_coulomb_mats = jnp.concatenate((diag_coulomb_mats, res_diag_coulomb_mats))
+                orbital_rotations = jnp.concatenate((orbital_rotations, res_orbital_rotations))
             reconstructed = (
                 1j
                 * contract(
@@ -281,12 +296,12 @@ def double_factorized_t2_compress(
         value_and_grad_func = jax.value_and_grad(fun_jax, argnums=(0, 1))
 
         def fun_jac(x):
-            orbital_rotations_log = _params_to_leaf_logs(x, n_tensors, norb)
+            orbital_rotations_log = _params_to_leaf_logs(x, n_reps, norb)
             orbital_rotations_log_jax = jnp.array(orbital_rotations_log)
             mask = jnp.ones((norb, norb), dtype=bool)
             mask = jnp.triu(mask)
             orbital_rotations_log_jax_tri = orbital_rotations_log_jax * mask
-            n_leaf_params = n_tensors * (norb * (norb - 1) // 2 + norb * (norb + 1) // 2)
+            n_leaf_params = n_reps * (norb * (norb - 1) // 2 + norb * (norb + 1) // 2)
             core_coulomb_params = jnp.array(x[n_leaf_params:] + 0j)
 
             val, (grad_diag_coulomb_params, grad_orbital_rotations_log_jax_tri) = (
@@ -313,7 +328,6 @@ def double_factorized_t2_compress(
 
         init_loss, _ = fun_jac(x0)
         list_init_loss.append(init_loss)
-
         if use_adam:
             lr = 1e-3
             optimizer = optax.adam(lr)
@@ -330,7 +344,7 @@ def double_factorized_t2_compress(
                     break
                 previous_val = val
             diag_coulomb_mats, orbital_rotations = _params_to_df_tensors(
-                x0, n_tensors, norb, diag_coulomb_mask
+                x0, n_reps, norb, diag_coulomb_mask
             )
             final_loss, _ = fun_jac(x0)
             list_final_loss.append(final_loss)
@@ -347,7 +361,7 @@ def double_factorized_t2_compress(
             )
 
             diag_coulomb_mats, orbital_rotations = _params_to_df_tensors(
-                result.x, n_tensors, norb, diag_coulomb_mask
+                result.x, n_reps, norb, diag_coulomb_mask
             )
             final_loss, _ = fun_jac(result.x)
             list_final_loss.append(final_loss)
@@ -394,7 +408,7 @@ def from_t_amplitudes_compressed(
                 regularization = regularization,
                 regularization_option = regularization_option,
                 regularization_factor = regularization_factor,
-                use_adam=use_adam
+                use_adam = use_adam
             )
         )
     else:

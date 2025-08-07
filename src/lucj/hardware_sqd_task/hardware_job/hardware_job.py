@@ -7,7 +7,8 @@ from qiskit_ibm_runtime import QiskitRuntimeService
 from qiskit_ibm_runtime import SamplerV2 as Sampler
 
 from lucj.hardware_sqd_task.hardware_job.layout import get_zigzag_physical_layout
-
+from qiskit.primitives import BitArray
+import mthree
 
 
 def constrcut_lucj_circuit(norb, nelec, operator):
@@ -28,7 +29,7 @@ def run_on_hardware(circuit: QuantumCircuit, norb, shots, dynamic_decoupling = F
     backend = service.backend("ibm_pittsburgh")
 
     initial_layout, _ = get_zigzag_physical_layout(norb, backend=backend)
- 
+    # initial_layout: [1, 4, 0] program qubit 0 is mapped to physical qubit 1
     pass_manager = generate_preset_pass_manager(
         optimization_level=3, backend=backend, initial_layout=initial_layout
     )
@@ -48,9 +49,22 @@ def run_on_hardware(circuit: QuantumCircuit, norb, shots, dynamic_decoupling = F
     if dynamic_decoupling:
         print("Use dynamic decoupling")
         sampler.options.dynamical_decoupling.enable = True
+        sampler.options.dynamical_decoupling.sequence_type = 'XY4'
+
 
     job = sampler.run([isa_circuit], shots=shots)
 
     primitive_result = job.result()
     pub_result = primitive_result[0]
-    return pub_result.data.meas
+
+    # Specify a mitigator object targeting a given backend
+    mit = mthree.M3Mitigation(backend)
+    mit.cals_from_system(initial_layout, shots)
+    # Apply mitigation to a given dict of raw counts over the specified qubits
+    raw_counts = pub_result.data.meas.get_counts()
+    m3_quasi = mit.apply_correction(raw_counts, initial_layout)
+
+    bit_array = BitArray.from_counts(m3_quasi, num_bits=2 * norb)
+    
+    # return pub_result.data.meas
+    return bit_array
