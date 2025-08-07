@@ -63,7 +63,7 @@ class HardwareSQDEnergyTask:
             / (
                 ""
                 if self.dynamic_decoupling is False
-                else "dynamic_decoupling_xy"
+                else "dynamic_decoupling_xy_m3s"
             )
             / f"shots-{self.shots}"
             / f"samples_per_batch-{self.samples_per_batch}"
