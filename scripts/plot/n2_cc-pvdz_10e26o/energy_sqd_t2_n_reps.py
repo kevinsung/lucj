@@ -142,7 +142,7 @@ for d in bond_distance_range:
 fig, axes = plt.subplots(
     3,
     len(bond_distance_range) * len(connectivities),
-    figsize=(10, 5),  # , layout="constrained"
+    figsize=(6, 5),  # , layout="constrained"
 )
 
 for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distance_range, connectivities)):
@@ -261,66 +261,66 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     # print(error_avg)
     # print(error_min)
     # print(error_max)
+    if connectivity == "all-to-all":
+        axes[0, i].axhline(
+            error_avg,
+            linestyle="--",
+            label="LUCJ-full",
+            color=colors["lucj_full"],
+        )
 
-    axes[0, i].axhline(
-        error_avg,
-        linestyle="--",
-        label="LUCJ-full",
-        color=colors["lucj_full"],
-    )
+        axes[0, i].axhline(
+            error_min,
+            linestyle="--",
+            # label="LUCJ-full",
+            color=colors["lucj_full"],
+            alpha=0.7
+        )
 
-    axes[0, i].axhline(
-        error_min,
-        linestyle="--",
-        # label="LUCJ-full",
-        color=colors["lucj_full"],
-        alpha=0.7
-    )
+        axes[0, i].axhline(
+            error_max,
+            linestyle="--",
+            # label="LUCJ-full",
+            color=colors["lucj_full"],
+            alpha=0.7
+        )
 
-    axes[0, i].axhline(
-        error_max,
-        linestyle="--",
-        # label="LUCJ-full",
-        color=colors["lucj_full"],
-        alpha=0.7
-    )
+        axes[0, i].axhspan(
+            error_min,
+            error_max,
+            color=colors["lucj_full"],
+            alpha=0.5,
+        )
 
-    axes[0, i].axhspan(
-        error_min,
-        error_max,
-        color=colors["lucj_full"],
-        alpha=0.5,
-    )
+        axes[1, i].axhline(
+            sci_vec_shape_avg,
+            linestyle="--",
+            label="LUCJ-full",
+            color=colors["lucj_full"],
+        )
 
-    axes[1, i].axhline(
-        sci_vec_shape_avg,
-        linestyle="--",
-        label="LUCJ-full",
-        color=colors["lucj_full"],
-    )
+        axes[1, i].axhline(
+            sci_vec_shape_min,
+            linestyle="--",
+            # label="LUCJ-full",
+            color=colors["lucj_full"],
+            alpha=0.7
+        )
 
-    axes[1, i].axhline(
-        sci_vec_shape_min,
-        linestyle="--",
-        # label="LUCJ-full",
-        color=colors["lucj_full"],
-        alpha=0.7
-    )
-
-    axes[1, i].axhline(
-        sci_vec_shape_max,
-        linestyle="--",
-        # label="LUCJ-full",
-        color=colors["lucj_full"],
-        alpha=0.7
-    )
-    
-    axes[1, i].axhspan(
-        sci_vec_shape_min,
-        sci_vec_shape_max,
-        color=colors["lucj_full"],
-        alpha=0.5,
-    )
+        axes[1, i].axhline(
+            sci_vec_shape_max,
+            linestyle="--",
+            # label="LUCJ-full",
+            color=colors["lucj_full"],
+            alpha=0.7
+        )
+        
+        axes[1, i].axhspan(
+            sci_vec_shape_min,
+            sci_vec_shape_max,
+            color=colors["lucj_full"],
+            alpha=0.5,
+        )
     
 
     tasks_compressed_t2 = [
@@ -481,7 +481,71 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
             color=colors[color_key],
         )
 
-        list_loss = [[], [], []]
+        list_loss = [[], [], [], [], []]
+
+        tasks_compressed_t2_adam = [
+            SQDEnergyTask(
+                molecule_basename=molecule_basename,
+                bond_distance=bond_distance,
+                lucj_params=LUCJParams(
+                    connectivity=connectivity,
+                    n_reps=n_reps,
+                    with_final_orbital_rotation=True,
+                ),
+                compressed_t2_params=CompressedT2Params(
+                    multi_stage_optimization=True,
+                    begin_reps=50,
+                    step=2
+                ),
+                use_adam=True,
+                fixparam=False,
+                regularization=False,
+                regularization_option=None,
+                shots=shots,
+                samples_per_batch=samples_per_batch,
+                n_batches=n_batches,
+                energy_tol=energy_tol,
+                occupancies_tol=occupancies_tol,
+                carryover_threshold=carryover_threshold,
+                max_iterations=max_iterations,
+                symmetrize_spin=symmetrize_spin,
+                entropy=entropy,
+                max_dim=max_dim,
+            )
+            for n_reps in n_reps_range
+        ]
+
+        tasks_compressed_t2_fix_param_adam = [
+            SQDEnergyTask(
+                molecule_basename=molecule_basename,
+                bond_distance=bond_distance,
+                lucj_params=LUCJParams(
+                    connectivity=connectivity,
+                    n_reps=n_reps,
+                    with_final_orbital_rotation=True,
+                ),
+                compressed_t2_params=CompressedT2Params(
+                    multi_stage_optimization=True,
+                    begin_reps=50,
+                    step=2
+                ),
+                use_adam=True,
+                fixparam=True,
+                regularization=False,
+                regularization_option=None,
+                shots=shots,
+                samples_per_batch=samples_per_batch,
+                n_batches=n_batches,
+                energy_tol=energy_tol,
+                occupancies_tol=occupancies_tol,
+                carryover_threshold=carryover_threshold,
+                max_iterations=max_iterations,
+                symmetrize_spin=symmetrize_spin,
+                entropy=entropy,
+                max_dim=max_dim,
+            )
+            for n_reps in n_reps_range
+        ]
 
         for n_reps in n_reps_range:
             list_loss[0].append(init_loss(n_reps, bond_distance, connectivity))
@@ -496,8 +560,18 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
             results = load_data(filepath)
             list_loss[2].append(results["final_loss"])
         
-        color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_quimb"]
-        labels = ["LUCJ-truncated", "LUCJ-compressed", "LUCJ-compressed-fp"]
+        for task in tasks_compressed_t2_adam:
+            filepath = DATA_ROOT / task.operatorpath / "opt_data.pickle"
+            results = load_data(filepath)
+            list_loss[3].append(results["final_loss"])
+
+        for task in tasks_compressed_t2_fix_param_adam:
+            filepath = DATA_ROOT / task.operatorpath / "opt_data.pickle"
+            results = load_data(filepath)
+            list_loss[4].append(results["final_loss"])
+        
+        color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_quimb", "lucj_compressed_quimb2", "lucj_compressed_1stg"]
+        labels = ["LUCJ-truncated", "LUCJ-compressed", "LUCJ-compressed-fp", "LUCJ-compressed-a", "LUCJ-compressed-fp-a"]
         for loss, color_key, label in zip(list_loss, color_keys, labels):
             axes[2, i].plot(
                 n_reps_range,
@@ -524,15 +598,16 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     axes[2, i].set_xticks(n_reps_range)
     axes[2, i].set_yscale("log")
 
-    leg = axes[1, 2].legend(bbox_to_anchor=(-0.3, -1.52), loc="upper center", ncol=3)
+# leg = axes[1, 2].legend(bbox_to_anchor=(-0.4, -2.3), loc="upper center", ncol=4)
+leg = axes[2, 2].legend(bbox_to_anchor=(-0.4, -0.5), loc="upper center", ncol=5, columnspacing=0.8)
 
-    leg.set_in_layout(False)
-    plt.tight_layout()
-    plt.subplots_adjust(bottom=0.20)
+leg.set_in_layout(False)
+plt.tight_layout()
+plt.subplots_adjust(bottom=0.1, top=0.85)
 
-    fig.suptitle(
-        f"CCSD initial parameters {molecule_name} {basis} ({nelectron}e, {norb}o)"
-    )
+fig.suptitle(
+    f"CCSD initial parameters {molecule_name} {basis} ({nelectron}e, {norb}o)"
+)
 
 filepath = os.path.join(
     plots_dir,

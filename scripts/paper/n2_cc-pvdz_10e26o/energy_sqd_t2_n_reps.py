@@ -261,66 +261,66 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     # print(error_avg)
     # print(error_min)
     # print(error_max)
+    if connectivity == "all-to-all":
+        axes[0, i].axhline(
+            error_avg,
+            linestyle="--",
+            label="LUCJ-full",
+            color=colors["lucj_full"],
+        )
 
-    axes[0, i].axhline(
-        error_avg,
-        linestyle="--",
-        label="LUCJ-full",
-        color=colors["lucj_full"],
-    )
+        axes[0, i].axhline(
+            error_min,
+            linestyle="--",
+            # label="LUCJ-full",
+            color=colors["lucj_full"],
+            alpha=0.7
+        )
 
-    axes[0, i].axhline(
-        error_min,
-        linestyle="--",
-        # label="LUCJ-full",
-        color=colors["lucj_full"],
-        alpha=0.7
-    )
+        axes[0, i].axhline(
+            error_max,
+            linestyle="--",
+            # label="LUCJ-full",
+            color=colors["lucj_full"],
+            alpha=0.7
+        )
 
-    axes[0, i].axhline(
-        error_max,
-        linestyle="--",
-        # label="LUCJ-full",
-        color=colors["lucj_full"],
-        alpha=0.7
-    )
+        axes[0, i].axhspan(
+            error_min,
+            error_max,
+            color=colors["lucj_full"],
+            alpha=0.5,
+        )
 
-    axes[0, i].axhspan(
-        error_min,
-        error_max,
-        color=colors["lucj_full"],
-        alpha=0.5,
-    )
+        axes[1, i].axhline(
+            sci_vec_shape_avg,
+            linestyle="--",
+            label="LUCJ-full",
+            color=colors["lucj_full"],
+        )
 
-    axes[1, i].axhline(
-        sci_vec_shape_avg,
-        linestyle="--",
-        label="LUCJ-full",
-        color=colors["lucj_full"],
-    )
+        axes[1, i].axhline(
+            sci_vec_shape_min,
+            linestyle="--",
+            # label="LUCJ-full",
+            color=colors["lucj_full"],
+            alpha=0.7
+        )
 
-    axes[1, i].axhline(
-        sci_vec_shape_min,
-        linestyle="--",
-        # label="LUCJ-full",
-        color=colors["lucj_full"],
-        alpha=0.7
-    )
-
-    axes[1, i].axhline(
-        sci_vec_shape_max,
-        linestyle="--",
-        # label="LUCJ-full",
-        color=colors["lucj_full"],
-        alpha=0.7
-    )
-    
-    axes[1, i].axhspan(
-        sci_vec_shape_min,
-        sci_vec_shape_max,
-        color=colors["lucj_full"],
-        alpha=0.5,
-    )
+        axes[1, i].axhline(
+            sci_vec_shape_max,
+            linestyle="--",
+            # label="LUCJ-full",
+            color=colors["lucj_full"],
+            alpha=0.7
+        )
+        
+        axes[1, i].axhspan(
+            sci_vec_shape_min,
+            sci_vec_shape_max,
+            color=colors["lucj_full"],
+            alpha=0.5,
+        )
     
 
     tasks_compressed_t2 = [
@@ -451,6 +451,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         )
 
         list_loss = [[], []]
+
 
         for n_reps in n_reps_range:
             list_loss[0].append(init_loss(n_reps, bond_distance, connectivity))

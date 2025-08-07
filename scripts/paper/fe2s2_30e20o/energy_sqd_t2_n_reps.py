@@ -138,7 +138,7 @@ result_random = load_data(filepath)
 fig, axes = plt.subplots(
     3,
     len(connectivities),
-    figsize=(10, 5),  # , layout="constrained"
+    figsize=(8, 5),  # , layout="constrained"
 )
 
 

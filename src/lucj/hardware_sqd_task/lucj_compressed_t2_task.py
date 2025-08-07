@@ -63,7 +63,7 @@ class HardwareSQDEnergyTask:
             / (
                 ""
                 if self.dynamic_decoupling is False
-                else "dynamic_decoupling"
+                else "dynamic_decoupling_xy"
             )
             / f"shots-{self.shots}"
             / f"samples_per_batch-{self.samples_per_batch}"
@@ -213,7 +213,7 @@ def run_hardware_sqd_energy_task(
 
     # use CCSD to initialize parameters
     if task.dynamic_decoupling:
-        sample_filename = data_dir / task.operatorpath / "dynamic_decoupling/hardware_sample.pickle"
+        sample_filename = data_dir / task.operatorpath / "dynamic_decoupling_xy_m3/hardware_sample.pickle"
     else:
         sample_filename = data_dir / task.operatorpath / "hardware_sample.pickle"
 

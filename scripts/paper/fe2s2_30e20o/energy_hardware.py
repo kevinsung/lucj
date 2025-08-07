@@ -207,6 +207,7 @@ axes[row_sci_vec_dim].errorbar(
 )
 
 # LUCJ data
+# print(energies_truncated)
 errors = np.average(energies_truncated) - dmrg_energy 
 errors_min = [np.average(energies_truncated) - np.min(energies_truncated)]
 errors_max = [np.max(energies_truncated) - np.average(energies_truncated)]

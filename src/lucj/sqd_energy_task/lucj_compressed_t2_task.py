@@ -25,6 +25,7 @@ class SQDEnergyTask:
     lucj_params: LUCJParams
     compressed_t2_params: CompressedT2Params | None
     connectivity_opt: bool = False
+    use_adam: bool = False
     fixparam: bool = False
     random_op: bool = False
     regularization: bool = False
@@ -52,6 +53,8 @@ class SQDEnergyTask:
                 compress_option = f"{compress_option}/fixparam"
             if self.regularization:
                 compress_option = f"{compress_option}/regularization_{self.regularization_option}"
+            if self.use_adam:
+                compress_option = f"{compress_option}/adam"
         else:
             compress_option = "truncated"
         return (
@@ -87,6 +90,8 @@ class SQDEnergyTask:
                 compress_option = f"{compress_option}/fixparam"
             if self.regularization:
                 compress_option = f"{compress_option}/regularization_{self.regularization_option}"
+            if self.use_adam:
+                compress_option = f"{compress_option}/adam"
         else:
             compress_option = "truncated"
         return (

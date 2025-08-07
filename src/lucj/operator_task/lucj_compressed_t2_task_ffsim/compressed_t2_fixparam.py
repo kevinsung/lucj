@@ -6,6 +6,7 @@ from opt_einsum import contract
 import scipy
 import jax
 import jax.numpy as jnp
+import optax
 
 # jax.config.update("jax_enable_x64", True)
 
@@ -153,7 +154,8 @@ def double_factorized_t2_compress(
     regularization_option: int = 0,
     regularization_factor: float | None = None,
     begin_reps: int | None = None,
-    step: int = 2
+    step: int = 2,
+    use_adam: bool = False
 ) -> tuple[np.ndarray, np.ndarray, float, float]:
     diag_coulomb_mats, orbital_rotations = ffsim.linalg.double_factorized_t2(
         t2, tol=tol
@@ -326,21 +328,43 @@ def double_factorized_t2_compress(
 
         init_loss, _ = fun_jac(x0)
         list_init_loss.append(init_loss)
-        result = scipy.optimize.minimize(
-            fun_jac,
-            x0,
-            # result.x,
-            method=method,
-            jac=True,
-            # callback=callback,
-            options=options,
-        )
+        if use_adam:
+            lr = 1e-3
+            optimizer = optax.adam(lr)
+            # Obtain the `opt_state` that contains statistics for the optimizer.
+            opt_state = optimizer.init(x0)
+            previous_val = 0
+            for i in range(200):
+                val, grads = fun_jac(x0)
+                # print(f"Intermediate result: Fidelity {1 - val:.8}")
+                updates, opt_state = optimizer.update(grads, opt_state)
+                x0 = np.asarray(optax.apply_updates(x0, updates))
+                if abs(val - previous_val) < 1e-6:
+                    # Good enough for now
+                    break
+                previous_val = val
+            diag_coulomb_mats, orbital_rotations = _params_to_df_tensors(
+                x0, n_reps, norb, diag_coulomb_mask
+            )
+            final_loss, _ = fun_jac(x0)
+            list_final_loss.append(final_loss)
+        
+        else:
+            result = scipy.optimize.minimize(
+                fun_jac,
+                x0,
+                # result.x,
+                method=method,
+                jac=True,
+                # callback=callback,
+                options=options,
+            )
 
-        diag_coulomb_mats, orbital_rotations = _params_to_df_tensors(
-            result.x, n_reps, norb, diag_coulomb_mask
-        )
-        final_loss, _ = fun_jac(result.x)
-        list_final_loss.append(final_loss)
+            diag_coulomb_mats, orbital_rotations = _params_to_df_tensors(
+                result.x, n_reps, norb, diag_coulomb_mask
+            )
+            final_loss, _ = fun_jac(result.x)
+            list_final_loss.append(final_loss)
     
     # stack here without dealing with interaction constraint for Jaa, Jab
     diag_coulomb_mats = np.stack([diag_coulomb_mats, diag_coulomb_mats], axis=1)
@@ -362,6 +386,7 @@ def from_t_amplitudes_compressed(
     regularization: bool = False,
     regularization_option: int = 0,
     regularization_factor: float | None = None,
+    use_adam: bool = False,
 ) -> ffsim.UCJOpSpinBalanced:
     if interaction_pairs is None:
         interaction_pairs = (None, None)
@@ -382,7 +407,8 @@ def from_t_amplitudes_compressed(
                 step=step,
                 regularization = regularization,
                 regularization_option = regularization_option,
-                regularization_factor = regularization_factor
+                regularization_factor = regularization_factor,
+                use_adam = use_adam
             )
         )
     else:

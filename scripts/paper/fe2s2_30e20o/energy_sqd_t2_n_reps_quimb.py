@@ -91,7 +91,7 @@ results_random = load_data(filepath)
 fig, axes = plt.subplots(
     3,
     len(connectivities),
-    figsize=(10, 5),  # , layout="constrained"
+    figsize=(8, 5),  # , layout="constrained"
 )
 
 for i, connectivity in enumerate(connectivities):
@@ -210,36 +210,6 @@ for i, connectivity in enumerate(connectivities):
         for n_reps in n_reps_range
     ]
 
-    tasks_compressed_t2_naive = [
-        SQDEnergyTask(
-            molecule_basename=molecule_basename,
-            bond_distance=None,
-            lucj_params=LUCJParams(
-                connectivity=connectivity,
-                n_reps=n_reps,
-                with_final_orbital_rotation=True,
-            ),
-            compressed_t2_params=CompressedT2Params(
-                multi_stage_optimization=False,
-                begin_reps=n_reps,
-                step=2
-            ),
-            regularization=False,
-            regularization_option=None,
-            shots=shots,
-            samples_per_batch=samples_per_batch,
-            n_batches=n_batches,
-            energy_tol=energy_tol,
-            occupancies_tol=occupancies_tol,
-            carryover_threshold=carryover_threshold,
-            max_iterations=max_iterations,
-            symmetrize_spin=symmetrize_spin,
-            entropy=entropy,
-            max_dim=max_dim,
-        )
-        for n_reps in n_reps_range
-    ]
-
     if connectivity == "heavy-hex":
         tasks_compressed_t2_quimb = [
             LUCJSQDQuimbTask(
@@ -273,45 +243,12 @@ for i, connectivity in enumerate(connectivities):
                 max_dim = max_dim,
             )
             for n_reps in n_reps_range]
-        
-        # tasks_compressed_t2_quimb_do = [
-        #     LUCJSQDQuimbTask(
-        #         molecule_basename=molecule_basename,
-        #         bond_distance=None,
-        #         lucj_params=LUCJParams(
-        #             connectivity=connectivity,
-        #             n_reps=n_reps,
-        #             with_final_orbital_rotation=True,
-        #         ),
-        #         compressed_t2_params=CompressedT2Params(
-        #             multi_stage_optimization=True,
-        #             begin_reps=20,
-        #             step=2
-        #         ),
-        #         regularization=False,
-        #         cobyqa_params=COBYQAParams(maxiter=100),
-        #         shots=10_000,
-        #         samples_per_batch=samples_per_batch,
-        #         n_batches=n_batches,
-        #         energy_tol=energy_tol,
-        #         occupancies_tol=occupancies_tol,
-        #         carryover_threshold=carryover_threshold,
-        #         max_iterations=max_iterations,
-        #         symmetrize_spin=symmetrize_spin,
-        #         entropy=entropy,
-        #         max_bond = 100,
-        #         perm_mps = False,
-        #         cutoff = 1e-10,
-        #         seed = 0,
-        #         max_dim = max_dim,
-        #     )
-        #     for n_reps in n_reps_range]
-    
+
 
         # list_tasks = [tasks_truncated, tasks_compressed_t2, tasks_compressed_t2_naive, tasks_compressed_t2_quimb, tasks_compressed_t2_quimb_do]
-        list_tasks = [tasks_truncated, tasks_compressed_t2, tasks_compressed_t2_naive, tasks_compressed_t2_quimb]
-        color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_1stg", "lucj_compressed_quimb", "lucj_compressed_quimb2"]
-        labels = ["LUCJ-truncated", "LUCJ-compressed", "LUCJ-compressed-1stg", "lucj-compressed-tn", "lucj-compressed-tn-do"]
+        list_tasks = [tasks_truncated, tasks_compressed_t2, tasks_compressed_t2_quimb]
+        color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_quimb"]
+        labels = ["LUCJ-truncated", "LUCJ-compressed", "lucj-compressed-tn"]
         nit = []
         for task in tasks_compressed_t2_quimb:
             filepath = DATA_ROOT / task.dirpath / "info.pickle"
@@ -341,9 +278,9 @@ for i, connectivity in enumerate(connectivities):
         # )
         
     else:
-        list_tasks = [tasks_truncated, tasks_compressed_t2, tasks_compressed_t2_naive]
-        color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_1stg"]
-        labels = ["LUCJ-truncated", "LUCJ-compressed", "LUCJ-compressed-1stg"]
+        list_tasks = [tasks_truncated, tasks_compressed_t2]
+        color_keys = ["lucj_truncated", "lucj_compressed"]
+        labels = ["LUCJ-truncated", "LUCJ-compressed"]
 
     for tasks, color_key, label in zip(list_tasks, color_keys, labels):
         results = {}
@@ -361,6 +298,12 @@ for i, connectivity in enumerate(connectivities):
             label=label,
             color=colors[color_key],
         )
+        if color_key == "lucj_compressed":
+            print("lucj_compressed")
+            print([results[task]["energy"] for task in tasks])
+        if color_key == "lucj_compressed_quimb":
+            print("lucj_compressed_quimb")
+            print([results[task]["energy"] for task in tasks])
 
         axes[2, i].plot(
             n_reps_range,
@@ -388,15 +331,15 @@ for i, connectivity in enumerate(connectivities):
     axes[2, i].set_xticks(n_reps_range)
 
     leg = axes[2, 1].legend(
-        bbox_to_anchor=(1.05, -0.48), loc="upper center", ncol=6,
+        bbox_to_anchor=(-0.25, -0.48), loc="upper center", ncol=6,
         columnspacing=1, handletextpad=0.8
     )
     leg.set_in_layout(False)
     plt.tight_layout()
-    plt.subplots_adjust(bottom=0.16, top=0.88)
+    plt.subplots_adjust(bottom=0.16, top=0.86)
 
     fig.suptitle(
-        f"$N_2$ (6-31g, {nelectron}e, {norb}o)"
+        f"Fe2S2 ({nelectron}e, {norb}o)"
     )
 
 filepath = os.path.join(
