@@ -14,7 +14,7 @@ from lucj.quimb_task.lucj_sqd_quimb_task import (
     run_lucj_sqd_quimb_task,
 )
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_maxbond_100.log"
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_maxbond_150_0807.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -42,7 +42,7 @@ connectivities = [
 ]
 
 n_reps_range = list(range(1, 11))
-shots = 10_000
+shots = 100_000
 samples_per_batch = 4000
 max_dim = samples_per_batch
 n_batches = 10
@@ -60,7 +60,8 @@ max_bonds = [
     # 10,
     # 25,
     # 50,
-    100,
+    # 100,
+    150
     # 200,
     # None,
 ]

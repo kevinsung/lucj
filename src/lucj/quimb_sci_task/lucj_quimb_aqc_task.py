@@ -23,9 +23,10 @@ from qiskit_addon_dice_solver import solve_sci_batch, solve_hci
 from qiskit.circuit import QuantumCircuit, QuantumRegister
 import quimb.tensor
 from qiskit_quimb import quimb_circuit
+from functools import partial
+from qiskit_addon_aqc_tensor.simulation.quimb import QuimbSimulator
 
 from qiskit_addon_aqc_tensor.objective import MaximizeStateFidelity
-from qiskit_aer import AerSimulator
 from qiskit_addon_aqc_tensor import generate_ansatz_from_circuit
 
 import pyscf.ci
@@ -34,7 +35,6 @@ import autoray
 import pyscf
 import jax
 from ffsim.states.bitstring import convert_bitstring_type
-import jax.numpy as jnp
 
 # remove later
 filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}.log"
@@ -48,7 +48,6 @@ logging.basicConfig(
 ####
 
 logger = logging.getLogger(__name__)
-
 
 @dataclass(frozen=True, kw_only=True)
 class LUCJQuimbTask:
@@ -456,10 +455,13 @@ def run_lucj_sqd_quimb_task(
                 decomposed, qubits_initially_zero=True
         )
 
-        simulator_settings = AerSimulator(
-            method="matrix_product_state",
-            matrix_product_state_max_bond_dimension=100,
-        )
+        simulator_settings = QuimbSimulator(
+           partial(
+               quimb.tensor.CircuitMPS,
+               cutoff=1e-8,
+           ),
+           autodiff_backend="auto",
+       )
                 
         objective = MaximizeStateFidelity(
             quimb_circuit, aqc_ansatz, simulator_settings
