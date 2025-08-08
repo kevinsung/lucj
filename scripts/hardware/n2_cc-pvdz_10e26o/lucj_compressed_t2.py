@@ -14,7 +14,7 @@ from lucj.hardware_sqd_task.lucj_compressed_t2_task import (
     run_hardware_sqd_energy_task,
 )
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}.log"
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_dd_maxdim_3000.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -27,7 +27,7 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 2
+MAX_PROCESSES = 1
 OVERWRITE = False
 
 molecule_name = "n2"
@@ -36,11 +36,12 @@ nelectron, norb = 10, 26
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 bond_distance_range = [1.2, 2.4]
-# bond_distance_range = [1.2]
+bond_distance_range = [1.2]
 
 n_reps_range = [1]
 
 shots = 100_000
+# shots = 1_000_000
 n_batches = 3
 energy_tol = 1e-8
 occupancies_tol = 1e-5
@@ -48,7 +49,7 @@ carryover_threshold = 1e-4
 max_iterations = 20
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
-# entropies = list(range(1, 11))
+# entropies = list(range(2, 11))
 entropies = [1]
 
 max_dim = 2500
@@ -78,6 +79,7 @@ tasks = [
         symmetrize_spin=symmetrize_spin,
         entropy=entropy,
         max_dim=max_dim,
+        dynamic_decoupling=True
     )
     for n_reps in n_reps_range
     for d in bond_distance_range

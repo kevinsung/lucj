@@ -27,7 +27,7 @@ max_iterations = 20
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropies = list(range(1, 11))
-samples_per_batch = 2500
+samples_per_batch = 2000
 max_dim = samples_per_batch
 dmrg_energy = -116.6056091 #ref: https://github.com/jrm874/sqd_data_repository/blob/main/classical_reference_energies/2Fe-2S/classical_methods_energies.txt
 
@@ -126,26 +126,29 @@ print("Loading data")
 energies_random = []
 sci_vec_shape_random = []
 for task in tasks_random:
-    filepath = DATA_ROOT / tasks_random.dirpath / "hardware_sqd_data.pickle"
+    filepath = DATA_ROOT / task.dirpath / "hardware_sqd_data.pickle"
     result = load_data(filepath)
-    energies_random.append(result['energy'])
-    sci_vec_shape_random.append(result['sci_vec_shape'][0])
+    if result['energy'] < 0:
+        energies_random.append(result['energy'])
+        sci_vec_shape_random.append(result['sci_vec_shape'][0])
 
 energies_truncated = []
 sci_vec_shape_truncated = []
 for task in tasks_truncated_t2:
     filepath = DATA_ROOT / task.dirpath / "hardware_sqd_data.pickle"
     result = load_data(filepath)
-    energies_truncated.append(result['energy'])
-    sci_vec_shape_truncated.append(result['sci_vec_shape'][0])
+    if result['energy'] < 0:
+        energies_truncated.append(result['energy'])
+        sci_vec_shape_truncated.append(result['sci_vec_shape'][0])
 
 energies_compressed = []
 sci_vec_shape_compressed = []
 for task in tasks_compressed_t2:
     filepath = DATA_ROOT / task.dirpath / "hardware_sqd_data.pickle"
-    result = load_data(filepath)    
-    energies_compressed.append(result['energy'])
-    sci_vec_shape_compressed.append(result['sci_vec_shape'][0])
+    result = load_data(filepath)
+    if result['energy'] < 0:    
+        energies_compressed.append(result['energy'])
+        sci_vec_shape_compressed.append(result['sci_vec_shape'][0])
 
 print("Done loading data.")
 
@@ -168,11 +171,11 @@ fig, axes = plt.subplots(
 
 # random lucj
 errors = np.average(energies_random) - dmrg_energy 
-errors_min = errors - np.min(energies_random)
-errors_max = np.max(energies_random) - errors
+errors_min = [np.average(energies_random) - np.min(energies_random)]
+errors_max = [np.max(energies_random) -  np.average(energies_random)]
 sci_vec_shape = np.average(sci_vec_shape_random)
-sci_vec_shape_min = sci_vec_shape - np.min(sci_vec_shape_random)
-sci_vec_shape_max = np.max(sci_vec_shape_random) - sci_vec_shape
+sci_vec_shape_min = [sci_vec_shape - np.min(sci_vec_shape_random)]
+sci_vec_shape_max = [np.max(sci_vec_shape_random) - sci_vec_shape]
 
 axes[row_error].bar(
     - width,
@@ -204,12 +207,13 @@ axes[row_sci_vec_dim].errorbar(
 )
 
 # LUCJ data
+# print(energies_truncated)
 errors = np.average(energies_truncated) - dmrg_energy 
-errors_min = errors - np.min(energies_truncated)
-errors_max = np.max(energies_truncated) - errors
+errors_min = [np.average(energies_truncated) - np.min(energies_truncated)]
+errors_max = [np.max(energies_truncated) - np.average(energies_truncated)]
 sci_vec_shape = np.average(sci_vec_shape_truncated)
-sci_vec_shape_min = sci_vec_shape - np.min(sci_vec_shape_truncated)
-sci_vec_shape_max = np.max(sci_vec_shape_truncated) - sci_vec_shape
+sci_vec_shape_min = [sci_vec_shape - np.min(sci_vec_shape_truncated)]
+sci_vec_shape_max = [np.max(sci_vec_shape_truncated) - sci_vec_shape]
 
 
 axes[row_error].bar(
@@ -245,11 +249,11 @@ axes[row_sci_vec_dim].errorbar(
 
 # compressed_t2
 errors = np.average(energies_compressed) - dmrg_energy 
-errors_min = errors - np.min(energies_compressed)
-errors_max = np.max(energies_compressed) - errors
+errors_min = [np.average(energies_compressed) - np.min(energies_compressed)]
+errors_max = [np.max(energies_compressed) - np.average(energies_compressed)]
 sci_vec_shape = np.average(sci_vec_shape_compressed)
-sci_vec_shape_min = sci_vec_shape - np.min(sci_vec_shape_compressed)
-sci_vec_shape_max = np.max(sci_vec_shape_compressed) - sci_vec_shape
+sci_vec_shape_min = [sci_vec_shape - np.min(sci_vec_shape_compressed)]
+sci_vec_shape_max = [np.max(sci_vec_shape_compressed) - sci_vec_shape]
 
 axes[row_error].bar(
     width,

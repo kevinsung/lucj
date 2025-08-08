@@ -19,7 +19,7 @@ basis = "6-31g"
 nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-plots_dir = os.path.join("paper", molecule_basename)
+plots_dir = os.path.join("plots", molecule_basename)
 os.makedirs(plots_dir, exist_ok=True)
 
 bond_distance_range = [1.2, 2.4]
@@ -212,6 +212,35 @@ for i, (bond_distance, connectivity) in enumerate(
         for n_reps in n_reps_range
     ]
 
+    tasks_compressed_t2_fixparam = [
+        SQDEnergyTask(
+            molecule_basename=molecule_basename,
+            bond_distance=bond_distance,
+            lucj_params=LUCJParams(
+                connectivity=connectivity,
+                n_reps=n_reps,
+                with_final_orbital_rotation=True,
+            ),
+            compressed_t2_params=CompressedT2Params(
+                multi_stage_optimization=True, begin_reps=20, step=2
+            ),
+            regularization=False,
+            regularization_option=None,
+            fixparam=True,
+            shots=shots,
+            samples_per_batch=samples_per_batch,
+            n_batches=n_batches,
+            energy_tol=energy_tol,
+            occupancies_tol=occupancies_tol,
+            carryover_threshold=carryover_threshold,
+            max_iterations=max_iterations,
+            symmetrize_spin=symmetrize_spin,
+            entropy=entropy,
+            max_dim=max_dim,
+        )
+        for n_reps in n_reps_range
+    ]
+
     tasks_truncated = [
         SQDEnergyTask(
             molecule_basename=molecule_basename,
@@ -246,23 +275,41 @@ for i, (bond_distance, connectivity) in enumerate(
             tasks_truncated,
             tasks_compressed_t2,
             tasks_compressed_t2_naive,
+            tasks_compressed_t2_fixparam,
         ]
         color_keys = [
             "uccsd-compressed",
             "lucj_truncated",
             "lucj_compressed",
             "lucj_compressed_1stg",
+            "lucj_compressed_quimb",
         ]
         labels = [
             "UCCSD-compressed t2",
             "LUCJ-truncated",
             "LUCJ-compressed",
             "LUCJ-compressed-1stg",
+            "LUCJ-compressed-fp",
         ]
     else:
-        list_tasks = [tasks_truncated, tasks_compressed_t2, tasks_compressed_t2_naive]
-        color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_1stg"]
-        labels = ["LUCJ-truncated", "LUCJ-compressed", "LUCJ-compressed-1stg"]
+        list_tasks = [
+            tasks_truncated,
+            tasks_compressed_t2,
+            tasks_compressed_t2_naive,
+            tasks_compressed_t2_fixparam,
+        ]
+        color_keys = [
+            "lucj_truncated",
+            "lucj_compressed",
+            "lucj_compressed_1stg",
+            "lucj_compressed_quimb",
+        ]
+        labels = [
+            "LUCJ-truncated",
+            "LUCJ-compressed",
+            "LUCJ-compressed-1stg",
+            "LUCJ-compressed-fp",
+        ]
 
     for tasks, color_key, label in zip(list_tasks, color_keys, labels):
         results = {}
@@ -283,8 +330,7 @@ for i, (bond_distance, connectivity) in enumerate(
             color=colors[color_key],
         )
 
-    list_tasks = [tasks_compressed_t2, tasks_compressed_t2_naive]
-    list_loss = [[], [], []]
+    list_loss = [[], [], [], []]
     for task in tasks_compressed_t2_naive:
         filepath = DATA_ROOT / task.operatorpath / "opt_data.pickle"
         results = load_data(filepath)
@@ -294,10 +340,31 @@ for i, (bond_distance, connectivity) in enumerate(
         filepath = DATA_ROOT / task.operatorpath / "opt_data.pickle"
         results = load_data(filepath)
         list_loss[1].append(results["final_loss"])
+    for task in tasks_compressed_t2_fixparam:
+        filepath = DATA_ROOT / task.operatorpath / "opt_data.pickle"
+        results = load_data(filepath)
+        list_loss[3].append(results["final_loss"])
 
-    color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_1stg"]
-    labels = ["LUCJ-truncated", "LUCJ-compressed", "LUCJ-compressed-1stg"]
     # for loss, color_key, label in zip(list_loss[1:], color_keys[1:], labels[1:]):
+    list_tasks = [
+        tasks_truncated,
+        tasks_compressed_t2,
+        tasks_compressed_t2_naive,
+        tasks_compressed_t2_fixparam,
+    ]
+    color_keys = [
+        "lucj_truncated",
+        "lucj_compressed",
+        "lucj_compressed_1stg",
+        "lucj_compressed_quimb",
+    ]
+    labels = [
+        "LUCJ-truncated",
+        "LUCJ-compressed",
+        "LUCJ-compressed-1stg",
+        "LUCJ-compressed-fp",
+    ]
+
     for loss, color_key, label in zip(list_loss, color_keys, labels):
         axes[1, i].plot(
             n_reps_range,
@@ -322,13 +389,13 @@ for i, (bond_distance, connectivity) in enumerate(
     leg = axes[0, 2].legend(
         bbox_to_anchor=(-0.38, -1.65),
         loc="upper center",
-        ncol=6,
+        ncol=4,
         columnspacing=1,
         handletextpad=0.8,
     )
     leg.set_in_layout(False)
     plt.tight_layout()
-    plt.subplots_adjust(bottom=0.15, top=0.88)
+    plt.subplots_adjust(bottom=0.2, top=0.88)
 
     fig.suptitle(f"$N_2$ (6-31g, {nelectron}e, {norb}o)")
 

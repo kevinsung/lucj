@@ -9,14 +9,14 @@ import numpy as np
 from molecules_catalog.util import load_molecular_data
 from ffsim.variational.util import interaction_pairs_spin_balanced
 from lucj.params import LUCJParams, CompressedT2Params
-from functools import partial
-from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, SCIResult, solve_sci_batch
 
+from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, SCIResult, solve_sci_batch
 from lucj.hardware_sqd_task.hardware_job.hardware_job import (
     constrcut_lucj_circuit,
     run_on_hardware,
 )
 
+hardware_path = "dynamic_decoupling_xy"
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +39,7 @@ class HardwareSQDEnergyTask:
     symmetrize_spin: bool
     entropy: int | None
     max_dim: int | None
+    dynamic_decoupling: bool = False
 
     @property
     def dirpath(self) -> Path:
@@ -59,6 +60,7 @@ class HardwareSQDEnergyTask:
             )
             / self.lucj_params.dirpath
             / compress_option
+            / ("" if self.dynamic_decoupling is False else hardware_path)
             / f"shots-{self.shots}"
             / f"samples_per_batch-{self.samples_per_batch}"
             / f"n_batches-{self.n_batches}"
@@ -104,7 +106,7 @@ def load_operator(task: HardwareSQDEnergyTask, data_dir: str, mol_data):
             norb,
             n_reps=task.lucj_params.n_reps,
             interaction_pairs=(pairs_aa, pairs_ab),
-            with_final_orbital_rotation=True
+            with_final_orbital_rotation=True,
         )
     elif task.connectivity_opt or task.compressed_t2_params is not None:
         operator_filename = data_dir / task.operatorpath / "operator.npz"
@@ -119,10 +121,13 @@ def load_operator(task: HardwareSQDEnergyTask, data_dir: str, mol_data):
         final_orbital_rotation = None
         if mol_data.ccsd_t1 is not None:
             final_orbital_rotation = (
-                ffsim.variational.util.orbital_rotation_from_t1_amplitudes(mol_data.ccsd_t1)
+                ffsim.variational.util.orbital_rotation_from_t1_amplitudes(
+                    mol_data.ccsd_t1
+                )
             )
         elif mol_data.ccsd_t2 is None:
             nelec = mol_data.nelec
+            norb = mol_data.norb
             c0, c1, c2 = pyscf.ci.cisd.cisdvec_to_amplitudes(
                 mol_data.cisd_vec, norb, nelec[0]
             )
@@ -158,12 +163,14 @@ def load_operator(task: HardwareSQDEnergyTask, data_dir: str, mol_data):
                 interaction_pairs=interaction_pairs_spin_balanced(
                     connectivity=task.lucj_params.connectivity, norb=norb
                 ),
-            ) 
+            )
         else:
             operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
                 mol_data.ccsd_t2,
                 n_reps=task.lucj_params.n_reps,
-                t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
+                t1=mol_data.ccsd_t1
+                if task.lucj_params.with_final_orbital_rotation
+                else None,
                 interaction_pairs=(pairs_aa, pairs_ab),
             )
 
@@ -201,12 +208,24 @@ def run_hardware_sqd_energy_task(
     mol_hamiltonian = mol_data.hamiltonian
 
     # use CCSD to initialize parameters
-    sample_filename = data_dir / task.operatorpath / "hardware_sample.pickle"
+    if task.dynamic_decoupling:
+        sample_filename = (
+            data_dir
+            / task.operatorpath
+            / f"{hardware_path}/hardware_sample.pickle"
+        )
+        mitigate_sample_filename = (
+            data_dir
+            / task.operatorpath
+            / f"{hardware_path}/mitigate_hardware_sample.pickle"
+        )
+    else:
+        sample_filename = data_dir / task.operatorpath / "hardware_sample.pickle"
 
     rng = np.random.default_rng(task.entropy)
 
     if not os.path.exists(sample_filename):
-        assert(0)
+        # assert 0
         operator = load_operator(task, data_dir, mol_data)
         if operator is None:
             return
@@ -215,10 +234,15 @@ def run_hardware_sqd_energy_task(
 
         # run on hardware and get the sample
         logging.info(f"{task} Sampling from real device...\n")
-        samples = run_on_hardware(circuit, norb, 1_000_000)
-
-        with open(sample_filename, "wb") as f:
-            pickle.dump(samples, f)
+        samples = run_on_hardware(
+            circuit,
+            norb,
+            1_000_000,
+            sample_filename=sample_filename,
+            mitigate_sample_filename=mitigate_sample_filename,
+            dynamic_decoupling=task.dynamic_decoupling,
+        )
+        logging.info(f"{task} Finish sample\n")
 
     else:
         logging.info(f"{task} load sample...\n")
@@ -232,8 +256,9 @@ def run_hardware_sqd_energy_task(
 
     # Run SQD
     logging.info(f"{task} Running SQD...\n")
-    sci_solver = partial(solve_sci_batch, spin_sq=0.0)
+    # sci_solver = partial(solve_sci_batch, spin_sq=0.0)
     result_history = []
+
     def callback(results: list[SCIResult]):
         result_history.append(results)
         iteration = len(result_history)
@@ -241,7 +266,19 @@ def run_hardware_sqd_energy_task(
         for i, result in enumerate(results):
             logging.info(f"\tSubsample {i}")
             logging.info(f"\t\tEnergy: {result.energy + mol_data.core_energy}")
-            logging.info(f"\t\tSubspace dimension: {np.prod(result.sci_state.amplitudes.shape)}")
+            logging.info(
+                f"\t\tSubspace dimension: {np.prod(result.sci_state.amplitudes.shape)}"
+            )
+
+    # # Convert BitArray into bitstring and probability arrays
+    # raw_bitstrings, raw_probs = bit_array_to_arrays(samples)
+
+    # # Run configuration recovery loop
+    # # If we don't have average orbital occupancy information, simply postselect
+    # # bitstrings with the correct numbers of spin-up and spin-down electrons
+    # bitstrings, probs = postselect_by_hamming_right_and_left(
+    #     raw_bitstrings, raw_probs, hamming_right=mol_data.nelec[0], hamming_left=mol_data.nelec[1]
+    # )
 
     result = diagonalize_fermionic_hamiltonian(
         mol_hamiltonian.one_body_tensor,
@@ -254,12 +291,12 @@ def run_hardware_sqd_energy_task(
         energy_tol=task.energy_tol,
         occupancies_tol=task.occupancies_tol,
         max_iterations=task.max_iterations,
-        sci_solver=sci_solver,
+        sci_solver=solve_sci_batch,
         symmetrize_spin=task.symmetrize_spin,
         carryover_threshold=task.carryover_threshold,
         seed=rng,
         max_dim=task.max_dim,
-        callback=callback
+        callback=callback,
     )
     energy = result.energy + mol_data.core_energy
     sci_state = result.sci_state

@@ -21,6 +21,8 @@ class LUCJCompressedT2Task:
     lucj_params: LUCJParams
     compressed_t2_params: CompressedT2Params | None
     connectivity_opt: bool = False
+    fixparam: bool = False
+    use_adam: bool = False
     random_op: bool = False
     regularization: bool = False
     regularization_option: int | None = None
@@ -34,11 +36,15 @@ class LUCJCompressedT2Task:
             compress_option = "connectivity_opt-True"
         elif self.compressed_t2_params is not None:
             compress_option = self.compressed_t2_params.dirpath
+            if self.fixparam:
+                compress_option = f"{compress_option}/fixparam"
             if self.regularization:
                 if self.regularization_factor is None:
                     compress_option = f"{compress_option}/regularization_{self.regularization_option}"
                 else:
                     compress_option = f"{compress_option}/regularization_{self.regularization_option}_{self.regularization_factor:.6f}"
+            if self.use_adam:
+                compress_option = f"{compress_option}/adam"
         else:
             compress_option = "truncated"
         return (
@@ -122,6 +128,23 @@ def run_lucj_compressed_t2_task(
                 interaction_pairs=(pairs_aa, pairs_ab),
                 optimize=True,
             )
+        elif task.fixparam and task.compressed_t2_params is not None:
+            from lucj.operator_task.lucj_compressed_t2_task_ffsim.compressed_t2_fixparam import (
+                from_t_amplitudes_compressed,
+            )
+            operator, init_loss, final_loss = from_t_amplitudes_compressed(
+                t2,
+                n_reps=task.lucj_params.n_reps,
+                t1=t1 if task.lucj_params.with_final_orbital_rotation else None,
+                interaction_pairs=(pairs_aa, pairs_ab),
+                optimize=True,
+                multi_stage_optimization=task.compressed_t2_params.multi_stage_optimization,
+                regularization=task.regularization,
+                regularization_option=task.regularization_option,
+                regularization_factor=task.regularization_factor,
+                step=task.compressed_t2_params.step,
+                begin_reps=task.compressed_t2_params.begin_reps,
+            )
         else:
             from lucj.operator_task.lucj_compressed_t2_task_ffsim.compressed_t2 import (
                 from_t_amplitudes_compressed,
@@ -139,6 +162,7 @@ def run_lucj_compressed_t2_task(
                     regularization_factor=task.regularization_factor,
                     step=task.compressed_t2_params.step,
                     begin_reps=task.compressed_t2_params.begin_reps,
+                    use_adam=task.use_adam
                 )
             else:
                 operator, init_loss, final_loss = from_t_amplitudes_compressed(
@@ -147,6 +171,7 @@ def run_lucj_compressed_t2_task(
                     t1=t1 if task.lucj_params.with_final_orbital_rotation else None,
                     interaction_pairs=(pairs_aa, pairs_ab),
                     optimize=False,
+                    use_adam=task.use_adam
                 )
         data_filename = data_dir / task.dirpath / "opt_data.pickle"
         data = {"init_loss": init_loss, "final_loss": final_loss}

@@ -14,7 +14,7 @@ from lucj.quimb_task.lucj_sqd_quimb_task import (
     run_lucj_sqd_quimb_task,
 )
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_maxbond_all_0808.log"
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -30,10 +30,11 @@ MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 1
 OVERWRITE = False
 
-molecule_name = "fe2s2"
-nelectron, norb = 30, 20
-molecule_basename = f"{molecule_name}_{nelectron}e{norb}o"
-
+molecule_name = "n2"
+basis = "cc-pvdz"
+nelectron, norb = 10, 26
+molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
+bond_distance = 1.2
 
 connectivities = [
     # "square",
@@ -61,7 +62,6 @@ max_bonds = [
     # 25,
     50,
     100,
-    # 150
     200,
     # None,
 ]
@@ -76,7 +76,7 @@ perm_mps = False
 tasks = [
     LUCJSQDQuimbTask(
         molecule_basename=molecule_basename,
-        bond_distance=None,
+        bond_distance=bond_distance,
         lucj_params=LUCJParams(
             connectivity=connectivity,
             n_reps=n_reps,
@@ -84,7 +84,7 @@ tasks = [
         ),
         compressed_t2_params=CompressedT2Params(
             multi_stage_optimization=True,
-            begin_reps=20,
+            begin_reps=50,
             step=2
         ),
         regularization=False,
