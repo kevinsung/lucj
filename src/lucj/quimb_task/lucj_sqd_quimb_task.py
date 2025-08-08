@@ -298,28 +298,29 @@ def run_lucj_sqd_quimb_task(
         # assert(0)
         bit_array = BitArray.from_samples(samples, num_bits=2 * norb)
         # sci_solver = partial(solve_sci_batch, spin_sq=0.0)
-        try:
-            result = diagonalize_fermionic_hamiltonian(
-                mol_ham.one_body_tensor,
-                mol_ham.two_body_tensor,
-                bit_array,
-                samples_per_batch=task.samples_per_batch,
-                norb=norb,
-                nelec=nelec,
-                num_batches=task.n_batches,
-                energy_tol=task.energy_tol,
-                occupancies_tol=task.occupancies_tol,
-                max_iterations=task.max_iterations,
-                sci_solver=solve_sci_batch,
-                symmetrize_spin=task.symmetrize_spin,
-                carryover_threshold=task.carryover_threshold,
-                seed=rng,
-                max_dim=task.max_dim,
-            )
-            return result.energy + mol_data.core_energy
-        except DiceExecutionError:
-            logging.info(f"{task} Dice execution error\n")
-            return
+        while True:
+            try:
+                result = diagonalize_fermionic_hamiltonian(
+                    mol_ham.one_body_tensor,
+                    mol_ham.two_body_tensor,
+                    bit_array,
+                    samples_per_batch=task.samples_per_batch,
+                    norb=norb,
+                    nelec=nelec,
+                    num_batches=task.n_batches,
+                    energy_tol=task.energy_tol,
+                    occupancies_tol=task.occupancies_tol,
+                    max_iterations=task.max_iterations,
+                    sci_solver=solve_sci_batch,
+                    symmetrize_spin=task.symmetrize_spin,
+                    carryover_threshold=task.carryover_threshold,
+                    seed=rng,
+                    max_dim=task.max_dim,
+                )
+                return result.energy + mol_data.core_energy
+            except DiceExecutionError:
+                logging.info(f"{task} Dice execution error\n")
+                
 
     if not os.path.exists(result_filename) and not os.path.exists(info_filename):
         # Generate initial parameters
@@ -476,29 +477,31 @@ def run_lucj_sqd_quimb_task(
             )
         result_history_energy.append(result_energy)
         result_history_subspace_dim.append(result_subspace_dim)
-
-    try: 
-        result = diagonalize_fermionic_hamiltonian(
-            mol_ham.one_body_tensor,
-            mol_ham.two_body_tensor,
-            bit_array,
-            samples_per_batch=task.samples_per_batch,
-            norb=norb,
-            nelec=nelec,
-            num_batches=task.n_batches,
-            energy_tol=task.energy_tol,
-            occupancies_tol=task.occupancies_tol,
-            max_iterations=task.max_iterations,
-            sci_solver=solve_sci_batch,
-            symmetrize_spin=task.symmetrize_spin,
-            carryover_threshold=task.carryover_threshold,
-            seed=rng,
-            callback=callback,
-            max_dim=task.max_dim,
-        )
-    except DiceExecutionError:
-        logging.info(f"{task} Dice execution error\n")
-        return
+    solve = False
+    while not solve:
+        try: 
+            result = diagonalize_fermionic_hamiltonian(
+                mol_ham.one_body_tensor,
+                mol_ham.two_body_tensor,
+                bit_array,
+                samples_per_batch=task.samples_per_batch,
+                norb=norb,
+                nelec=nelec,
+                num_batches=task.n_batches,
+                energy_tol=task.energy_tol,
+                occupancies_tol=task.occupancies_tol,
+                max_iterations=task.max_iterations,
+                sci_solver=solve_sci_batch,
+                symmetrize_spin=task.symmetrize_spin,
+                carryover_threshold=task.carryover_threshold,
+                seed=rng,
+                callback=callback,
+                max_dim=task.max_dim,
+            )
+            solve = True
+        except DiceExecutionError:
+            logging.info(f"{task} Dice execution error\n")
+            
     logging.info(f"{task} Finish SQD\n")
     energy = result.energy + mol_data.core_energy
     sci_state = result.sci_state
