@@ -15,6 +15,7 @@ from qiskit.primitives import BitArray
 from qiskit_addon_sqd.fermion import SCIResult, diagonalize_fermionic_hamiltonian
 # from functools import partial
 from qiskit_addon_dice_solver import solve_sci_batch
+from qiskit_addon_dice_solver.dice_solver import DiceExecutionError
 
 logger = logging.getLogger(__name__)
 
@@ -295,7 +296,7 @@ def run_sqd_energy_task(
         logging.info(f"{task} load sample...\n")
         with open(sample_filename, "rb") as f:
             bit_array_count = pickle.load(f)
-            bit_array = BitArray.from_counts(bit_array_count)
+            bit_array = BitArray.from_counts(bit_array_count, num_bits=2 * norb)
     
     array = bit_array.to_bool_array()
 
@@ -329,26 +330,30 @@ def run_sqd_energy_task(
         result_history_energy.append(result_energy)
         result_history_subspace_dim.append(result_subspace_dim)
 
-
-
-    result = diagonalize_fermionic_hamiltonian(
-        mol_hamiltonian.one_body_tensor,
-        mol_hamiltonian.two_body_tensor,
-        bit_array,
-        samples_per_batch=task.samples_per_batch,
-        norb=norb,
-        nelec=nelec,
-        num_batches=task.n_batches,
-        energy_tol=task.energy_tol,
-        occupancies_tol=task.occupancies_tol,
-        max_iterations=task.max_iterations,
-        sci_solver=solve_sci_batch,
-        symmetrize_spin=task.symmetrize_spin,
-        carryover_threshold=task.carryover_threshold,
-        seed=rng,
-        callback=callback,
-        max_dim=task.max_dim
-    )
+    solve = False
+    while not solve:
+        try:
+            result = diagonalize_fermionic_hamiltonian(
+                mol_hamiltonian.one_body_tensor,
+                mol_hamiltonian.two_body_tensor,
+                bit_array,
+                samples_per_batch=task.samples_per_batch,
+                norb=norb,
+                nelec=nelec,
+                num_batches=task.n_batches,
+                energy_tol=task.energy_tol,
+                occupancies_tol=task.occupancies_tol,
+                max_iterations=task.max_iterations,
+                sci_solver=solve_sci_batch,
+                symmetrize_spin=task.symmetrize_spin,
+                carryover_threshold=task.carryover_threshold,
+                seed=rng,
+                callback=callback,
+                max_dim=task.max_dim
+            )
+            solve = True
+        except DiceExecutionError:
+            logging.info(f"{task} Dice execution error\n")
     logging.info(f"{task} Finish SQD\n")
     energy = result.energy + mol_data.core_energy
     sci_state = result.sci_state

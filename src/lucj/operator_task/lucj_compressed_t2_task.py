@@ -72,17 +72,21 @@ def run_lucj_compressed_t2_task(
         return task
 
     # Get molecular data and molecular Hamiltonian
-    if task.molecule_basename == "fe2s2_30e20o":
+    if task.molecule_basename == "fe2s2_30e20o" or task.molecule_basename == "fe4s4_54e36o":
         mol_data = load_molecular_data(
             task.molecule_basename,
             molecules_catalog_dir=molecules_catalog_dir,
         )
-        c0, c1, c2 = pyscf.ci.cisd.cisdvec_to_amplitudes(
-            mol_data.cisd_vec, mol_data.norb, mol_data.nelec[0]
-        )
-        assert abs(c0) > 1e-8
-        t1 = c1 / c0
-        t2 = c2 / c0 - np.einsum("ia,jb->ijab", t1, t1)
+        if mol_data.ccsd_t2 is None:
+            c0, c1, c2 = pyscf.ci.cisd.cisdvec_to_amplitudes(
+                mol_data.cisd_vec, mol_data.norb, mol_data.nelec[0]
+            )
+            assert abs(c0) > 1e-8
+            t1 = c1 / c0
+            t2 = c2 / c0 - np.einsum("ia,jb->ijab", t1, t1)
+        else:
+            t2 = mol_data.ccsd_t2
+            t1 = mol_data.ccsd_t1
     else:
         mol_data = load_molecular_data(
             f"{task.molecule_basename}_d-{task.bond_distance:.5f}",

@@ -12,6 +12,7 @@ from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, SCIResul
 from qiskit_addon_sqd.counts import bit_array_to_arrays, generate_bit_array_uniform
 # from qiskit_addon_sqd.subsampling import postselect_by_hamming_right_and_left
 from qiskit_addon_dice_solver import solve_sci_batch
+from qiskit_addon_dice_solver.dice_solver import DiceExecutionError
 # from functools import partial
 
 
@@ -144,24 +145,30 @@ def run_random_sqd_energy_task(
     # Run SQD
     logging.info(f"{task} Running SQD...\n")
     # sci_solver = partial(solve_sci_batch, spin_sq=0.0)
-    result = diagonalize_fermionic_hamiltonian(
-        mol_hamiltonian.one_body_tensor,
-        mol_hamiltonian.two_body_tensor,
-        bit_array,
-        samples_per_batch=task.samples_per_batch,
-        norb=norb,
-        nelec=nelec,
-        num_batches=task.n_batches,
-        energy_tol=task.energy_tol,
-        occupancies_tol=task.occupancies_tol,
-        max_iterations=task.max_iterations,
-        sci_solver=solve_sci_batch,
-        symmetrize_spin=task.symmetrize_spin,
-        carryover_threshold=task.carryover_threshold,
-        seed=rng,
-        max_dim=task.max_dim,
-        callback=callback
-    )
+    solve = False
+    while not solve:
+        try:
+            result = diagonalize_fermionic_hamiltonian(
+                mol_hamiltonian.one_body_tensor,
+                mol_hamiltonian.two_body_tensor,
+                bit_array,
+                samples_per_batch=task.samples_per_batch,
+                norb=norb,
+                nelec=nelec,
+                num_batches=task.n_batches,
+                energy_tol=task.energy_tol,
+                occupancies_tol=task.occupancies_tol,
+                max_iterations=task.max_iterations,
+                sci_solver=solve_sci_batch,
+                symmetrize_spin=task.symmetrize_spin,
+                carryover_threshold=task.carryover_threshold,
+                seed=rng,
+                callback=callback,
+                max_dim=task.max_dim
+            )
+            solve = True
+        except DiceExecutionError:
+            logging.info(f"{task} Dice execution error\n")
     logging.info(f"{task} Finish SQD\n")
     energy = result.energy + mol_data.core_energy
     sci_state = result.sci_state
