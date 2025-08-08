@@ -51,8 +51,9 @@ symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 # entropies = list(range(2, 11))
 entropies = [1]
+n_hardware_run = 0
 
-max_dim = 3000
+max_dim = 2500
 samples_per_batch = max_dim
 
 tasks = [
@@ -65,6 +66,7 @@ tasks = [
             with_final_orbital_rotation=True,
         ),
         compressed_t2_params=None,
+        n_hardware_run=n_hardware_run,
         connectivity_opt=False,
         random_op =False,
         shots=shots,

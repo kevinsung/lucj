@@ -36,8 +36,8 @@ nelectron, norb = 10, 26
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 bond_distance_range = [1.2, 2.4]
-bond_distance_range = [1.2]
-
+# bond_distance_range = [1.2]
+n_hardware_run = 0
 n_reps_range = [1]
 
 shots = 100_000
@@ -69,6 +69,7 @@ tasks = [
             begin_reps=50,
             step=2
         ),
+        n_hardware_run=n_hardware_run,
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
@@ -79,7 +80,7 @@ tasks = [
         symmetrize_spin=symmetrize_spin,
         entropy=entropy,
         max_dim=max_dim,
-        dynamic_decoupling=True
+        dynamic_decoupling=True,
     )
     for n_reps in n_reps_range
     for d in bond_distance_range
