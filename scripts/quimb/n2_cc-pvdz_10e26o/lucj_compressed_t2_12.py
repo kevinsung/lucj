@@ -43,7 +43,7 @@ connectivities = [
 ]
 
 n_reps_range = list(range(1, 11))
-shots = 10_000
+shots = 50_000
 samples_per_batch = 4000
 max_dim = samples_per_batch
 n_batches = 10
@@ -60,9 +60,9 @@ max_bonds = [
     # 5,
     # 10,
     # 25,
-    # 50,
+    50,
     100,
-    # 200,
+    200,
     # None,
 ]
 cutoffs = [

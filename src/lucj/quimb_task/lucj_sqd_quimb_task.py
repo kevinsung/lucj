@@ -22,6 +22,7 @@ from lucj.tasks.lucj_compressed_t2_task_ffsim.compressed_t2 import (
 )
 from lucj.params import COBYQAParams, LUCJParams, CompressedT2Params
 from qiskit_addon_dice_solver import solve_sci_batch
+from qiskit_addon_dice_solver.dice_solver import DiceExecutionError
 from qiskit.circuit import QuantumCircuit, QuantumRegister
 import quimb.tensor
 from qiskit_quimb import quimb_circuit
@@ -282,6 +283,8 @@ def run_lucj_sqd_quimb_task(
             progbar=True,
             # to_backend=to_backend,
         )
+        logger.info(f"{task}\n\tConstruct MPS with error {quimb_circ.error_estimate():.5f}...")
+        
         # assert(0)
         logger.info(f"{task}\n\tSampling circuit...")
         t0 = timeit.default_timer()
@@ -295,24 +298,28 @@ def run_lucj_sqd_quimb_task(
         # assert(0)
         bit_array = BitArray.from_samples(samples, num_bits=2 * norb)
         # sci_solver = partial(solve_sci_batch, spin_sq=0.0)
-        result = diagonalize_fermionic_hamiltonian(
-            mol_ham.one_body_tensor,
-            mol_ham.two_body_tensor,
-            bit_array,
-            samples_per_batch=task.samples_per_batch,
-            norb=norb,
-            nelec=nelec,
-            num_batches=task.n_batches,
-            energy_tol=task.energy_tol,
-            occupancies_tol=task.occupancies_tol,
-            max_iterations=task.max_iterations,
-            sci_solver=solve_sci_batch,
-            symmetrize_spin=task.symmetrize_spin,
-            carryover_threshold=task.carryover_threshold,
-            seed=rng,
-            max_dim=task.max_dim,
-        )
-        return result.energy + mol_data.core_energy
+        try:
+            result = diagonalize_fermionic_hamiltonian(
+                mol_ham.one_body_tensor,
+                mol_ham.two_body_tensor,
+                bit_array,
+                samples_per_batch=task.samples_per_batch,
+                norb=norb,
+                nelec=nelec,
+                num_batches=task.n_batches,
+                energy_tol=task.energy_tol,
+                occupancies_tol=task.occupancies_tol,
+                max_iterations=task.max_iterations,
+                sci_solver=solve_sci_batch,
+                symmetrize_spin=task.symmetrize_spin,
+                carryover_threshold=task.carryover_threshold,
+                seed=rng,
+                max_dim=task.max_dim,
+            )
+            return result.energy + mol_data.core_energy
+        except DiceExecutionError:
+            logging.info(f"{task} Dice execution error\n")
+            return
 
     if not os.path.exists(result_filename) and not os.path.exists(info_filename):
         # Generate initial parameters
@@ -370,29 +377,29 @@ def run_lucj_sqd_quimb_task(
             with open(intermediate_result_filename, "wb") as f:
                 pickle.dump(intermediate_result, f)
             if info["nit"] > 3:
-                if (abs(info["fun"][-1] - info["fun"][-2]) < 1e-5) and (
-                    abs(info["fun"][-2] - info["fun"][-3]) < 1e-5
+                if (abs(info["fun"][-1] - info["fun"][-2]) < 1e-8) and (
+                    abs(info["fun"][-2] - info["fun"][-3]) < 1e-8
                 ):
                     raise StopIteration(
                         "Objective function value does not decrease for two iterations."
                     )
 
         t0 = timeit.default_timer()
-        # result = scipy.optimize.minimize(
-        #     fun,
-        #     x0=params,
-        #     method="COBYQA",
-        #     options=dataclasses.asdict(task.cobyqa_params),
-        #     callback=callback,
-        # )
-        result = scipy.optimize.differential_evolution(
+        result = scipy.optimize.minimize(
             fun,
-            [(-1e3, 1e3) for x in params],
-            callback=callback,
             x0=params,
-            maxiter=task.cobyqa_params.maxiter
-            # workers=2,
+            method="COBYQA",
+            options=dataclasses.asdict(task.cobyqa_params),
+            callback=callback,
         )
+        # result = scipy.optimize.differential_evolution(
+        #     fun,
+        #     [(-1e3, 1e3) for x in params],
+        #     callback=callback,
+        #     x0=params,
+        #     maxiter=task.cobyqa_params.maxiter
+        #     # workers=2,
+        # )
         t1 = timeit.default_timer()
         logger.info(f"{task} Done optimizing ansatz in {t1 - t0} seconds.\n")
 
@@ -470,24 +477,28 @@ def run_lucj_sqd_quimb_task(
         result_history_energy.append(result_energy)
         result_history_subspace_dim.append(result_subspace_dim)
 
-    result = diagonalize_fermionic_hamiltonian(
-        mol_ham.one_body_tensor,
-        mol_ham.two_body_tensor,
-        bit_array,
-        samples_per_batch=task.samples_per_batch,
-        norb=norb,
-        nelec=nelec,
-        num_batches=task.n_batches,
-        energy_tol=task.energy_tol,
-        occupancies_tol=task.occupancies_tol,
-        max_iterations=task.max_iterations,
-        sci_solver=solve_sci_batch,
-        symmetrize_spin=task.symmetrize_spin,
-        carryover_threshold=task.carryover_threshold,
-        seed=rng,
-        callback=callback,
-        max_dim=task.max_dim,
-    )
+    try: 
+        result = diagonalize_fermionic_hamiltonian(
+            mol_ham.one_body_tensor,
+            mol_ham.two_body_tensor,
+            bit_array,
+            samples_per_batch=task.samples_per_batch,
+            norb=norb,
+            nelec=nelec,
+            num_batches=task.n_batches,
+            energy_tol=task.energy_tol,
+            occupancies_tol=task.occupancies_tol,
+            max_iterations=task.max_iterations,
+            sci_solver=solve_sci_batch,
+            symmetrize_spin=task.symmetrize_spin,
+            carryover_threshold=task.carryover_threshold,
+            seed=rng,
+            callback=callback,
+            max_dim=task.max_dim,
+        )
+    except DiceExecutionError:
+        logging.info(f"{task} Dice execution error\n")
+        return
     logging.info(f"{task} Finish SQD\n")
     energy = result.energy + mol_data.core_energy
     sci_state = result.sci_state

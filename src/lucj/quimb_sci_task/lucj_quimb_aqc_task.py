@@ -667,3 +667,44 @@ run_lucj_sqd_quimb_task(
     run_sqd=True,
     use_dice=True,
 )
+
+
+# File "/home/WanHsuan.Lin/lucj/.venv/lib/python3.10/site-packages/plum/function.py", line 383, in __call__
+#     return _convert(method(*args, **kw_args), return_type)
+#   File "/home/WanHsuan.Lin/qiskit-addon-aqc-tensor/qiskit_addon_aqc_tensor/simulation/quimb/__init__.py", line 407, in _compute_objective_and_gradient
+#     val, quimb_gradient = preprocess_info.tnopt.vectorized_value_and_grad(quimb_parameter_values)
+#   File "/home/WanHsuan.Lin/lucj/.venv/lib/python3.10/site-packages/quimb/tensor/optimize.py", line 1385, in vectorized_value_and_grad
+#     result, grads = self.handler.value_and_grad(arrays)
+#   File "/home/WanHsuan.Lin/lucj/.venv/lib/python3.10/site-packages/quimb/tensor/optimize.py", line 534, in value_and_grad
+#     tree_map(lambda x: to_numpy(x.conj()), grads),
+#   File "/home/WanHsuan.Lin/lucj/.venv/lib/python3.10/site-packages/quimb/utils.py", line 633, in tree_map
+#     return TREE_MAPPER_CACHE[tree.__class__](f, tree, is_leaf)
+#   File "/home/WanHsuan.Lin/lucj/.venv/lib/python3.10/site-packages/quimb/utils.py", line 815, in tree_map_list
+#     return [tree_map(f, x, is_leaf) for x in tree]
+#   File "/home/WanHsuan.Lin/lucj/.venv/lib/python3.10/site-packages/quimb/utils.py", line 815, in <listcomp>
+#     return [tree_map(f, x, is_leaf) for x in tree]
+#   File "/home/WanHsuan.Lin/lucj/.venv/lib/python3.10/site-packages/quimb/utils.py", line 633, in tree_map
+#     return TREE_MAPPER_CACHE[tree.__class__](f, tree, is_leaf)
+#   File "/home/WanHsuan.Lin/lucj/.venv/lib/python3.10/site-packages/quimb/utils.py", line 832, in tree_map_dict
+#     return {k: tree_map(f, v, is_leaf) for k, v in tree.items()}
+#   File "/home/WanHsuan.Lin/lucj/.venv/lib/python3.10/site-packages/quimb/utils.py", line 832, in <dictcomp>
+#     return {k: tree_map(f, v, is_leaf) for k, v in tree.items()}
+#   File "/home/WanHsuan.Lin/lucj/.venv/lib/python3.10/site-packages/quimb/utils.py", line 630, in tree_map
+#     return f(tree)
+#   File "/home/WanHsuan.Lin/lucj/.venv/lib/python3.10/site-packages/quimb/tensor/optimize.py", line 534, in <lambda>
+#     tree_map(lambda x: to_numpy(x.conj()), grads),
+#   File "/home/WanHsuan.Lin/lucj/.venv/lib/python3.10/site-packages/autoray/autoray.py", line 1136, in to_numpy
+#     return do("to_numpy", x)
+#   File "/home/WanHsuan.Lin/lucj/.venv/lib/python3.10/site-packages/autoray/autoray.py", line 81, in do
+#     return func(*args, **kwargs)
+#   File "/home/WanHsuan.Lin/lucj/.venv/lib/python3.10/site-packages/autoray/autoray.py", line 1605, in jax_to_numpy
+#     return do("asarray", x, like="numpy")
+#   File "/home/WanHsuan.Lin/lucj/.venv/lib/python3.10/site-packages/autoray/autoray.py", line 81, in do
+#     return func(*args, **kwargs)
+#   File "/home/WanHsuan.Lin/lucj/.venv/lib/python3.10/site-packages/jax/_src/array.py", line 441, in __array__
+#     return np.asarray(self._value, dtype=dtype, **kwds)
+#   File "/home/WanHsuan.Lin/lucj/.venv/lib/python3.10/site-packages/jax/_src/profiler.py", line 354, in wrapper
+#     return func(*args, **kwargs)
+#   File "/home/WanHsuan.Lin/lucj/.venv/lib/python3.10/site-packages/jax/_src/array.py", line 644, in _value
+#     npy_value, did_copy = self._single_device_array_to_np_array_did_copy()
+# jaxlib._jax.XlaRuntimeError: INTERNAL: Buffer Definition Event: Error dispatching computation: Error preparing computation: Out of memory allocating 316378178560 bytes.
