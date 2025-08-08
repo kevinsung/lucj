@@ -253,8 +253,12 @@ def run_hardware_sqd_energy_task(
 
     else:
         logging.info(f"{task} load sample...\n")
-        with open(sample_filename, "rb") as f:
-            samples = pickle.load(f)
+        if task.dynamic_decoupling and os.path.exists(mitigate_sample_filename):
+            with open(mitigate_sample_filename, "rb") as f:
+                samples = pickle.load(f)    
+        else:
+            with open(sample_filename, "rb") as f:
+                samples = pickle.load(f)
 
     logging.info(f"{task} Done sampling\n")
     # print(samples)
@@ -267,7 +271,8 @@ def run_hardware_sqd_energy_task(
     result_history = []
 
     def callback(results: list[SCIResult]):
-        result_history.append(results)
+        energy = [result.energy for result in results]
+        result_history.append(min(energy) + mol_data.core_energy)
         iteration = len(result_history)
         logging.info(f"Iteration {iteration}")
         for i, result in enumerate(results):
@@ -319,6 +324,7 @@ def run_hardware_sqd_energy_task(
     data = {
         "energy": energy,
         "error": error,
+        "result_history": result_history,
         "spin_squared": spin_squared,
         "sci_vec_shape": sci_state.amplitudes.shape,
     }

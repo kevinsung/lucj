@@ -58,7 +58,7 @@ def run_on_hardware(circuit: QuantumCircuit, norb, shots, sample_filename, mitig
     pub_result = primitive_result[0]
     with open(sample_filename, "wb") as f:
             pickle.dump(pub_result.data.meas, f)
-    return pub_result.data.meas
+    # return pub_result.data.meas
 
     # Specify a mitigator object targeting a given backend
     mit = mthree.M3Mitigation(backend)
@@ -71,5 +71,8 @@ def run_on_hardware(circuit: QuantumCircuit, norb, shots, sample_filename, mitig
         prob[key] = int(prob[key] * shots)
 
     bit_array = BitArray.from_counts(prob, num_bits=2 * norb)
+
+    with open(mitigate_sample_filename, "wb") as f:
+        pickle.dump(bit_array, f)
     
     return bit_array

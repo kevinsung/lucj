@@ -32,6 +32,7 @@ class HardwareSQDEnergyTask:
     shots: int
     samples_per_batch: int
     n_batches: int
+    n_hardware_run: int
     energy_tol: float
     occupancies_tol: float
     carryover_threshold: float
@@ -61,6 +62,7 @@ class HardwareSQDEnergyTask:
             / self.lucj_params.dirpath
             / compress_option
             / ("" if self.dynamic_decoupling is False else hardware_path)
+            / f"n_hardware_run-{self.n_hardware_run}"
             / f"shots-{self.shots}"
             / f"samples_per_batch-{self.samples_per_batch}"
             / f"n_batches-{self.n_batches}"
@@ -212,12 +214,16 @@ def run_hardware_sqd_energy_task(
         sample_filename = (
             data_dir
             / task.operatorpath
-            / f"{hardware_path}/hardware_sample.pickle"
+            / hardware_path
+            / f"n_hardware_run-{task.n_hardware_run}"
+            / "hardware_sample.pickle"
         )
         mitigate_sample_filename = (
             data_dir
             / task.operatorpath
-            / f"{hardware_path}/mitigate_hardware_sample.pickle"
+            / hardware_path
+            / f"n_hardware_run-{task.n_hardware_run}"
+            / "mitigate_hardware_sample.pickle"
         )
     else:
         sample_filename = data_dir / task.operatorpath / "hardware_sample.pickle"
@@ -246,8 +252,12 @@ def run_hardware_sqd_energy_task(
 
     else:
         logging.info(f"{task} load sample...\n")
-        with open(sample_filename, "rb") as f:
-            samples = pickle.load(f)
+        if task.dynamic_decoupling and os.path.exists(mitigate_sample_filename):
+            with open(mitigate_sample_filename, "rb") as f:
+                samples = pickle.load(f)    
+        else:
+            with open(sample_filename, "rb") as f:
+                samples = pickle.load(f)
 
     logging.info(f"{task} Done sampling\n")
     # print(samples)
@@ -260,7 +270,8 @@ def run_hardware_sqd_energy_task(
     result_history = []
 
     def callback(results: list[SCIResult]):
-        result_history.append(results)
+        energy = [result.energy for result in results]
+        result_history.append(min(energy) + mol_data.core_energy)
         iteration = len(result_history)
         logging.info(f"Iteration {iteration}")
         for i, result in enumerate(results):
@@ -312,6 +323,7 @@ def run_hardware_sqd_energy_task(
     data = {
         "energy": energy,
         "error": error,
+        "result_history": result_history,
         "spin_squared": spin_squared,
         "sci_vec_shape": sci_state.amplitudes.shape,
     }
