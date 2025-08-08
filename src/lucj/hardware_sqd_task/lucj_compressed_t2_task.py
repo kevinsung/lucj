@@ -17,6 +17,7 @@ from lucj.hardware_sqd_task.hardware_job.hardware_job import (
     run_on_hardware,
 )
 
+hardware_path = "dynamic_decoupling_xy"
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,7 @@ class HardwareSQDEnergyTask:
     shots: int
     samples_per_batch: int
     n_batches: int
+    n_hardware_run: int
     energy_tol: float
     occupancies_tol: float
     carryover_threshold: float
@@ -60,11 +62,8 @@ class HardwareSQDEnergyTask:
             )
             / self.lucj_params.dirpath
             / compress_option
-            / (
-                ""
-                if self.dynamic_decoupling is False
-                else "dynamic_decoupling_xy_m3"
-            )
+            / ("" if self.dynamic_decoupling is False else hardware_path)
+            / f"n_hardware_run-{self.n_hardware_run}"
             / f"shots-{self.shots}"
             / f"samples_per_batch-{self.samples_per_batch}"
             / f"n_batches-{self.n_batches}"
@@ -213,12 +212,24 @@ def run_hardware_sqd_energy_task(
 
     # use CCSD to initialize parameters
     if task.dynamic_decoupling:
-        sample_filename = data_dir / task.operatorpath / "dynamic_decoupling_xy_m3/hardware_sample.pickle"
+        sample_filename = (
+            data_dir
+            / task.operatorpath
+            / hardware_path
+            / f"n_hardware_run-{task.n_hardware_run}"
+            / "hardware_sample.pickle"
+        )
+        mitigate_sample_filename = (
+            data_dir
+            / task.operatorpath
+            / hardware_path
+            / f"n_hardware_run-{task.n_hardware_run}"
+            / "mitigate_hardware_sample.pickle"
+        )
     else:
         sample_filename = data_dir / task.operatorpath / "hardware_sample.pickle"
 
     rng = np.random.default_rng(task.entropy)
-
 
     if not os.path.exists(sample_filename):
         # assert 0
@@ -230,11 +241,15 @@ def run_hardware_sqd_energy_task(
 
         # run on hardware and get the sample
         logging.info(f"{task} Sampling from real device...\n")
-        samples = run_on_hardware(circuit, norb, 1_000_000, task.dynamic_decoupling)
+        samples = run_on_hardware(
+            circuit,
+            norb,
+            1_000_000,
+            sample_filename=sample_filename,
+            mitigate_sample_filename=mitigate_sample_filename,
+            dynamic_decoupling=task.dynamic_decoupling,
+        )
         logging.info(f"{task} Finish sample\n")
-
-        with open(sample_filename, "wb") as f:
-            pickle.dump(samples, f)
 
     else:
         logging.info(f"{task} load sample...\n")

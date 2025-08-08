@@ -36,7 +36,7 @@ nelectron, norb = 10, 26
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 bond_distance_range = [1.2, 2.4]
-# bond_distance_range = [1.2]
+bond_distance_range = [1.2]
 
 n_reps_range = [1]
 
