@@ -11,6 +11,8 @@ from ffsim.variational.util import interaction_pairs_spin_balanced
 from lucj.params import LUCJParams, CompressedT2Params
 
 from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, SCIResult, solve_sci_batch
+from qiskit_addon_sqd.counts import bit_array_to_arrays
+from qiskit_addon_sqd.subsampling import postselect_by_hamming_right_and_left
 from lucj.hardware_sqd_task.hardware_job.hardware_job import (
     constrcut_lucj_circuit,
     run_on_hardware,
@@ -218,13 +220,6 @@ def run_hardware_sqd_energy_task(
             / f"n_hardware_run-{task.n_hardware_run}"
             / "hardware_sample.pickle"
         )
-        mitigate_sample_filename = (
-            data_dir
-            / task.operatorpath
-            / hardware_path
-            / f"n_hardware_run-{task.n_hardware_run}"
-            / "mitigate_hardware_sample.pickle"
-        )
     else:
         sample_filename = data_dir / task.operatorpath / "hardware_sample.pickle"
 
@@ -245,19 +240,14 @@ def run_hardware_sqd_energy_task(
             norb,
             1_000_000,
             sample_filename=sample_filename,
-            mitigate_sample_filename=mitigate_sample_filename,
             dynamic_decoupling=task.dynamic_decoupling,
         )
         logging.info(f"{task} Finish sample\n")
 
     else:
         logging.info(f"{task} load sample...\n")
-        if task.dynamic_decoupling and os.path.exists(mitigate_sample_filename):
-            with open(mitigate_sample_filename, "rb") as f:
-                samples = pickle.load(f)    
-        else:
-            with open(sample_filename, "rb") as f:
-                samples = pickle.load(f)
+        with open(sample_filename, "rb") as f:
+            samples = pickle.load(f)
 
     logging.info(f"{task} Done sampling\n")
     # print(samples)
@@ -281,15 +271,17 @@ def run_hardware_sqd_energy_task(
                 f"\t\tSubspace dimension: {np.prod(result.sci_state.amplitudes.shape)}"
             )
 
-    # # Convert BitArray into bitstring and probability arrays
-    # raw_bitstrings, raw_probs = bit_array_to_arrays(samples)
+    # Convert BitArray into bitstring and probability arrays
+    raw_bitstrings, raw_probs = bit_array_to_arrays(samples)
 
-    # # Run configuration recovery loop
-    # # If we don't have average orbital occupancy information, simply postselect
-    # # bitstrings with the correct numbers of spin-up and spin-down electrons
-    # bitstrings, probs = postselect_by_hamming_right_and_left(
-    #     raw_bitstrings, raw_probs, hamming_right=mol_data.nelec[0], hamming_left=mol_data.nelec[1]
-    # )
+    # Run configuration recovery loop
+    # If we don't have average orbital occupancy information, simply postselect
+    # bitstrings with the correct numbers of spin-up and spin-down electrons
+    bitstrings, probs = postselect_by_hamming_right_and_left(
+        raw_bitstrings, raw_probs, hamming_right=mol_data.nelec[0], hamming_left=mol_data.nelec[1]
+    )
+
+    logging.info(f"{task} #Valid bitstr: {bitstrings.shape}\n")
 
     result = diagonalize_fermionic_hamiltonian(
         mol_hamiltonian.one_body_tensor,
@@ -306,8 +298,8 @@ def run_hardware_sqd_energy_task(
         symmetrize_spin=task.symmetrize_spin,
         carryover_threshold=task.carryover_threshold,
         seed=rng,
-        max_dim=task.max_dim,
         callback=callback,
+        max_dim=task.max_dim
     )
     energy = result.energy + mol_data.core_energy
     sci_state = result.sci_state

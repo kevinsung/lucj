@@ -11,6 +11,8 @@ from ffsim.variational.util import interaction_pairs_spin_balanced
 from lucj.params import LUCJParams, CompressedT2Params
 
 from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, SCIResult
+from qiskit_addon_sqd.counts import bit_array_to_arrays, bitstring_matrix_to_integers
+from qiskit_addon_sqd.subsampling import postselect_by_hamming_right_and_left
 from qiskit_addon_dice_solver import solve_sci_batch
 from qiskit_addon_dice_solver.dice_solver import DiceExecutionError
 from lucj.hardware_sqd_task.hardware_job.hardware_job import (
@@ -64,7 +66,6 @@ class HardwareSQDEnergyTask:
             / self.lucj_params.dirpath
             / compress_option
             / ("" if self.dynamic_decoupling is False else hardware_path)
-            / f"n_hardware_run-{self.n_hardware_run}"
             / f"shots-{self.shots}"
             / f"samples_per_batch-{self.samples_per_batch}"
             / f"n_batches-{self.n_batches}"
@@ -217,15 +218,7 @@ def run_hardware_sqd_energy_task(
             data_dir
             / task.operatorpath
             / hardware_path
-            / f"n_hardware_run-{task.n_hardware_run}"
             / "hardware_sample.pickle"
-        )
-        mitigate_sample_filename = (
-            data_dir
-            / task.operatorpath
-            / hardware_path
-            / f"n_hardware_run-{task.n_hardware_run}"
-            / "mitigate_hardware_sample.pickle"
         )
     else:
         sample_filename = data_dir / task.operatorpath / "hardware_sample.pickle"
@@ -233,7 +226,7 @@ def run_hardware_sqd_energy_task(
     rng = np.random.default_rng(task.entropy)
 
     if not os.path.exists(sample_filename):
-        # assert 0
+        assert 0
         operator = load_operator(task, data_dir, mol_data)
         if operator is None:
             return
@@ -247,19 +240,14 @@ def run_hardware_sqd_energy_task(
             norb,
             1_000_000,
             sample_filename=sample_filename,
-            mitigate_sample_filename=mitigate_sample_filename,
             dynamic_decoupling=task.dynamic_decoupling,
         )
         logging.info(f"{task} Finish sample\n")
 
     else:
         logging.info(f"{task} load sample...\n")
-        if task.dynamic_decoupling and os.path.exists(mitigate_sample_filename):
-            with open(mitigate_sample_filename, "rb") as f:
-                samples = pickle.load(f)    
-        else:
-            with open(sample_filename, "rb") as f:
-                samples = pickle.load(f)
+        with open(sample_filename, "rb") as f:
+            samples = pickle.load(f)
 
     logging.info(f"{task} Done sampling\n")
     # print(samples)
@@ -283,40 +271,50 @@ def run_hardware_sqd_energy_task(
                 f"\t\tSubspace dimension: {np.prod(result.sci_state.amplitudes.shape)}"
             )
 
-    # # Convert BitArray into bitstring and probability arrays
-    # raw_bitstrings, raw_probs = bit_array_to_arrays(samples)
+    # Convert BitArray into bitstring and probability arrays
+    raw_bitstrings, raw_probs = bit_array_to_arrays(samples)
 
-    # # Run configuration recovery loop
-    # # If we don't have average orbital occupancy information, simply postselect
-    # # bitstrings with the correct numbers of spin-up and spin-down electrons
-    # bitstrings, probs = postselect_by_hamming_right_and_left(
-    #     raw_bitstrings, raw_probs, hamming_right=mol_data.nelec[0], hamming_left=mol_data.nelec[1]
-    # )
+    # Run configuration recovery loop
+    # If we don't have average orbital occupancy information, simply postselect
+    # bitstrings with the correct numbers of spin-up and spin-down electrons
+    bitstrings, probs = postselect_by_hamming_right_and_left(
+        raw_bitstrings, raw_probs, hamming_right=mol_data.nelec[0], hamming_left=mol_data.nelec[1]
+    )
 
-    solve = False
-    while not solve:
-        try:
-            result = diagonalize_fermionic_hamiltonian(
-                mol_hamiltonian.one_body_tensor,
-                mol_hamiltonian.two_body_tensor,
-                samples,
-                samples_per_batch=task.samples_per_batch,
-                norb=norb,
-                nelec=nelec,
-                num_batches=task.n_batches,
-                energy_tol=task.energy_tol,
-                occupancies_tol=task.occupancies_tol,
-                max_iterations=task.max_iterations,
-                sci_solver=solve_sci_batch,
-                symmetrize_spin=task.symmetrize_spin,
-                carryover_threshold=task.carryover_threshold,
-                seed=rng,
-                callback=callback,
-                max_dim=task.max_dim
-            )
-            solve = True
-        except DiceExecutionError:
-            logging.info(f"{task} Dice execution error\n")
+    unique_valid_bitstr, _ = np.unique(
+        bitstring_matrix_to_integers(bitstrings), return_counts=True
+    )
+    logging.info(f"{task} #Valid bitstr: {bitstrings.shape}, #unique bitstr: {len(unique_valid_bitstr)}\n")
+
+    return 
+
+    def solve_sci_batch_wrap(ci_strings, one_body_tensor, two_body_tensor, norb, nelec):
+        solve = False
+        while not solve:
+            try:
+                solve_sci_batch(ci_strings, one_body_tensor, two_body_tensor, norb, nelec)
+            except DiceExecutionError:
+                logging.info(f"{task} Dice execution error\n")
+        
+
+    result = diagonalize_fermionic_hamiltonian(
+        mol_hamiltonian.one_body_tensor,
+        mol_hamiltonian.two_body_tensor,
+        samples,
+        samples_per_batch=task.samples_per_batch,
+        norb=norb,
+        nelec=nelec,
+        num_batches=task.n_batches,
+        energy_tol=task.energy_tol,
+        occupancies_tol=task.occupancies_tol,
+        max_iterations=task.max_iterations,
+        sci_solver=solve_sci_batch_wrap,
+        symmetrize_spin=task.symmetrize_spin,
+        carryover_threshold=task.carryover_threshold,
+        seed=rng,
+        callback=callback,
+        max_dim=task.max_dim
+    )
     energy = result.energy + mol_data.core_energy
     sci_state = result.sci_state
     spin_squared = sci_state.spin_square()
