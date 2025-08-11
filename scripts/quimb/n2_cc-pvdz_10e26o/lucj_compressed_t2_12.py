@@ -43,6 +43,7 @@ connectivities = [
 ]
 
 n_reps_range = list(range(1, 11))
+n_reps_range = [1]
 shots = 50_000
 samples_per_batch = 4000
 max_dim = samples_per_batch
