@@ -26,9 +26,7 @@ def run_on_hardware(
     shots,
     list_sample_filenames,
     dynamic_decoupling=True,
-    repeated_run: int = 1,
 ):
-    repeated_run = len(list_sample_filenames) // len(list_circuit)
     service = QiskitRuntimeService(name="wanhsuan-lucj")
     # service = QiskitRuntimeService(name="wanhsuan-lucj-internal")
     # backend = service.least_busy(
@@ -52,6 +50,8 @@ def run_on_hardware(
         print(f"Circuit: Gate counts (w/ pre-init passes): {isa_circuit.count_ops()}")
         list_isa_circuit.append(isa_circuit)
     
+    assert(list_isa_circuit == 3)
+    
     sampler = Sampler(mode=backend)
 
     if dynamic_decoupling:
@@ -59,21 +59,15 @@ def run_on_hardware(
         sampler.options.dynamical_decoupling.enable = True
         sampler.options.dynamical_decoupling.sequence_type = "XY4"
 
-    for i in range(1, repeated_run):
-        for j in range(len(list_circuit)):
-            list_isa_circuit.append(list_isa_circuit[j])
 
     job = sampler.run(list_isa_circuit, shots=shots)
 
     meas_circuit = []
-    for i in range(len(list_circuit)):
-        meas_circuit.append([])
 
     primitive_result = job.result()
     
-    for i, (pub_result, sample_filename) in enumerate(zip(primitive_result, list_sample_filenames)):
-        idx = i % len(list_circuit)
-        meas_circuit[idx].append(pub_result.data.meas)
+    for pub_result, sample_filename in zip(primitive_result, list_sample_filenames):
+        meas_circuit.append(pub_result.data.meas)
         with open(sample_filename, "wb") as f:
             pickle.dump(pub_result.data.meas, f)
         print(f"save file to {sample_filename}")

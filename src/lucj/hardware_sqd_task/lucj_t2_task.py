@@ -224,11 +224,7 @@ def run_hardware_sqd_energy_batch_task(
             list_sample_filenames.append(
                 data_dir
                 / task.operatorpath
-                / (
-                    hardware_path
-                    if task.dynamic_decoupling
-                    else ""
-                )
+                / (hardware_path if task.dynamic_decoupling else "")
                 / f"hardware_sample_{i}.pickle"
             )
 
@@ -264,13 +260,25 @@ def run_hardware_sqd_energy_batch_task(
         logging.info(f"{list_tasks[0]} Sampling from real device...\n")
         logging.info(f"{list_tasks[1]} Sampling from real device...\n")
         logging.info(f"{list_tasks[2]} Sampling from real device...\n")
-        list_samples = run_on_hardware(
-            list_circuit,
-            norb,
-            1_000_000,
-            list_sample_filenames=list_sample_filenames,
-            dynamic_decoupling=list_tasks[0].dynamic_decoupling,
-        )
+        list_samples = [[], [], []]
+        begin_file_idx = 0
+        end_file_idx = 3
+        step = 3
+        for i in range(list_tasks[0].n_hardware_run):
+            list_samples_per_run = run_on_hardware(
+                list_circuit,
+                norb,
+                1_000_000,
+                list_sample_filenames=list_sample_filenames[
+                    begin_file_idx:end_file_idx
+                ],
+                dynamic_decoupling=list_tasks[0].dynamic_decoupling,
+            )
+            assert(list_samples_per_run == 3)
+            begin_file_idx = end_file_idx
+            end_file_idx += step
+            for j in range(len(list_samples_per_run)):
+                list_samples[j].append(list_samples_per_run[j])
         logging.info(f"{list_tasks[0]} Finish sample\n")
         logging.info(f"{list_tasks[1]} Finish sample\n")
         logging.info(f"{list_tasks[2]} Finish sample\n")
@@ -288,7 +296,9 @@ def run_hardware_sqd_energy_batch_task(
     logging.info(f"{list_tasks[1]} Done sampling\n")
     logging.info(f"{list_tasks[2]} Done sampling\n")
 
-    for samples, task, data_filename in zip(list_samples, list_tasks, list_data_filenames):
+    for samples, task, data_filename in zip(
+        list_samples, list_tasks, list_data_filenames
+    ):
         for i, sample in enumerate(samples):
             # Convert BitArray into bitstring and probability arrays
             raw_bitstrings, raw_probs = bit_array_to_arrays(sample)
@@ -349,7 +359,9 @@ def run_hardware_sqd_energy_batch_task(
             f"{task} #Total valid bitstr: {bitstrings.shape}, #total unique bitstr: {len(unique_valid_bitstr)}\n"
         )
 
-        def solve_sci_batch_wrap(ci_strings, one_body_tensor, two_body_tensor, norb, nelec):
+        def solve_sci_batch_wrap(
+            ci_strings, one_body_tensor, two_body_tensor, norb, nelec
+        ):
             solve = False
             while not solve:
                 try:
