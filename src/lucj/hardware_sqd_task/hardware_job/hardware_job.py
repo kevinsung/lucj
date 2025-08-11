@@ -43,7 +43,7 @@ def run_on_hardware(circuit: QuantumCircuit, norb, shots, sample_filename, dynam
     pass_manager.pre_init = ffsim.qiskit.PRE_INIT
     isa_circuit = pass_manager.run(circuit)
     print(f"Gate counts (w/ pre-init passes): {isa_circuit.count_ops()}")
-
+    assert 0
     sampler = Sampler(mode=backend)
 
     if dynamic_decoupling:

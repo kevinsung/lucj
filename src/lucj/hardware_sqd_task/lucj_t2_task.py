@@ -235,9 +235,12 @@ def run_hardware_sqd_energy_batch_task(
     rng = np.random.default_rng(list_tasks[0].entropy)
 
     if not os.path.exists(list_sample_filenames[0]):
-        assert 0
-        list_operator = load_operator(list_tasks[0], data_dir, mol_data)
-        if list_operator[1] is None:
+        # assert 0
+        list_operator = load_operator(compressed_task, data_dir, mol_data)
+        # print(list_operator)
+        # input()
+
+        if list_operator is None:
             return
         # construct lucj circuit
         list_circuit = []
@@ -245,13 +248,27 @@ def run_hardware_sqd_energy_batch_task(
             circuit = constrcut_lucj_circuit(norb, nelec, operator)
             list_circuit.append(circuit)
 
+        # pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
+        #     random_task.lucj_params.connectivity, norb
+        # )
+        # op = ffsim.random.random_ucj_op_spin_balanced(
+        #     norb,
+        #     n_reps=random_task.lucj_params.n_reps,
+        #     interaction_pairs=(pairs_aa, pairs_ab),
+        #     with_final_orbital_rotation=True,
+        # )
+        # circuit = constrcut_lucj_circuit(op, nelec, operator)
+        # list_circuit = [circuit]
+
         # run on hardware and get the sample
-        logging.info(f"{task} Sampling from real device...\n")
+        logging.info(f"{list_tasks[0]} Sampling from real device...\n")
+        logging.info(f"{list_tasks[1]} Sampling from real device...\n")
+        logging.info(f"{list_tasks[2]} Sampling from real device...\n")
         list_samples = run_on_hardware(
-            circuit,
+            list_circuit,
             norb,
             1_000_000,
-            sample_filename=list_sample_filenames,
+            list_sample_filenames=list_sample_filenames,
             dynamic_decoupling=list_tasks[0].dynamic_decoupling,
         )
         logging.info(f"{list_tasks[0]} Finish sample\n")
@@ -272,6 +289,26 @@ def run_hardware_sqd_energy_batch_task(
     logging.info(f"{list_tasks[2]} Done sampling\n")
 
     for samples, task, data_filename in zip(list_samples, list_tasks, list_data_filenames):
+        for i, sample in enumerate(samples):
+            # Convert BitArray into bitstring and probability arrays
+            raw_bitstrings, raw_probs = bit_array_to_arrays(sample)
+
+            # Run configuration recovery loop
+            # If we don't have average orbital occupancy information, simply postselect
+            # bitstrings with the correct numbers of spin-up and spin-down electrons
+            bitstrings, probs = postselect_by_hamming_right_and_left(
+                raw_bitstrings,
+                raw_probs,
+                hamming_right=mol_data.nelec[0],
+                hamming_left=mol_data.nelec[1],
+            )
+
+            unique_valid_bitstr, _ = np.unique(
+                bitstring_matrix_to_integers(bitstrings), return_counts=True
+            )
+            logging.info(
+                f"{task} run {i}: #Valid bitstr: {bitstrings.shape}, #unique bitstr: {len(unique_valid_bitstr)}\n"
+            )
         samples = BitArray.concatenate_shots(samples)
         # print(samples)
 
@@ -309,7 +346,7 @@ def run_hardware_sqd_energy_batch_task(
             bitstring_matrix_to_integers(bitstrings), return_counts=True
         )
         logging.info(
-            f"{task} #Valid bitstr: {bitstrings.shape}, #unique bitstr: {len(unique_valid_bitstr)}\n"
+            f"{task} #Total valid bitstr: {bitstrings.shape}, #total unique bitstr: {len(unique_valid_bitstr)}\n"
         )
 
         def solve_sci_batch_wrap(ci_strings, one_body_tensor, two_body_tensor, norb, nelec):

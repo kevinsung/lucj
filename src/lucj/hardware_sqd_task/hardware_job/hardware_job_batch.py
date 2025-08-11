@@ -63,7 +63,7 @@ def run_on_hardware(
         for j in range(len(list_circuit)):
             list_isa_circuit.append(list_isa_circuit[j])
 
-    job = sampler.run(list_circuit, shots=shots)
+    job = sampler.run(list_isa_circuit, shots=shots)
 
     meas_circuit = []
     for i in range(len(list_circuit)):
@@ -72,8 +72,9 @@ def run_on_hardware(
     primitive_result = job.result()
     
     for i, (pub_result, sample_filename) in enumerate(zip(primitive_result, list_sample_filenames)):
-        idx = i % len(list_isa_circuit)
+        idx = i % len(list_circuit)
         meas_circuit[idx].append(pub_result.data.meas)
         with open(sample_filename, "wb") as f:
             pickle.dump(pub_result.data.meas, f)
+        print(f"save file to {sample_filename}")
     return meas_circuit

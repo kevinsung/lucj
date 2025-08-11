@@ -78,6 +78,7 @@ tasks = [
         symmetrize_spin=symmetrize_spin,
         entropy=entropy,
         max_dim=max_dim,
+        dynamic_decoupling=True
     )
     for n_reps in n_reps_range
     for d in bond_distance_range
