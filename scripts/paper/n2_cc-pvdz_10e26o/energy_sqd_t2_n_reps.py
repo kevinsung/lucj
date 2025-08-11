@@ -261,7 +261,8 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     # print(error_avg)
     # print(error_min)
     # print(error_max)
-    if connectivity == "all-to-all":
+    # if connectivity == "all-to-all":
+    if True:
         axes[0, i].axhline(
             error_avg,
             linestyle="--",

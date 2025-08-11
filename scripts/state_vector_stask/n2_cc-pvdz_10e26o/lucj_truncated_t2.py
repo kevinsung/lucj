@@ -27,7 +27,7 @@ DATA_ROOT = "/media/storage/WanHsuan.Lin/"
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 6
+MAX_PROCESSES = 1
 OVERWRITE = False
 
 molecule_name = "n2"
@@ -37,11 +37,11 @@ molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 connectivities = [
     "heavy-hex",
-    "all-to-all",
+    # "all-to-all",
     # "square",
 ]
 # n_reps_range = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-n_reps_range = [2, 3, 4, 5, 6, 7, 8, 9, 10]
+n_reps_range = [None]
 shots = 100_000
 n_batches = 10
 energy_tol = 1e-5
@@ -53,7 +53,8 @@ symmetrize_spin = True
 entropy = 0
 max_dim = 4000
 samples_per_batch = max_dim
-bond_distance_range = [1.2, 2.4]
+# bond_distance_range = [1.2, 2.4]
+bond_distance_range = [2.4]
 
 tasks = [
     StateVecTask(
