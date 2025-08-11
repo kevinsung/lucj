@@ -26,11 +26,12 @@ class SQDEnergyTask:
     lucj_params: LUCJParams
     compressed_t2_params: CompressedT2Params | None
     connectivity_opt: bool = False
-    use_adam: bool = False
     fixparam: bool = False
     random_op: bool = False
+    constant_factor: float | None = None
     regularization: bool = False
     regularization_option: int | None = None
+    regularization_factor: float | None = None
     shots: int
     samples_per_batch: int
     n_batches: int
@@ -53,9 +54,12 @@ class SQDEnergyTask:
             if self.fixparam:
                 compress_option = f"{compress_option}/fixparam"
             if self.regularization:
-                compress_option = f"{compress_option}/regularization_{self.regularization_option}"
-            if self.use_adam:
-                compress_option = f"{compress_option}/adam"
+                if self.regularization_factor is None:
+                    compress_option = f"{compress_option}/regularization_{self.regularization_option}"
+                else:
+                    compress_option = f"{compress_option}/regularization_{self.regularization_option}_{self.regularization_factor:.6f}"
+            if self.constant_factor is not None:
+                compress_option = f"{compress_option}/constant_factor-{self.constant_factor:.6f}"
         else:
             compress_option = "truncated"
         return (
@@ -90,9 +94,10 @@ class SQDEnergyTask:
             if self.fixparam:
                 compress_option = f"{compress_option}/fixparam"
             if self.regularization:
-                compress_option = f"{compress_option}/regularization_{self.regularization_option}"
-            if self.use_adam:
-                compress_option = f"{compress_option}/adam"
+                if self.regularization_factor is None:
+                    compress_option = f"{compress_option}/regularization_{self.regularization_option}"
+                else:
+                    compress_option = f"{compress_option}/regularization_{self.regularization_option}_{self.regularization_factor:.6f}"
         else:
             compress_option = "truncated"
         return (
@@ -129,6 +134,8 @@ def load_operator(task: SQDEnergyTask, data_dir: str, mol_data):
         operator = np.load(operator_filename)
         diag_coulomb_mats = operator["diag_coulomb_mats"]
         orbital_rotations = operator["orbital_rotations"]
+        if task.constant_factor is not None:
+            diag_coulomb_mats = diag_coulomb_mats * task.constant_factor
 
         final_orbital_rotation = None
         if mol_data.ccsd_t1 is not None:
