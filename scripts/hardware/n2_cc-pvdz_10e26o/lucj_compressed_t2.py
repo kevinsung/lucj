@@ -14,7 +14,7 @@ from lucj.hardware_sqd_task.lucj_compressed_t2_task import (
     run_hardware_sqd_energy_task,
 )
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_dd_maxdim_3000.log"
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_dd.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -35,7 +35,7 @@ basis = "cc-pvdz"
 nelectron, norb = 10, 26
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-bond_distance_range = [1.2, 2.4]
+# bond_distance_range = [1.2, 2.4]
 bond_distance_range = [1.2]
 
 n_reps_range = [1]
@@ -51,7 +51,7 @@ symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 # entropies = list(range(2, 11))
 entropies = [1]
-
+n_hardware_run = 0
 max_dim = 2500
 samples_per_batch = max_dim
 
@@ -69,6 +69,8 @@ tasks = [
             begin_reps=50,
             step=2
         ),
+        n_hardware_run=n_hardware_run,
+        random_op =True,
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
@@ -79,13 +81,11 @@ tasks = [
         symmetrize_spin=symmetrize_spin,
         entropy=entropy,
         max_dim=max_dim,
-        dynamic_decoupling=True
     )
     for n_reps in n_reps_range
     for d in bond_distance_range
     for entropy in entropies
 ]
-
 if MAX_PROCESSES == 1:
     for task in tqdm(tasks):
         run_hardware_sqd_energy_task(
@@ -106,4 +106,3 @@ else:
                     overwrite=OVERWRITE,
                 )
                 future.add_done_callback(lambda _: progress.update())
-
