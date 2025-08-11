@@ -234,7 +234,7 @@ def run_lucj_sqd_quimb_task(
         and os.path.exists(result_filename)
         and os.path.exists(info_filename)
         and os.path.exists(sqd_result_filename)
-    ):
+    ):  
         logger.info(f"Data for {task} already exists. Skipping...\n")
         return task
     intermediate_result_filename = data_dir / task.dirpath / "intermediate_data.pickle"
@@ -402,6 +402,7 @@ def run_lucj_sqd_quimb_task(
         #     # workers=2,
         # )
         t1 = timeit.default_timer()
+        info["total_time"] = t1 - t0
         logger.info(f"{task} Done optimizing ansatz in {t1 - t0} seconds.\n")
 
         logger.info(f"{task} Saving data...\n")
@@ -501,7 +502,7 @@ def run_lucj_sqd_quimb_task(
             solve = True
         except DiceExecutionError:
             logging.info(f"{task} Dice execution error\n")
-            
+
     logging.info(f"{task} Finish SQD\n")
     energy = result.energy + mol_data.core_energy
     sci_state = result.sci_state
