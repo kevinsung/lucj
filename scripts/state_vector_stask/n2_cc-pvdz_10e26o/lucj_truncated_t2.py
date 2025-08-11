@@ -41,7 +41,7 @@ connectivities = [
     # "square",
 ]
 # n_reps_range = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-n_reps_range = [2, 3, 4, 5, 6, 7, 8, 9, 10]
+n_reps_range = [None]
 shots = 100_000
 n_batches = 10
 energy_tol = 1e-5
