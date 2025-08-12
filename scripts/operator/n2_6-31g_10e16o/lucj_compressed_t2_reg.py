@@ -43,8 +43,8 @@ connectivities = [
     # "square",
     "all-to-all",
 ]
-n_reps_range = list(range(2, 12, 2)) + [1]
-regularization_options = [0, 1, 2]
+n_reps_range = list(range(1, 11, 1))
+regularization_options = [1]
 
 tasks = [
     LUCJCompressedT2Task(

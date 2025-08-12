@@ -9,9 +9,9 @@ from pathlib import Path
 from tqdm import tqdm
 
 from lucj.params import LUCJParams, CompressedT2Params
-from lucj.state_vector_task.state_vector_task import (
-    StateVecTask,
-    run_state_vec_task,
+from lucj.sqd_energy_task.lucj_compressed_t2_task_sci import (
+    SQDEnergyTask,
+    run_sqd_energy_task,
 )
 
 filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}.log"
@@ -23,50 +23,62 @@ logging.basicConfig(
     filename=filename,
 )
 
-DATA_ROOT = "/media/storage/WanHsuan.Lin/"
+DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 16
+MAX_PROCESSES = 1
 OVERWRITE = False
 
 molecule_name = "n2"
-basis = "cc-pvdz"
-nelectron, norb = 10, 26
+basis = "6-31g"
+nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
+
+bond_distance_range = [1.2, 2.4]
 
 connectivities = [
     "heavy-hex",
-    # "all-to-all",
-    # "square",
+    "all-to-all",
 ]
-# n_reps_range = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-n_reps_range = [None]
+
+n_reps_range = list(range(1, 11))
+
+constant_factors = [0.5, 1.5, 2, 2.5]
+
 shots = 100_000
 n_batches = 10
-energy_tol = 1e-5
-occupancies_tol = 1e-3
-carryover_threshold = 1e-3
+energy_tol = 1e-5 
+occupancies_tol = 1e-3 
+carryover_threshold = 1e-3 
 max_iterations = 1
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
+
 max_dim = 4000
 samples_per_batch = max_dim
-# bond_distance_range = [1.2, 2.4]
-bond_distance_range = [2.4]
+
+
 
 tasks = [
-    StateVecTask(
+    SQDEnergyTask(
         molecule_basename=molecule_basename,
-        bond_distance=bond_distance,
+        bond_distance=d,
         lucj_params=LUCJParams(
             connectivity=connectivity,
             n_reps=n_reps,
             with_final_orbital_rotation=True,
         ),
-        compressed_t2_params=None,
+        compressed_t2_params=CompressedT2Params(
+            multi_stage_optimization=True,
+            begin_reps=20,
+            step=2
+        ),
         regularization=False,
+        regularization_option=None,
+        fixparam=False,
+        constant_factor=c,
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
@@ -78,14 +90,15 @@ tasks = [
         entropy=entropy,
         max_dim=max_dim,
     )
-    for bond_distance in bond_distance_range
-    for connectivity in connectivities
     for n_reps in n_reps_range
+    for connectivity in connectivities
+    for d in bond_distance_range
+    for c in constant_factors
 ]
 
 if MAX_PROCESSES == 1:
     for task in tqdm(tasks):
-        run_state_vec_task(
+        run_sqd_energy_task(
             task,
             data_dir=DATA_DIR,
             molecules_catalog_dir=MOLECULES_CATALOG_DIR,
@@ -96,7 +109,7 @@ else:
         with ProcessPoolExecutor(MAX_PROCESSES) as executor:
             for task in tasks:
                 future = executor.submit(
-                    run_state_vec_task,
+                    run_sqd_energy_task,
                     task,
                     data_dir=DATA_DIR,
                     molecules_catalog_dir=MOLECULES_CATALOG_DIR,
