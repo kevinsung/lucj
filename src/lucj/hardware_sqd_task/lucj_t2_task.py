@@ -274,7 +274,7 @@ def run_hardware_sqd_energy_batch_task(
                 ],
                 dynamic_decoupling=list_tasks[0].dynamic_decoupling,
             )
-            assert(list_samples_per_run == 3)
+            assert(len(list_samples_per_run) == 3)
             begin_file_idx = end_file_idx
             end_file_idx += step
             for j in range(len(list_samples_per_run)):

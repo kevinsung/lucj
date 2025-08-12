@@ -39,6 +39,7 @@ bond_distance_range = [1.2, 2.4]
 
 n_reps_range = [1]
 
+# shots = 100_000
 shots = 100_000
 n_batches = 10
 energy_tol = 1e-8

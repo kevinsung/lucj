@@ -50,7 +50,7 @@ def run_on_hardware(
         print(f"Circuit: Gate counts (w/ pre-init passes): {isa_circuit.count_ops()}")
         list_isa_circuit.append(isa_circuit)
     
-    assert(list_isa_circuit == 3)
+    assert(len(list_isa_circuit) == 3)
     
     sampler = Sampler(mode=backend)
 
