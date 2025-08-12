@@ -19,7 +19,7 @@ from lucj.hardware_sqd_task.hardware_job.hardware_job_batch import (
     run_on_hardware,
 )
 
-hardware_path = "dynamic_decoupling_xy_opt_1"
+hardware_path = "dynamic_decoupling_xy_opt_0"
 
 logger = logging.getLogger(__name__)
 

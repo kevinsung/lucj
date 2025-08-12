@@ -43,15 +43,18 @@ def run_on_hardware(
     list_isa_circuit = []
     for circuit in list_circuit:
         pass_manager = generate_preset_pass_manager(
-            optimization_level=0, backend=backend, initial_layout=initial_layout
+            optimization_level=0,
+            backend=backend,
+            initial_layout=initial_layout,
+            seed_transpiler=0,
         )
         pass_manager.pre_init = ffsim.qiskit.PRE_INIT
         isa_circuit = pass_manager.run(circuit)
         print(f"Circuit: Gate counts (w/ pre-init passes): {isa_circuit.count_ops()}")
         list_isa_circuit.append(isa_circuit)
-    
+
     # print(list_sample_filenames)
-    assert(len(list_isa_circuit) == 3)
+    assert len(list_isa_circuit) == 3
     # assert 0
     sampler = Sampler(mode=backend)
 
@@ -60,13 +63,12 @@ def run_on_hardware(
         sampler.options.dynamical_decoupling.enable = True
         sampler.options.dynamical_decoupling.sequence_type = "XY4"
 
-
     job = sampler.run(list_isa_circuit, shots=shots)
 
     meas_circuit = []
 
     primitive_result = job.result()
-    
+
     for pub_result, sample_filename in zip(primitive_result, list_sample_filenames):
         meas_circuit.append(pub_result.data.meas)
         with open(sample_filename, "wb") as f:

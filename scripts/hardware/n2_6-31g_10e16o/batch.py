@@ -36,7 +36,7 @@ nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 bond_distance_range = [1.2, 2.4]
-n_hardware_run = 10
+n_hardware_run_range = list(range(0, 10))
 n_reps_range = [1]
 
 shots = 1_000_000
@@ -81,6 +81,7 @@ compressed_tasks = [
     for n_reps in n_reps_range
     for d in bond_distance_range
     for entropy in entropies
+    for n_hardware_run in n_hardware_run_range
 ]
 
 random_tasks = [
@@ -110,6 +111,7 @@ random_tasks = [
     for n_reps in n_reps_range
     for d in bond_distance_range
     for entropy in entropies
+    for n_hardware_run in n_hardware_run_range
 ]
 
 truncated_tasks = [
@@ -139,6 +141,7 @@ truncated_tasks = [
     for n_reps in n_reps_range
     for d in bond_distance_range
     for entropy in entropies
+    for n_hardware_run in n_hardware_run_range
 ]
 
 if MAX_PROCESSES == 1:
