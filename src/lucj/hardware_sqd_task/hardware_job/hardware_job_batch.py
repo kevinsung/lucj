@@ -52,7 +52,7 @@ def run_on_hardware(
     
     # print(list_sample_filenames)
     assert(len(list_isa_circuit) == 3)
-    # assert 0
+    assert 0
     sampler = Sampler(mode=backend)
 
     if dynamic_decoupling:

@@ -99,6 +99,8 @@ class SQDEnergyTask:
                     compress_option = f"{compress_option}/regularization_{self.regularization_option}"
                 else:
                     compress_option = f"{compress_option}/regularization_{self.regularization_option}_{self.regularization_factor:.6f}"
+            if self.t2_constant_factor is not None:
+                compress_option = f"{compress_option}/t2_constant_factor-{self.t2_constant_factor:.6f}"
         else:
             compress_option = "truncated"
         return (
@@ -227,9 +229,14 @@ def run_sqd_energy_task(
     reference_state = ffsim.hartree_fock_state(norb, nelec)
 
     # use CCSD to initialize parameters
-    vqe_filename = data_dir / task.operatorpath / "data.pickle"
-    sample_filename = data_dir / task.operatorpath / "sample.pickle"
-    state_vector_filename = data_dir / task.operatorpath / "state_vector.npy"
+    if task.constant_factor is not None:
+        vqe_filename = data_dir / task.operatorpath / f"t2_constant_factor-{task.constant_factor:.6f}/data.pickle"
+        sample_filename = data_dir / task.operatorpath / f"t2_constant_factor-{task.constant_factor:.6f}/sample.pickle"
+        state_vector_filename = data_dir / task.operatorpath / f"t2_constant_factor-{task.constant_factor:.6f}/state_vector.npy"
+    else:
+        vqe_filename = data_dir / task.operatorpath / "data.pickle"
+        sample_filename = data_dir / task.operatorpath / "sample.pickle"
+        state_vector_filename = data_dir / task.operatorpath / "state_vector.npy"
     
     rng = np.random.default_rng(task.entropy)
     
