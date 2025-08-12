@@ -50,9 +50,9 @@ def run_on_hardware(
         print(f"Circuit: Gate counts (w/ pre-init passes): {isa_circuit.count_ops()}")
         list_isa_circuit.append(isa_circuit)
     
-    print(list_sample_filenames)
+    # print(list_sample_filenames)
     assert(len(list_isa_circuit) == 3)
-    assert 0
+    # assert 0
     sampler = Sampler(mode=backend)
 
     if dynamic_decoupling:
