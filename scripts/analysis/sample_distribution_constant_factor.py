@@ -9,7 +9,10 @@ import matplotlib.pyplot as plt
 from lucj.params import LUCJParams, CompressedT2Params
 from lucj.sqd_energy_task.lucj_compressed_t2_task_sci import SQDEnergyTask
 from qiskit.visualization import plot_distribution
-from lucj.hardware_sqd_task.lucj_compressed_t2_task import HardwareSQDEnergyTask
+import functools
+from collections import OrderedDict
+import numpy as np
+import matplotlib.pyplot as plt
 
 DATA_ROOT = "/media/storage/WanHsuan.Lin/"
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
@@ -49,29 +52,30 @@ n_reps = 1
 constant_factors = [None, 0.5, 1.5, 2, 2.5]
 
 
-tasks = [SQDEnergyTask(
-    molecule_basename=molecule_basename,
-    bond_distance=bond_distance,
-    lucj_params=LUCJParams(
-        connectivity=connectivity,
-        n_reps=n_reps,
-        with_final_orbital_rotation=True,
-    ),
-    compressed_t2_params=CompressedT2Params(
-        multi_stage_optimization=True, begin_reps=begin_reps, step=step
-    ),
-    regularization=False,
-    shots=shots,
-    samples_per_batch=samples_per_batch,
-    n_batches=n_batches,
-    energy_tol=energy_tol,
-    occupancies_tol=occupancies_tol,
-    carryover_threshold=carryover_threshold,
-    max_iterations=max_iterations,
-    symmetrize_spin=symmetrize_spin,
-    entropy=entropy,
-    max_dim=max_dim,
-    t2_constant_factor=c
+tasks = [
+    SQDEnergyTask(
+        molecule_basename=molecule_basename,
+        bond_distance=bond_distance,
+        lucj_params=LUCJParams(
+            connectivity=connectivity,
+            n_reps=n_reps,
+            with_final_orbital_rotation=True,
+        ),
+        compressed_t2_params=CompressedT2Params(
+            multi_stage_optimization=True, begin_reps=begin_reps, step=step
+        ),
+        regularization=False,
+        shots=shots,
+        samples_per_batch=samples_per_batch,
+        n_batches=n_batches,
+        energy_tol=energy_tol,
+        occupancies_tol=occupancies_tol,
+        carryover_threshold=carryover_threshold,
+        max_iterations=max_iterations,
+        symmetrize_spin=symmetrize_spin,
+        entropy=entropy,
+        max_dim=max_dim,
+        t2_constant_factor=c,
     )
     for c in constant_factors
 ]
@@ -83,40 +87,88 @@ colors = prop_cycle.by_key()["color"]
 samples = []
 
 for task in tasks:
-    sample_filename = (
-        DATA_ROOT / task.operatorpath / "sample.pickle"
-    )
+    sample_filename = DATA_ROOT / task.operatorpath / "sample.pickle"
 
     with open(sample_filename, "rb") as f:
         sample = pickle.load(f)
         sample = BitArray.from_counts(sample)
         sample = BitArray.get_counts(sample)
-    
+
     samples.append(sample)
 
-legend = [ f"factor-{c}" for c in constant_factors ]
+legends = [f"factor-{c}" for c in constant_factors]
 
 color = [colors[i] for i in range(len(constant_factors))]
 
+# plot_distribution(
+#     samples,
+#     figsize=(30, 20),
+#     legend=legend,
+#     color=color,
+#     number_to_keep=20,
+#     sort="hamming",
+#     target_string=hf_state,
+#     title="Sample Distribution",
+#     filename=filepath,
+#     bar_labels=False,
+# )
+
+
+def hamming_distance(str1, str2):
+    """Calculate the Hamming distance between two bit strings
+
+    Args:
+        str1 (str): First string.
+        str2 (str): Second string.
+    Returns:
+        int: Distance between strings.
+    Raises:
+        VisualizationError: Strings not same length
+    """
+    return sum(s1 != s2 for s1, s2 in zip(str1, str2))
+
+
+labels = sorted(functools.reduce(lambda x, y: x.union(y.keys()), samples, set()))
+dist = []
+for item in labels:
+    dist.append(hamming_distance(item, hf_state) if item != "rest" else 0)
+
+labels_dict = OrderedDict()
+all_pvalues = []
+
+for execution in samples:
+    values = []
+    for key in labels:
+        if key not in execution:
+            labels_dict[key] = 1
+            values.append(0)
+        else:
+            labels_dict[key] = 1
+            values.append(execution[key])
+    pvalues = np.array(values, dtype=float)
+    pvalues /= np.sum(pvalues)
+    all_pvalues.append(pvalues)
+
+
+
+fig = plt.plot(figsize=(9, 12), layout="constrained")
+# Cumulative distributions.
+x = np.arange(len(all_pvalues[0]))
+for value, legend, c in zip(all_pvalues, legends, color):
+    # print(value[:10])
+    # input()
+    y = value.cumsum()
+    plt.plot(x, y, "-", label=legend, color=c)
+    
+    # plt.ecdf(value, label=legend, color=c)
+
+plt.legend()
+
+plt.yscale("log")
 filepath = os.path.join(
     plots_dir,
     f"{os.path.splitext(os.path.basename(__file__))[0]}.pdf",
 )
-
-plot_distribution(
-    samples,
-    figsize=(30, 20),
-    legend=legend,
-    color=color,
-    number_to_keep=20,
-    sort="hamming",
-    target_string=hf_state,
-    title="Sample Distribution",
-    filename=filepath,
-    bar_labels=False,
-)
-
-# Cumulative distributions.
-axs[0].ecdf(data, label="CDF")
-n, bins, patches = axs[0].hist(data, n_bins, density=True, histtype="step",
-                               cumulative=True, label="Cumulative histogram")
+plt.title(f"CDF $N_2$ (6-31g, {nelectron}e, {norb}o)")
+plt.savefig(filepath)
+plt.close()
