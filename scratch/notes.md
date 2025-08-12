@@ -77,3 +77,16 @@ dynamic correlation
 
 July 21
 random bit string can generate energy lower than ground truth?
+
+
+truncated r=1.2
+OrderedDict([('sx', 2315), ('rz', 2244),('cz', 738), ('x', 64), ('measure', 32), ('barrier', 1)])
+
+compressed r=1.2
+OrderedDict([('sx', 2904), ('rz, 2841), ('cz', 790), ('measure', 32), ('x', 23), ('barrier', 1)])          
+
+truncated r=2.4
+OrderedDict([('sx', 2317), ('rz', 2246), ('cz', 738), ('x', 65), ('measure', 32), ('barrier', 1)])
+
+compressed r=2.4
+OrderedDict([('sx', 2904), ('rz', 2841), ('cz', 790), ('measure', 32), ('x', 23), ('barrier', 1)])

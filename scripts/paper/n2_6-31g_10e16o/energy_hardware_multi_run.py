@@ -151,7 +151,8 @@ for task in tasks_random:
 results_truncated_t2 = {}
 for task in tasks_truncated_t2:
     filepath = DATA_ROOT / task.dirpath / "hardware_sqd_data.pickle"
-    results_truncated_t2[task] = load_data(filepath)
+    if os.path.exists(filepath):
+        results_truncated_t2[task] = load_data(filepath)
     
 results_compressed_t2 = {}
 for task in tasks_compressed_t2:
@@ -293,8 +294,8 @@ for i, bond_distance in enumerate(bond_distance_range):
             )
             for n_hardware_run in n_hardware_run_range]
     
-    errors_n_reps = [results_truncated_t2[task]['error'] for task in tasks_truncated_t2]
-    sci_vec_shape_n_reps = [results_truncated_t2[task]["sci_vec_shape"][0] for task in tasks_truncated_t2]
+    errors_n_reps = [results_truncated_t2[task]['error'] for task in tasks_truncated_t2 if task in results_truncated_t2]
+    sci_vec_shape_n_reps = [results_truncated_t2[task]["sci_vec_shape"][0] for task in tasks_truncated_t2 if task in results_truncated_t2]
     # errors_n_reps = [results_truncated_t2[task]['error'] for task in tasks_truncated_t2]
     # sci_vec_shape_n_reps = [results_truncated_t2[task]["sci_vec_shape"][0] for task in tasks_truncated_t2]
     errors.append(np.average(errors_n_reps))
