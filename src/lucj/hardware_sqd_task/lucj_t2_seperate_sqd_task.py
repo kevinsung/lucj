@@ -21,7 +21,7 @@ from lucj.hardware_sqd_task.hardware_job.hardware_job_batch import (
     run_on_hardware,
 )
 
-hardware_path = "dynamic_decoupling_xy"
+hardware_path = "dynamic_decoupling_xy_opt_1"
 
 logger = logging.getLogger(__name__)
 
@@ -189,19 +189,6 @@ def run_hardware_sqd_energy_batch_task(
     os.makedirs(data_dir / truncated_task.dirpath, exist_ok=True)
     os.makedirs(data_dir / compressed_task.dirpath, exist_ok=True)
 
-    list_tasks = [random_task, truncated_task, compressed_task]
-    list_data_filenames = []
-    for task in list_tasks:
-        list_data_filenames.append(data_dir / task.dirpath / "hardware_sqd_data.pickle")
-    if (
-        (not overwrite)
-        and os.path.exists(list_data_filenames[0])
-        and os.path.exists(list_data_filenames[1])
-        and os.path.exists(list_data_filenames[2])
-    ):
-        logging.info("Data for tasks already exists. Skipping...\n")
-        return random_task
-
     # Get molecular data and molecular Hamiltonian
     if random_task.molecule_basename == "fe2s2_30e20o":
         mol_data = load_molecular_data(
@@ -217,8 +204,9 @@ def run_hardware_sqd_energy_batch_task(
     nelec = mol_data.nelec
     mol_hamiltonian = mol_data.hamiltonian
 
-    list_sample_filenames = []
+    list_tasks = [random_task, truncated_task, compressed_task]
     for i in range(list_tasks[0].n_hardware_run):
+        list_sample_filenames = []
         for task in list_tasks:
             list_sample_filenames.append(
                 data_dir
@@ -227,80 +215,83 @@ def run_hardware_sqd_energy_batch_task(
                 / f"hardware_sample_{i}.pickle"
             )
 
-    rng = np.random.default_rng(list_tasks[0].entropy)
+        list_data_filenames = []
+        for task in list_tasks:
+            list_data_filenames.append(data_dir / task.dirpath / "hardware_sqd_data.pickle")
+        
+        if (
+            (not overwrite)
+            and os.path.exists(list_data_filenames[0])
+            and os.path.exists(list_data_filenames[1])
+            and os.path.exists(list_data_filenames[2])
+        ):
+            logging.info("Data for tasks already exists. Skipping...\n")
+            continue
+        
+        rng = np.random.default_rng(list_tasks[0].entropy)
 
-    if not os.path.exists(list_sample_filenames[0]):
-        # assert 0
-        list_operator = load_operator(compressed_task, data_dir, mol_data)
-        # print(list_operator)
-        # input()
+        if not os.path.exists(list_sample_filenames[0]):
+            list_operator = load_operator(compressed_task, data_dir, mol_data)
 
-        if list_operator is None:
-            return
-        # construct lucj circuit
-        list_circuit = []
-        for operator in list_operator:
-            circuit = constrcut_lucj_circuit(norb, nelec, operator)
-            list_circuit.append(circuit)
+            if list_operator is None:
+                return
+            # construct lucj circuit
+            list_circuit = []
+            for operator in list_operator:
+                circuit = constrcut_lucj_circuit(norb, nelec, operator)
+                list_circuit.append(circuit)
 
-        # pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
-        #     random_task.lucj_params.connectivity, norb
-        # )
-        # op = ffsim.random.random_ucj_op_spin_balanced(
-        #     norb,
-        #     n_reps=random_task.lucj_params.n_reps,
-        #     interaction_pairs=(pairs_aa, pairs_ab),
-        #     with_final_orbital_rotation=True,
-        # )
-        # circuit = constrcut_lucj_circuit(op, nelec, operator)
-        # list_circuit = [circuit]
-
-        # run on hardware and get the sample
-        logging.info(f"{list_tasks[0]} Sampling from real device...\n")
-        logging.info(f"{list_tasks[1]} Sampling from real device...\n")
-        logging.info(f"{list_tasks[2]} Sampling from real device...\n")
-        list_samples = [[], [], []]
-        begin_file_idx = 0
-        end_file_idx = 3
-        step = 3
-        for i in range(list_tasks[0].n_hardware_run):
-            list_samples_per_run = run_on_hardware(
+            # run on hardware and get the sample
+            logging.info(f"{list_tasks[0]} Sampling from real device...\n")
+            logging.info(f"{list_tasks[1]} Sampling from real device...\n")
+            logging.info(f"{list_tasks[2]} Sampling from real device...\n")
+            list_samples = run_on_hardware(
                 list_circuit,
                 norb,
                 1_000_000,
-                list_sample_filenames=list_sample_filenames[
-                    begin_file_idx:end_file_idx
-                ],
+                list_sample_filenames=list_sample_filenames,
                 dynamic_decoupling=list_tasks[0].dynamic_decoupling,
             )
-            assert(len(list_samples_per_run) == 3)
-            begin_file_idx = end_file_idx
-            end_file_idx += step
-            for j in range(len(list_samples_per_run)):
-                list_samples[j].append(list_samples_per_run[j])
-        logging.info(f"{list_tasks[0]} Finish sample\n")
-        logging.info(f"{list_tasks[1]} Finish sample\n")
-        logging.info(f"{list_tasks[2]} Finish sample\n")
+            assert(len(list_samples) == 3)
+            logging.info(f"{list_tasks[0]} Finish sample\n")
+            logging.info(f"{list_tasks[1]} Finish sample\n")
+            logging.info(f"{list_tasks[2]} Finish sample\n")
 
-    else:
-        logging.info(f"{task} load sample...\n")
-        list_samples = [[], [], []]
-        for i, sample_filename in enumerate(list_sample_filenames):
-            with open(sample_filename, "rb") as f:
-                samples = pickle.load(f)
-            if i % 3 == 0:
-                list_samples[i].append(samples)
+        else:
+            logging.info(f"{task} load sample...\n")
+            list_samples = [[], [], []]
+            for i, sample_filename in enumerate(list_sample_filenames):
+                with open(sample_filename, "rb") as f:
+                    samples = pickle.load(f)
+                if i % 3 == 0:
+                    list_samples[i].append(samples)
 
-    logging.info(f"{list_tasks[0]} Done sampling\n")
-    logging.info(f"{list_tasks[1]} Done sampling\n")
-    logging.info(f"{list_tasks[2]} Done sampling\n")
+        logging.info(f"{list_tasks[0]} Done sampling\n")
+        logging.info(f"{list_tasks[1]} Done sampling\n")
+        logging.info(f"{list_tasks[2]} Done sampling\n")
 
-    for samples, task, data_filename in zip(
-        list_samples, list_tasks, list_data_filenames
-    ):
-        for i, sample in enumerate(samples):
+        for samples, task, data_filename in zip(
+            list_samples, list_tasks, list_data_filenames
+        ):
+            # Run SQD
+            logging.info(f"{task} Running SQD...\n")
+            # sci_solver = partial(solve_sci_batch, spin_sq=0.0)
+            result_history = []
+
+            def callback(results: list[SCIResult]):
+                energy = [result.energy for result in results]
+                result_history.append(min(energy) + mol_data.core_energy)
+                iteration = len(result_history)
+                logging.info(f"Iteration {iteration}")
+                for i, result in enumerate(results):
+                    logging.info(f"\tSubsample {i}")
+                    logging.info(f"\t\tEnergy: {result.energy + mol_data.core_energy}")
+                    logging.info(
+                        f"\t\tSubspace dimension: {np.prod(result.sci_state.amplitudes.shape)}"
+                    )
+
             # Convert BitArray into bitstring and probability arrays
-            raw_bitstrings, raw_probs = bit_array_to_arrays(sample)
+            raw_bitstrings, raw_probs = bit_array_to_arrays(samples)
 
             # Run configuration recovery loop
             # If we don't have average orbital occupancy information, simply postselect
@@ -316,97 +307,58 @@ def run_hardware_sqd_energy_batch_task(
                 bitstring_matrix_to_integers(bitstrings), return_counts=True
             )
             logging.info(
-                f"{task} run {i}: #Valid bitstr: {bitstrings.shape}, #unique bitstr: {len(unique_valid_bitstr)}\n"
+                f"{task} #Total valid bitstr: {bitstrings.shape}, #total unique bitstr: {len(unique_valid_bitstr)}\n"
             )
-        samples = BitArray.concatenate_shots(samples)
-        # print(samples)
 
-        # Run SQD
-        logging.info(f"{task} Running SQD...\n")
-        # sci_solver = partial(solve_sci_batch, spin_sq=0.0)
-        result_history = []
+            def solve_sci_batch_wrap(
+                ci_strings, one_body_tensor, two_body_tensor, norb, nelec
+            ):
+                solve = False
+                while not solve:
+                    try:
+                        solve_sci_batch(
+                            ci_strings, one_body_tensor, two_body_tensor, norb, nelec
+                        )
+                    except DiceExecutionError:
+                        logging.info(f"{task} Dice execution error\n")
 
-        def callback(results: list[SCIResult]):
-            energy = [result.energy for result in results]
-            result_history.append(min(energy) + mol_data.core_energy)
-            iteration = len(result_history)
-            logging.info(f"Iteration {iteration}")
-            for i, result in enumerate(results):
-                logging.info(f"\tSubsample {i}")
-                logging.info(f"\t\tEnergy: {result.energy + mol_data.core_energy}")
-                logging.info(
-                    f"\t\tSubspace dimension: {np.prod(result.sci_state.amplitudes.shape)}"
-                )
+            result = diagonalize_fermionic_hamiltonian(
+                mol_hamiltonian.one_body_tensor,
+                mol_hamiltonian.two_body_tensor,
+                samples,
+                samples_per_batch=task.samples_per_batch,
+                norb=norb,
+                nelec=nelec,
+                num_batches=task.n_batches,
+                energy_tol=task.energy_tol,
+                occupancies_tol=task.occupancies_tol,
+                max_iterations=task.max_iterations,
+                sci_solver=solve_sci_batch_wrap,
+                symmetrize_spin=task.symmetrize_spin,
+                carryover_threshold=task.carryover_threshold,
+                seed=rng,
+                callback=callback,
+                max_dim=task.max_dim,
+            )
+            energy = result.energy + mol_data.core_energy
+            sci_state = result.sci_state
+            spin_squared = sci_state.spin_square()
+            if mol_data.fci_energy is not None:
+                error = energy - mol_data.fci_energy
+            elif mol_data.sci_energy is not None:
+                error = energy - mol_data.sci_energy
+            else:
+                error = -1
 
-        # Convert BitArray into bitstring and probability arrays
-        raw_bitstrings, raw_probs = bit_array_to_arrays(samples)
+            # Save data
+            data = {
+                "energy": energy,
+                "error": error,
+                "result_history": result_history,
+                "spin_squared": spin_squared,
+                "sci_vec_shape": sci_state.amplitudes.shape,
+            }
 
-        # Run configuration recovery loop
-        # If we don't have average orbital occupancy information, simply postselect
-        # bitstrings with the correct numbers of spin-up and spin-down electrons
-        bitstrings, probs = postselect_by_hamming_right_and_left(
-            raw_bitstrings,
-            raw_probs,
-            hamming_right=mol_data.nelec[0],
-            hamming_left=mol_data.nelec[1],
-        )
-
-        unique_valid_bitstr, _ = np.unique(
-            bitstring_matrix_to_integers(bitstrings), return_counts=True
-        )
-        logging.info(
-            f"{task} #Total valid bitstr: {bitstrings.shape}, #total unique bitstr: {len(unique_valid_bitstr)}\n"
-        )
-
-        def solve_sci_batch_wrap(
-            ci_strings, one_body_tensor, two_body_tensor, norb, nelec
-        ):
-            solve = False
-            while not solve:
-                try:
-                    solve_sci_batch(
-                        ci_strings, one_body_tensor, two_body_tensor, norb, nelec
-                    )
-                except DiceExecutionError:
-                    logging.info(f"{task} Dice execution error\n")
-
-        result = diagonalize_fermionic_hamiltonian(
-            mol_hamiltonian.one_body_tensor,
-            mol_hamiltonian.two_body_tensor,
-            samples,
-            samples_per_batch=task.samples_per_batch,
-            norb=norb,
-            nelec=nelec,
-            num_batches=task.n_batches,
-            energy_tol=task.energy_tol,
-            occupancies_tol=task.occupancies_tol,
-            max_iterations=task.max_iterations,
-            sci_solver=solve_sci_batch_wrap,
-            symmetrize_spin=task.symmetrize_spin,
-            carryover_threshold=task.carryover_threshold,
-            seed=rng,
-            callback=callback,
-            max_dim=task.max_dim,
-        )
-        energy = result.energy + mol_data.core_energy
-        sci_state = result.sci_state
-        spin_squared = sci_state.spin_square()
-        if mol_data.fci_energy is not None:
-            error = energy - mol_data.fci_energy
-        elif mol_data.sci_energy is not None:
-            error = energy - mol_data.sci_energy
-        else:
-            error = -1
-
-        # Save data
-        data = {
-            "energy": energy,
-            "error": error,
-            "result_history": result_history,
-            "spin_squared": spin_squared,
-            "sci_vec_shape": sci_state.amplitudes.shape,
-        }
-
-        logging.info(f"{task} Saving SQD data...\n")
-        with open(data_filename, "wb") as f:
-            pickle.dump(data, f)
+            logging.info(f"{task} Saving SQD data...\n")
+            with open(data_filename, "wb") as f:
+                pickle.dump(data, f)

@@ -28,7 +28,7 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 4
+MAX_PROCESSES = 10
 OVERWRITE = False
 
 molecule_name = "n2"
@@ -62,7 +62,7 @@ tasks = [
         ),
         regularization=True,
         regularization_option=regularization_option,
-        regularization_factor=1e-3
+        regularization_factor=5e-3
     )
     for regularization_option in regularization_options
     for d in bond_distance_range
