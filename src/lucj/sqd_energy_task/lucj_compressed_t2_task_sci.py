@@ -230,9 +230,9 @@ def run_sqd_energy_task(
 
     # use CCSD to initialize parameters
     if task.constant_factor is not None:
-        vqe_filename = data_dir / task.operatorpath / f"t2_constant_factor-{task.constant_factor:.6f}/data.pickle"
-        sample_filename = data_dir / task.operatorpath / f"t2_constant_factor-{task.constant_factor:.6f}/sample.pickle"
-        state_vector_filename = data_dir / task.operatorpath / f"t2_constant_factor-{task.constant_factor:.6f}/state_vector.npy"
+        vqe_filename = data_dir / task.operatorpath / f"constant_factor-{task.constant_factor:.6f}/data.pickle"
+        sample_filename = data_dir / task.operatorpath / f"constant_factor-{task.constant_factor:.6f}/sample.pickle"
+        state_vector_filename = data_dir / task.operatorpath / f"constant_factor-{task.constant_factor:.6f}/state_vector.npy"
     else:
         vqe_filename = data_dir / task.operatorpath / "data.pickle"
         sample_filename = data_dir / task.operatorpath / "sample.pickle"

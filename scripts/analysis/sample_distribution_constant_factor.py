@@ -75,7 +75,7 @@ tasks = [
         symmetrize_spin=symmetrize_spin,
         entropy=entropy,
         max_dim=max_dim,
-        t2_constant_factor=c,
+        constant_factor=c,
     )
     for c in constant_factors
 ]
@@ -87,7 +87,10 @@ colors = prop_cycle.by_key()["color"]
 samples = []
 
 for task in tasks:
-    sample_filename = DATA_ROOT / task.operatorpath / "sample.pickle"
+    if task.constant_factor is None:
+        sample_filename = DATA_ROOT / task.operatorpath / "sample.pickle"
+    else:
+        sample_filename = DATA_ROOT / task.operatorpath / f"t2_constant_factor-{task.constant_factor:.6f}/sample.pickle"
 
     with open(sample_filename, "rb") as f:
         sample = pickle.load(f)

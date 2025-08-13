@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from lucj.params import LUCJParams, CompressedT2Params
-from lucj.hardware_sqd_task.lucj_compressed_t2_task import HardwareSQDEnergyTask
+from lucj.hardware_sqd_task.lucj_t2_seperate_sqd_task_sci import HardwareSQDEnergyTask
 
 import json
 
@@ -21,10 +21,12 @@ plots_dir = os.path.join("paper", molecule_basename)
 os.makedirs(plots_dir, exist_ok=True)
 
 bond_distance_range = [1.2, 2.4]
+# bond_distance_range = [1.2]
 
 n_reps = 1
 
-shots = 100_000
+# shots = 100_000
+shots = 1_000_000
 n_batches = 10
 energy_tol = 1e-8
 occupancies_tol = 1e-5
@@ -37,7 +39,7 @@ n_hardware_run_range = list(range(0, 10))
 
 
 max_dim = 1000
-samples_per_batch = max_dim
+samples_per_batch = 4000
 
 tasks_compressed_t2 = [
     HardwareSQDEnergyTask(
@@ -80,7 +82,6 @@ tasks_random = [
                 with_final_orbital_rotation=True,
             ),
             compressed_t2_params=None,
-            connectivity_opt=False,
             random_op =True,
             shots=shots,
             samples_per_batch=samples_per_batch,
@@ -108,7 +109,6 @@ tasks_truncated_t2 = [
                 with_final_orbital_rotation=True,
             ),
             compressed_t2_params=None,
-            connectivity_opt=False,
             random_op =False,
             shots=shots,
             samples_per_batch=samples_per_batch,
@@ -146,7 +146,8 @@ print("Loading data")
 results_random = {}
 for task in tasks_random:
     filepath = DATA_ROOT / task.dirpath / "hardware_sqd_data.pickle"
-    results_random[task] = load_data(filepath)
+    if os.path.exists(filepath):
+        results_random[task] = load_data(filepath)
 
 results_truncated_t2 = {}
 for task in tasks_truncated_t2:
@@ -157,10 +158,10 @@ for task in tasks_truncated_t2:
 results_compressed_t2 = {}
 for task in tasks_compressed_t2:
     filepath = DATA_ROOT / task.dirpath / "hardware_sqd_data.pickle"
-    results_compressed_t2[task] = load_data(filepath)
+    if os.path.exists(filepath):
+        results_compressed_t2[task] = load_data(filepath)
 
 print("Done loading data.")
-
 
 width = 0.15
 # prop_cycle = plt.rcParams["axes.prop_cycle"]
@@ -202,7 +203,6 @@ for i, bond_distance in enumerate(bond_distance_range):
                     with_final_orbital_rotation=True,
                 ),
                 compressed_t2_params=None,
-                connectivity_opt=False,
                 random_op =True,
                 shots=shots,
                 samples_per_batch=samples_per_batch,
@@ -218,8 +218,8 @@ for i, bond_distance in enumerate(bond_distance_range):
                 n_hardware_run=n_hardware_run
             )
             for n_hardware_run in n_hardware_run_range]
-    errors_n_reps = [results_random[task]['error'] for task in tasks_random]
-    sci_vec_shape_n_reps = [results_random[task]["sci_vec_shape"][0] for task in tasks_random]
+    errors_n_reps = [results_random[task]['error'] for task in tasks_random  if task in results_random]
+    sci_vec_shape_n_reps = [results_random[task]["sci_vec_shape"][0] for task in tasks_random if task in results_random]
     errors.append(np.average(errors_n_reps))
     errors_min.append(np.average(errors_n_reps) - np.min(errors_n_reps))
     errors_max.append(np.max(errors_n_reps) - np.average(errors_n_reps))
@@ -277,7 +277,6 @@ for i, bond_distance in enumerate(bond_distance_range):
                     with_final_orbital_rotation=True,
                 ),
                 compressed_t2_params=None,
-                connectivity_opt=False,
                 random_op =False,
                 shots=shots,
                 samples_per_batch=samples_per_batch,
@@ -372,8 +371,8 @@ for i, bond_distance in enumerate(bond_distance_range):
             )
             for n_hardware_run in n_hardware_run_range]   
     
-    errors_n_reps = [results_compressed_t2[task]['error'] for task in tasks_compressed_t2]
-    sci_vec_shape_n_reps = [results_compressed_t2[task]["sci_vec_shape"][0] for task in tasks_compressed_t2]
+    errors_n_reps = [results_compressed_t2[task]['error'] for task in tasks_compressed_t2 if task in results_compressed_t2]
+    sci_vec_shape_n_reps = [results_compressed_t2[task]["sci_vec_shape"][0] for task in tasks_compressed_t2 if task in results_compressed_t2]
     errors.append(np.average(errors_n_reps))
     errors_min.append(np.average(errors_n_reps) - np.min(errors_n_reps))
     errors_max.append(np.max(errors_n_reps) - np.average(errors_n_reps))

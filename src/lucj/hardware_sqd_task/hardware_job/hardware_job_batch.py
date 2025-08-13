@@ -51,6 +51,7 @@ def run_on_hardware(
         pass_manager.pre_init = ffsim.qiskit.PRE_INIT
         isa_circuit = pass_manager.run(circuit)
         print(f"Circuit: Gate counts (w/ pre-init passes): {isa_circuit.count_ops()}")
+        print(f"Circuit: gate depth: {isa_circuit.depth()}")
         list_isa_circuit.append(isa_circuit)
 
     # print(list_sample_filenames)
