@@ -66,6 +66,7 @@ class HardwareSQDEnergyTask:
             / self.lucj_params.dirpath
             / compress_option
             / ("" if self.dynamic_decoupling is False else hardware_path)
+            / f"n_hardware_run-{self.n_hardware_run}"
             / f"shots-{self.shots}"
             / f"samples_per_batch-{self.samples_per_batch}"
             / f"n_batches-{self.n_batches}"
@@ -218,10 +219,11 @@ def run_hardware_sqd_energy_task(
             data_dir
             / task.operatorpath
             / hardware_path
+            / f"n_hardware_run-{task.n_hardware_run}"
             / "hardware_sample.pickle"
         )
     else:
-        sample_filename = data_dir / task.operatorpath / "hardware_sample.pickle"
+        sample_filename = data_dir / task.operatorpath / f"n_hardware_run-{task.n_hardware_run}/hardware_sample.pickle"
 
     rng = np.random.default_rng(task.entropy)
 

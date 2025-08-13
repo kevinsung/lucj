@@ -26,6 +26,8 @@ class SQDEnergyTask:
     connectivity_opt: bool = False
     fixparam: bool = False
     random_op: bool = False
+    constant_factor: float | None = None
+    t2_constant_factor: float | None = None
     regularization: bool = False
     regularization_option: int | None = None
     regularization_factor: float | None = None
@@ -55,6 +57,10 @@ class SQDEnergyTask:
                     compress_option = f"{compress_option}/regularization_{self.regularization_option}"
                 else:
                     compress_option = f"{compress_option}/regularization_{self.regularization_option}_{self.regularization_factor:.6f}"
+            if self.constant_factor is not None:
+                compress_option = f"{compress_option}/constant_factor-{self.constant_factor:.6f}"
+            if self.t2_constant_factor is not None:
+                compress_option = f"{compress_option}/t2_constant_factor-{self.t2_constant_factor:.6f}"
         else:
             compress_option = "truncated"
         return (
@@ -93,6 +99,8 @@ class SQDEnergyTask:
                     compress_option = f"{compress_option}/regularization_{self.regularization_option}"
                 else:
                     compress_option = f"{compress_option}/regularization_{self.regularization_option}_{self.regularization_factor:.6f}"
+            if self.t2_constant_factor is not None:
+                compress_option = f"{compress_option}/t2_constant_factor-{self.t2_constant_factor:.6f}"
         else:
             compress_option = "truncated"
         return (
@@ -129,6 +137,8 @@ def load_operator(task: SQDEnergyTask, data_dir: str, mol_data):
         operator = np.load(operator_filename)
         diag_coulomb_mats = operator["diag_coulomb_mats"]
         orbital_rotations = operator["orbital_rotations"]
+        if task.constant_factor is not None:
+            diag_coulomb_mats = diag_coulomb_mats * task.constant_factor
 
         final_orbital_rotation = None
         if mol_data.ccsd_t1 is not None:
@@ -219,9 +229,14 @@ def run_sqd_energy_task(
     reference_state = ffsim.hartree_fock_state(norb, nelec)
 
     # use CCSD to initialize parameters
-    vqe_filename = data_dir / task.operatorpath / "data.pickle"
-    sample_filename = data_dir / task.operatorpath / "sample.pickle"
-    state_vector_filename = data_dir / task.operatorpath / "state_vector.npy"
+    if task.constant_factor is not None:
+        vqe_filename = data_dir / task.operatorpath / f"constant_factor-{task.constant_factor:.6f}/data.pickle"
+        sample_filename = data_dir / task.operatorpath / f"constant_factor-{task.constant_factor:.6f}/sample.pickle"
+        state_vector_filename = data_dir / task.operatorpath / f"constant_factor-{task.constant_factor:.6f}/state_vector.npy"
+    else:
+        vqe_filename = data_dir / task.operatorpath / "data.pickle"
+        sample_filename = data_dir / task.operatorpath / "sample.pickle"
+        state_vector_filename = data_dir / task.operatorpath / "state_vector.npy"
     
     rng = np.random.default_rng(task.entropy)
     

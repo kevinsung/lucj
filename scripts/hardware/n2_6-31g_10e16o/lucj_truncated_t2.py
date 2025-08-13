@@ -14,15 +14,6 @@ from lucj.hardware_sqd_task.lucj_compressed_t2_task_sci import (
     run_hardware_sqd_energy_task,
 )
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}.log"
-os.makedirs(os.path.dirname(filename), exist_ok=True)
-logging.basicConfig(
-    level=logging.INFO,
-    format="[%(asctime)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S %z",
-    filename=filename,
-)
-
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
@@ -39,7 +30,8 @@ bond_distance_range = [1.2, 2.4]
 
 n_reps_range = [1]
 
-shots = 100_000
+# shots = 100_000
+shots = 1_000_000
 n_batches = 10
 energy_tol = 1e-8
 occupancies_tol = 1e-5
@@ -51,7 +43,7 @@ entropies = list(range(1, 6))
 entropies = [1]
 
 max_dim = 1000
-samples_per_batch = max_dim
+samples_per_batch = 4000
 n_hardware_run_range = list(range(0, 10))
 
 tasks = [
@@ -84,6 +76,16 @@ tasks = [
     for entropy in entropies
     for n_hardware_run in n_hardware_run_range
 ]
+
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_shot-{shots}_sample_per_batch_{samples_per_batch}.log"
+os.makedirs(os.path.dirname(filename), exist_ok=True)
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S %z",
+    filename=filename,
+)
+
 if MAX_PROCESSES == 1:
     for task in tqdm(tasks):
         run_hardware_sqd_energy_task(

@@ -9,9 +9,18 @@ from pathlib import Path
 from tqdm import tqdm
 
 from lucj.params import LUCJParams, CompressedT2Params
-from lucj.hardware_sqd_task.lucj_compressed_t2_task_sci import (
-    HardwareSQDEnergyTask,
-    run_hardware_sqd_energy_task,
+from lucj.sqd_energy_task.lucj_compressed_t2_task_sci import (
+    SQDEnergyTask,
+    run_sqd_energy_task,
+)
+
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}.log"
+os.makedirs(os.path.dirname(filename), exist_ok=True)
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S %z",
+    filename=filename,
 )
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
@@ -19,7 +28,7 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 10
-OVERWRITE = False
+OVERWRITE = True
 
 molecule_name = "n2"
 basis = "6-31g"
@@ -27,38 +36,49 @@ nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 bond_distance_range = [1.2, 2.4]
-# bond_distance_range = [1.2]
 
-n_reps_range = [1]
+connectivities = [
+    "heavy-hex",
+    "all-to-all",
+]
 
-# shots = 100_000
-shots = 1_000_000
+n_reps_range = list(range(1, 11))
+
+t2_constant_factors = [0.5, 1.5, 2, 2.5]
+
+shots = 100_000
 n_batches = 10
-energy_tol = 1e-8
-occupancies_tol = 1e-5
-carryover_threshold = 1e-4
+energy_tol = 1e-5 
+occupancies_tol = 1e-3 
+carryover_threshold = 1e-3 
 max_iterations = 1
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
-# entropies = list(range(1, 6))
-entropies = [1]
-n_hardware_run_range = list(range(0, 10))
+entropy = 0
 
-max_dim = 1000
-samples_per_batch = 4000
+max_dim = 4000
+samples_per_batch = max_dim
+
+
 
 tasks = [
-    HardwareSQDEnergyTask(
+    SQDEnergyTask(
         molecule_basename=molecule_basename,
         bond_distance=d,
         lucj_params=LUCJParams(
-            connectivity="heavy-hex",
+            connectivity=connectivity,
             n_reps=n_reps,
             with_final_orbital_rotation=True,
         ),
-        compressed_t2_params=None,
-        connectivity_opt=False,
-        random_op =True,
+        compressed_t2_params=CompressedT2Params(
+            multi_stage_optimization=True,
+            begin_reps=20,
+            step=2
+        ),
+        regularization=False,
+        regularization_option=None,
+        fixparam=False,
+        t2_constant_factor=c,
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
@@ -69,27 +89,16 @@ tasks = [
         symmetrize_spin=symmetrize_spin,
         entropy=entropy,
         max_dim=max_dim,
-        dynamic_decoupling=True,
-        n_hardware_run=n_hardware_run
     )
     for n_reps in n_reps_range
+    for connectivity in connectivities
     for d in bond_distance_range
-    for entropy in entropies
-    for n_hardware_run in n_hardware_run_range
+    for c in t2_constant_factors
 ]
-
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_shot-{shots}_sample_per_batch_{samples_per_batch}.log"
-os.makedirs(os.path.dirname(filename), exist_ok=True)
-logging.basicConfig(
-    level=logging.INFO,
-    format="[%(asctime)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S %z",
-    filename=filename,
-)
 
 if MAX_PROCESSES == 1:
     for task in tqdm(tasks):
-        run_hardware_sqd_energy_task(
+        run_sqd_energy_task(
             task,
             data_dir=DATA_DIR,
             molecules_catalog_dir=MOLECULES_CATALOG_DIR,
@@ -100,7 +109,7 @@ else:
         with ProcessPoolExecutor(MAX_PROCESSES) as executor:
             for task in tasks:
                 future = executor.submit(
-                    run_hardware_sqd_energy_task,
+                    run_sqd_energy_task,
                     task,
                     data_dir=DATA_DIR,
                     molecules_catalog_dir=MOLECULES_CATALOG_DIR,

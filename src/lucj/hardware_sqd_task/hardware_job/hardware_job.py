@@ -8,7 +8,7 @@ from qiskit_ibm_runtime import SamplerV2 as Sampler
 
 from lucj.hardware_sqd_task.hardware_job.layout import get_zigzag_physical_layout
 from qiskit.primitives import BitArray
-import mthree
+# import mthree
 import pickle
 
 def constrcut_lucj_circuit(norb, nelec, operator):
@@ -31,7 +31,7 @@ def run_on_hardware(circuit: QuantumCircuit, norb, shots, sample_filename, dynam
     initial_layout, _ = get_zigzag_physical_layout(norb, backend=backend)
     # initial_layout: [1, 4, 0] program qubit 0 is mapped to physical qubit 1
     pass_manager = generate_preset_pass_manager(
-        optimization_level=3, backend=backend, initial_layout=initial_layout
+        optimization_level=1, backend=backend, initial_layout=initial_layout
     )
     
     # without PRE_INIT passes

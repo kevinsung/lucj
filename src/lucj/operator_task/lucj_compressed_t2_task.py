@@ -21,6 +21,7 @@ class LUCJCompressedT2Task:
     lucj_params: LUCJParams
     compressed_t2_params: CompressedT2Params | None
     connectivity_opt: bool = False
+    t2_constant_factor: float | None = None
     fixparam: bool = False
     use_adam: bool = False
     random_op: bool = False
@@ -45,6 +46,8 @@ class LUCJCompressedT2Task:
                     compress_option = f"{compress_option}/regularization_{self.regularization_option}_{self.regularization_factor:.6f}"
             if self.use_adam:
                 compress_option = f"{compress_option}/adam"
+            if self.t2_constant_factor:
+                compress_option = f"{compress_option}/t2_constant_factor-{self.t2_constant_factor_:.6f}"
         else:
             compress_option = "truncated"
         return (
@@ -101,6 +104,9 @@ def run_lucj_compressed_t2_task(
         t2 = mol_data.ccsd_t2
         t1 = mol_data.ccsd_t1
     norb = mol_data.norb
+
+    if task.t2_constant_factor is not None:
+        t2 = t2 * task.t2_constant_factor
 
     # Initialize Hamiltonian, initial state, and LUCJ parameters
     pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
