@@ -114,11 +114,12 @@ def compute_score(task):
     # If we don't have average orbital occupancy information, simply postselect
     # bitstrings with the correct numbers of spin-up and spin-down electrons
     bitstrings, probs = postselect_by_hamming_right_and_left(
-        raw_bitstrings, raw_probs, hamming_right=nelectron, hamming_left=nelectron
+        raw_bitstrings, raw_probs, hamming_right=nelectron // 2, hamming_left=nelectron // 2
     )
     score = 0
     count = 0 # count for bitstring that has 0 amplitude in the state vector
     count_out_of_state_vec = 0 # count for bitstring that is not in the state vector
+    print(bitstrings.shape)
     for bitstr in bitstrings:
         converted_bitstr = ''
         for bit in bitstr:
@@ -132,6 +133,7 @@ def compute_score(task):
                 count += 1
             else:
                 score += state_vector[index]
+                # print(state_vector[index])
         except ValueError:
             count_out_of_state_vec += 1
 
