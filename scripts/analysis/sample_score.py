@@ -20,7 +20,8 @@ molecule_name = "n2"
 basis = "6-31g"
 nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
-bond_distance = 1.2
+# bond_distance = 1.2
+bond_distance = 2.4
 begin_reps = 20
 step = 2
 
@@ -140,3 +141,19 @@ score_truncated, count_truncated = compute_score(task_truncated_t2_hardware)
 
 print(f"Compressed Op - score: {score_compressed}, #bitstr with 0 amp: {count_compressed}")
 print(f"Truncated Op - score: {score_truncated}, #bitstr with 0 amp: {count_truncated}")
+
+# R=1.2
+# (19079424,)
+# (35952, 32)
+# (19079424,)
+# (24266, 32)
+# Compressed Op - score: 0.9944673870470951, #bitstr with 0 amp: 1800
+# Truncated Op - score: 0.9997713301041902, #bitstr with 0 amp: 22230
+
+# R.2=4
+# (19079424,)
+# (40638, 32)
+# (19079424,)
+# (25866, 32)
+# Compressed Op - score: 0.9945788605361614, #bitstr with 0 amp: 3276
+# Truncated Op - score: 0.9975553910834221, #bitstr with 0 amp: 22340
