@@ -14,7 +14,7 @@ from lucj.quimb_task.lucj_sqd_quimb_task import (
     run_lucj_sqd_quimb_task,
 )
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_maxbond_all_reps_1.log"
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_no_early_termination.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -43,7 +43,7 @@ connectivities = [
 
 # n_reps_range = list(range(1, 11))
 n_reps_range = [1]
-shots = 50_000
+shots = 10_000
 samples_per_batch = 4000
 max_dim = samples_per_batch
 n_batches = 10
@@ -52,23 +52,23 @@ occupancies_tol = 1e-3
 carryover_threshold = 1e-3
 max_iterations = 1
 symmetrize_spin = True
-cobyqa_maxiter = 25
+cobyqa_maxiter = 1000
 # TODO set entropy and generate seeds properly
 entropy = 0
 max_bond: int
 max_bonds = [
     # 5,
     # 10,
-    25,
-    50,
-    100,
-    # 150
-    200,
+    # 25,
+    # 50,
+    # 100,
+    150,
+    # 200,
     300,
     # 400,
     None,
 ]
-max_bonds = [100]
+max_bonds = [200]
 cutoffs = [
     # 1e-3,
     # 1e-6,

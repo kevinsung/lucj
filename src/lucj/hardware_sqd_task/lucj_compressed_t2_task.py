@@ -295,6 +295,7 @@ def run_hardware_sqd_energy_task(
         while not solve:
             try:
                 solve_sci_batch(ci_strings, one_body_tensor, two_body_tensor, norb, nelec)
+                solve = True
             except DiceExecutionError:
                 logging.info(f"{task} Dice execution error\n")
         
