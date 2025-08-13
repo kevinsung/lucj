@@ -286,13 +286,14 @@ def run_hardware_sqd_energy_task(
     )
     logging.info(f"{task} #Valid bitstr: {bitstrings.shape}, #unique bitstr: {len(unique_valid_bitstr)}\n")
 
-    return 
+    # return 
 
     def solve_sci_batch_wrap(ci_strings, one_body_tensor, two_body_tensor, norb, nelec):
         solve = False
         while not solve:
             try:
                 solve_sci_batch(ci_strings, one_body_tensor, two_body_tensor, norb, nelec)
+                solve = True
             except DiceExecutionError:
                 logging.info(f"{task} Dice execution error\n")
         

@@ -9,12 +9,12 @@ from pathlib import Path
 from tqdm import tqdm
 
 from lucj.params import LUCJParams, CompressedT2Params, COBYQAParams
-from lucj.quimb_task.lucj_sqd_quimb_task_sci import (
+from lucj.quimb_task.lucj_sqd_quimb_task_sci_nomad import (
     LUCJSQDQuimbTask,
     run_lucj_sqd_quimb_task,
 )
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_no_early_termination.log"
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_nomad.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -28,7 +28,7 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 1
-OVERWRITE = False
+OVERWRITE = True
 
 molecule_name = "n2"
 basis = "6-31g"
@@ -53,7 +53,7 @@ occupancies_tol = 1e-3
 carryover_threshold = 1e-3
 max_iterations = 1
 symmetrize_spin = True
-cobyqa_maxiter = 100 # 25
+cobyqa_maxiter = 0 # 25
 # TODO set entropy and generate seeds properly
 entropy = 0
 max_bond: int

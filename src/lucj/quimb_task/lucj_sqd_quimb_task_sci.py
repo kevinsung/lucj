@@ -16,7 +16,7 @@ from ffsim.linalg.util import unitaries_to_parameters
 from molecules_catalog.util import load_molecular_data
 from qiskit.primitives import BitArray
 from qiskit_addon_sqd.fermion import SCIResult, diagonalize_fermionic_hamiltonian, solve_sci_batch
-from lucj.tasks.lucj_compressed_t2_task_ffsim.compressed_t2 import from_t_amplitudes_compressed
+from lucj.operator_task.lucj_compressed_t2_task_ffsim.compressed_t2 import from_t_amplitudes_compressed
 from lucj.params import COBYQAParams, LUCJParams, CompressedT2Params
 from qiskit.circuit import QuantumCircuit, QuantumRegister
 import quimb.tensor
@@ -354,28 +354,28 @@ def run_lucj_sqd_quimb_task(
             info["nit"] += 1
             with open(intermediate_result_filename, "wb") as f:
                 pickle.dump(intermediate_result, f)
-            if info["nit"] > 3:
-                if (abs(info["fun"][-1] - info["fun"][-2]) < 1e-5) and (abs(info["fun"][-2] - info["fun"][-3]) < 1e-5):
-                    raise StopIteration("Objective function value does not decrease for two iterations.")
+            # if info["nit"] > 3:
+            #     if (abs(info["fun"][-1] - info["fun"][-2]) < 1e-5) and (abs(info["fun"][-2] - info["fun"][-3]) < 1e-5):
+            #         raise StopIteration("Objective function value does not decrease for two iterations.")
 
 
         t0 = timeit.default_timer()
-        # result = scipy.optimize.minimize(
-        #     fun,
-        #     x0=params,
-        #     method="COBYQA",
-        #     options=dataclasses.asdict(task.cobyqa_params),
-        #     callback=callback,
-        # )
-        result = scipy.optimize.differential_evolution(
+        result = scipy.optimize.minimize(
             fun,
-            [(-10, 10) for x in params],
-            callback=callback,
             x0=params,
-            popsize=5,
-            maxiter=task.cobyqa_params.maxiter
-            # workers=2,
+            method="COBYQA",
+            options=dataclasses.asdict(task.cobyqa_params),
+            callback=callback,
         )
+        # result = scipy.optimize.differential_evolution(
+        #     fun,
+        #     [(-10, 10) for x in params],
+        #     callback=callback,
+        #     x0=params,
+        #     popsize=5,
+        #     maxiter=task.cobyqa_params.maxiter
+        #     # workers=2,
+        # )
         t1 = timeit.default_timer()
         logger.info(f"{task} Done optimizing ansatz in {t1 - t0} seconds.\n")
 

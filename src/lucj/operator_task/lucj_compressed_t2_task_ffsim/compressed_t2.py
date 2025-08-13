@@ -6,7 +6,7 @@ from opt_einsum import contract
 import scipy
 import jax
 import jax.numpy as jnp
-import optax
+# import optax
 # jax.config.update("jax_enable_x64", True)
 
 def _reshape_grad(

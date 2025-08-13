@@ -13,19 +13,22 @@ import numpy as np
 import scipy.optimize
 from ffsim.variational.util import interaction_pairs_spin_balanced
 from ffsim.linalg.util import unitaries_to_parameters
-
 from molecules_catalog.util import load_molecular_data
 from qiskit.primitives import BitArray
-from qiskit_addon_sqd.fermion import SCIResult, diagonalize_fermionic_hamiltonian
+from qiskit_addon_sqd.fermion import (
+    SCIResult,
+    diagonalize_fermionic_hamiltonian,
+    solve_sci_batch,
+)
 from lucj.operator_task.lucj_compressed_t2_task_ffsim.compressed_t2 import (
     from_t_amplitudes_compressed,
 )
 from lucj.params import COBYQAParams, LUCJParams, CompressedT2Params
-from qiskit_addon_dice_solver import solve_sci_batch
-from qiskit_addon_dice_solver.dice_solver import DiceExecutionError
 from qiskit.circuit import QuantumCircuit, QuantumRegister
 import quimb.tensor
 from qiskit_quimb import quimb_circuit
+
+import PyNomad
 
 import pyscf
 import jax
@@ -234,7 +237,7 @@ def run_lucj_sqd_quimb_task(
         and os.path.exists(result_filename)
         and os.path.exists(info_filename)
         and os.path.exists(sqd_result_filename)
-    ):  
+    ):
         logger.info(f"Data for {task} already exists. Skipping...\n")
         return task
     intermediate_result_filename = data_dir / task.dirpath / "intermediate_data.pickle"
@@ -257,16 +260,10 @@ def run_lucj_sqd_quimb_task(
 
     rng = np.random.default_rng(task.entropy)
 
-    def solve_sci_batch_wrap(ci_strings, one_body_tensor, two_body_tensor, norb, nelec):
-        solve = False
-        while not solve:
-            try:
-                solve_sci_batch(ci_strings, one_body_tensor, two_body_tensor, norb, nelec)
-                solve = True
-            except DiceExecutionError:
-                logging.info(f"{task} Dice execution error\n")
-                
-    def fun(x: np.ndarray) -> float:
+    def fun(bbo_x) -> bool:
+        dim = bbo_x.size()
+        print(dim)
+        x = np.array([bbo_x.get_coord(i) for i in range(dim)])
         operator = ffsim.UCJOpSpinBalanced.from_parameters(
             x,
             norb=norb,
@@ -292,8 +289,6 @@ def run_lucj_sqd_quimb_task(
             progbar=True,
             # to_backend=to_backend,
         )
-        logger.info(f"{task}\n\tConstruct MPS with error {quimb_circ.error_estimate():.5f}...")
-        
         # assert(0)
         logger.info(f"{task}\n\tSampling circuit...")
         t0 = timeit.default_timer()
@@ -307,15 +302,6 @@ def run_lucj_sqd_quimb_task(
         # assert(0)
         bit_array = BitArray.from_samples(samples, num_bits=2 * norb)
         # sci_solver = partial(solve_sci_batch, spin_sq=0.0)
-
-        def sqd_callback(results: list[SCIResult]):
-            for i, result in enumerate(results):
-                logging.info(f"\tSubsample {i}")
-                logging.info(f"\t\tEnergy: {result.energy + mol_data.core_energy}")
-                logging.info(
-                    f"\t\tSubspace dimension: {np.prod(result.sci_state.amplitudes.shape)}"
-                )
-
         result = diagonalize_fermionic_hamiltonian(
             mol_ham.one_body_tensor,
             mol_ham.two_body_tensor,
@@ -327,18 +313,18 @@ def run_lucj_sqd_quimb_task(
             energy_tol=task.energy_tol,
             occupancies_tol=task.occupancies_tol,
             max_iterations=task.max_iterations,
-            # sci_solver=solve_sci_batch_wrap,
             sci_solver=solve_sci_batch,
             symmetrize_spin=task.symmetrize_spin,
             carryover_threshold=task.carryover_threshold,
             seed=rng,
             max_dim=task.max_dim,
-            callback=sqd_callback
         )
-        return result.energy + mol_data.core_energy
-                
+        logger.info(f"{task}\n\tEnergy: {(result.energy + mol_data.core_energy)}")
+        f = result.energy + mol_data.core_energy
+        bbo_x.setBBO(str(f).encode("UTF-8"))
+        return 1
 
-    if not os.path.exists(result_filename) and not os.path.exists(info_filename):
+    if overwrite or (not os.path.exists(result_filename) and not os.path.exists(info_filename)):
         # Generate initial parameters
         if bootstrap_task is None:
             # use CCSD to initialize parameters
@@ -353,8 +339,6 @@ def run_lucj_sqd_quimb_task(
                     interaction_pairs=(pairs_aa, pairs_ab),
                     optimize=True,
                 )
-                logging.info(f"No operator is found for {task}.\n")
-                return
             params = operator.to_parameters(interaction_pairs=(pairs_aa, pairs_ab))
         else:
             bootstrap_result_filename = os.path.join(
@@ -393,32 +377,47 @@ def run_lucj_sqd_quimb_task(
             info["nit"] += 1
             with open(intermediate_result_filename, "wb") as f:
                 pickle.dump(intermediate_result, f)
-            if info["nit"] > 3:
-                if (abs(info["fun"][-1] - info["fun"][-2]) < 1e-8) and (
-                    abs(info["fun"][-2] - info["fun"][-3]) < 1e-8
-                ):
-                    raise StopIteration(
-                        "Objective function value does not decrease for two iterations."
-                    )
+            # if info["nit"] > 3:
+            #     if (abs(info["fun"][-1] - info["fun"][-2]) < 1e-5) and (abs(info["fun"][-2] - info["fun"][-3]) < 1e-5):
+            #         raise StopIteration("Objective function value does not decrease for two iterations.")
 
         t0 = timeit.default_timer()
-        result = scipy.optimize.minimize(
-            fun,
-            x0=params,
-            method="COBYQA",
-            options=dataclasses.asdict(task.cobyqa_params),
-            callback=callback,
-        )
+
+        lb = []
+        ub = []
+
+        nomad_params = [
+            "BB_OUTPUT_TYPE OBJ",
+            "MAX_BB_EVAL 100",
+            "NM_OPTIMIZATION yes",
+            "DISPLAY_DEGREE 2",
+            "DISPLAY_ALL_EVAL false",
+            "DISPLAY_STATS BBE OBJNB_THREADS_PARALLEL_EVAL 4",
+        ]
+
+        result = PyNomad.optimize(fun, params, lb, ub, nomad_params)
+
+        fmt = ["{} = {}".format(n, v) for (n, v) in result.items() if n != 'x_best']
+        output = "\n".join(fmt)
+        print("\nNOMAD results \n" + output + " \n")
+        
+        # result = scipy.optimize.minimize(
+        #     fun,
+        #     x0=params,
+        #     method="COBYQA",
+        #     options=dataclasses.asdict(task.cobyqa_params),
+        #     callback=callback,
+        # )
         # result = scipy.optimize.differential_evolution(
         #     fun,
-        #     [(-1e3, 1e3) for x in params],
+        #     [(-10, 10) for x in params],
         #     callback=callback,
         #     x0=params,
+        #     popsize=5,
         #     maxiter=task.cobyqa_params.maxiter
         #     # workers=2,
         # )
         t1 = timeit.default_timer()
-        info["total_time"] = t1 - t0
         logger.info(f"{task} Done optimizing ansatz in {t1 - t0} seconds.\n")
 
         logger.info(f"{task} Saving data...\n")
@@ -434,7 +433,7 @@ def run_lucj_sqd_quimb_task(
     if not os.path.exists(state_vector_filename):
         logging.info(f"{task} Computing state vector\n")
         operator = ffsim.UCJOpSpinBalanced.from_parameters(
-            result.x,
+            np.array(result['x_best']),
             norb=norb,
             n_reps=task.lucj_params.n_reps,
             interaction_pairs=(pairs_aa, pairs_ab),
@@ -495,25 +494,24 @@ def run_lucj_sqd_quimb_task(
         result_history_energy.append(result_energy)
         result_history_subspace_dim.append(result_subspace_dim)
 
-        result = diagonalize_fermionic_hamiltonian(
-            mol_ham.one_body_tensor,
-            mol_ham.two_body_tensor,
-            bit_array,
-            samples_per_batch=task.samples_per_batch,
-            norb=norb,
-            nelec=nelec,
-            num_batches=task.n_batches,
-            energy_tol=task.energy_tol,
-            occupancies_tol=task.occupancies_tol,
-            max_iterations=task.max_iterations,
-            sci_solver=solve_sci_batch_wrap,
-            symmetrize_spin=task.symmetrize_spin,
-            carryover_threshold=task.carryover_threshold,
-            seed=rng,
-            callback=callback,
-            max_dim=task.max_dim,
-        )
-
+    result = diagonalize_fermionic_hamiltonian(
+        mol_ham.one_body_tensor,
+        mol_ham.two_body_tensor,
+        bit_array,
+        samples_per_batch=task.samples_per_batch,
+        norb=norb,
+        nelec=nelec,
+        num_batches=task.n_batches,
+        energy_tol=task.energy_tol,
+        occupancies_tol=task.occupancies_tol,
+        max_iterations=task.max_iterations,
+        sci_solver=solve_sci_batch,
+        symmetrize_spin=task.symmetrize_spin,
+        carryover_threshold=task.carryover_threshold,
+        seed=rng,
+        callback=callback,
+        max_dim=task.max_dim,
+    )
     logging.info(f"{task} Finish SQD\n")
     energy = result.energy + mol_data.core_energy
     sci_state = result.sci_state
@@ -535,6 +533,6 @@ def run_lucj_sqd_quimb_task(
         "history_sci_vec_shape": result_history_subspace_dim,
     }
 
-    logger.info(f"{task} Saving SQD data...\n")
+    logger.info(f"{task} Saving SQD data..\n")
     with open(sqd_result_filename, "wb") as f:
         pickle.dump(data, f)
