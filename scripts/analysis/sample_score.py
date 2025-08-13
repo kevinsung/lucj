@@ -86,16 +86,16 @@ task_truncated_t2_hardware = HardwareSQDEnergyTask(
     n_hardware_run = 0
 )
 
-
-dim = ffsim.dim(norb, (nelectron, nelectron))
+nelec = (nelectron // 2, nelectron // 2)
+dim = ffsim.dim(norb, nelec)
 strings = ffsim.addresses_to_strings(
     range(dim),
     norb=norb,
-    nelec=(nelectron, nelectron),
+    nelec=nelec,
     bitstring_type=ffsim.BitstringType.STRING,
 )
 
-
+print(len(strings))
 def compute_score(task):
     sample_filename = DATA_ROOT / task.operatorpath / "hardware_sample.pickle"
 
@@ -106,7 +106,7 @@ def compute_score(task):
         samples = pickle.load(f)
 
     state_vector = np.load(state_vector_filename)
-
+    print(state_vector.shape)
     # Convert BitArray into bitstring and probability arrays
     raw_bitstrings, raw_probs = bit_array_to_arrays(samples)
 
@@ -118,18 +118,28 @@ def compute_score(task):
     )
     score = 0
     count = 0 # count for bitstring that has 0 amplitude in the state vector
-    for bitstr in samples:
-        index = strings.indexOf(bitstr)
-        if np.isclose(state_vector[index], 0):
-            count += 1
-        else:
-            score += state_vector[index]
-    return score, count
+    count_out_of_state_vec = 0 # count for bitstring that is not in the state vector
+    for bitstr in bitstrings:
+        converted_bitstr = ''
+        for bit in bitstr:
+            if bit:
+                converted_bitstr = converted_bitstr + '1'
+            else:
+                converted_bitstr = converted_bitstr + '0'
+        try:
+            index = strings.index(converted_bitstr)
+            if np.isclose(state_vector[index], 0):
+                count += 1
+            else:
+                score += state_vector[index]
+        except ValueError:
+            count_out_of_state_vec += 1
 
+    return score, count, count_out_of_state_vec
 
-score_compressed, count_compressed = compute_score(task_compressed_t2_hardware)
+score_compressed, count_compressed, count_out_of_state_vec_compressed = compute_score(task_compressed_t2_hardware)
 
-score_truncated, count_truncated = compute_score(task_truncated_t2_hardware)
+score_truncated, count_truncated, count_out_of_state_vec_truncated = compute_score(task_truncated_t2_hardware)
 
-print(f"Compressed Op - score: {score_compressed}, count: {count_compressed}")
-print(f"Truncated Op - score: {score_truncated}, count: {count_truncated}")
+print(f"Compressed Op - score: {score_compressed}, #bitstr with 0 amp: {count_compressed}, #bitstr not in state vec: {count_out_of_state_vec_compressed}")
+print(f"Truncated Op - score: {score_truncated}, #bitstr with 0 amp: {count_truncated}, #bitstr not in state vec: {count_out_of_state_vec_truncated}")
