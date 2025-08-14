@@ -28,7 +28,7 @@ step = 2
 half_hf_state = "0" * (norb - nelectron // 2) + "1" * (nelectron // 2)
 hf_state = half_hf_state + half_hf_state
 
-plots_dir = os.path.join("plots", molecule_basename)
+plots_dir = os.path.join("paper", molecule_basename)
 os.makedirs(plots_dir, exist_ok=True)
 
 shots = 100_000
@@ -135,6 +135,8 @@ labels = sorted(functools.reduce(lambda x, y: x.union(y.keys()), samples, set())
 dist = []
 for item in labels:
     dist.append(hamming_distance(item, hf_state) if item != "rest" else 0)
+labels = [list(x) for x in zip(*sorted(zip(dist, labels), key=lambda pair: pair[0]))][1]
+dist = [list(x) for x in zip(*sorted(zip(dist, labels), key=lambda pair: pair[0]))][0]
 
 labels_dict = OrderedDict()
 all_pvalues = []
@@ -154,7 +156,7 @@ for execution in samples:
 
 
 
-fig = plt.plot(figsize=(9, 12), layout="constrained")
+fig = plt.plot(figsize=(3, 4), layout="constrained")
 # Cumulative distributions.
 x = np.arange(len(all_pvalues[0]))
 for value, legend, c in zip(all_pvalues, legends, color):
@@ -165,8 +167,20 @@ for value, legend, c in zip(all_pvalues, legends, color):
     
     # plt.ecdf(value, label=legend, color=c)
 
-plt.legend()
+x = []
+x_ticks = [0, 6, 8, 10, 12, 14]
+for d in x_ticks:
+    idx = dist.index(d)
+    x.append(idx)
 
+# print(x)
+
+plt.xticks(x, x_ticks)
+plt.xlabel("Hamming distance to HF state")
+plt.ylabel("CDF")
+plt.legend()
+plt.tight_layout()
+plt.subplots_adjust(left=0.15,bottom=0.1, top=0.92)
 plt.yscale("log")
 filepath = os.path.join(
     plots_dir,
