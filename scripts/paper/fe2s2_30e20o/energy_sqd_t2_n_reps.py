@@ -480,7 +480,7 @@ for i, connectivity in enumerate(connectivities):
     plt.tight_layout()
     plt.subplots_adjust(bottom=0.16)
 
-    fig.suptitle(f"CCSD initial parameters {molecule_name} ({nelectron}e, {norb}o)")
+    fig.suptitle(f"CCSD initial parameters 2Fe-2S ({nelectron}e, {norb}o)")
 
 filepath = os.path.join(
     plots_dir,
