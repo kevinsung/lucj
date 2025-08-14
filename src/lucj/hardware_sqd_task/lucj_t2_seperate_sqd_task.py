@@ -21,7 +21,7 @@ from lucj.hardware_sqd_task.hardware_job.hardware_job_batch import (
     run_on_hardware,
 )
 
-hardware_path = "dynamic_decoupling_xy_opt_1"
+hardware_path = "dynamic_decoupling_xy_opt_0"
 
 logger = logging.getLogger(__name__)
 
@@ -183,6 +183,7 @@ def run_hardware_sqd_energy_batch_task(
     data_dir: Path,
     molecules_catalog_dir: Path | None = None,
     overwrite: bool = True,
+    run_sqd: bool = True,
 ) -> HardwareSQDEnergyTask:
     logging.info(f"{compressed_task} Starting...\n")
     os.makedirs(data_dir / random_task.dirpath, exist_ok=True)
@@ -268,7 +269,8 @@ def run_hardware_sqd_energy_batch_task(
     logging.info(f"{list_tasks[0]} Done sampling\n")
     logging.info(f"{list_tasks[1]} Done sampling\n")
     logging.info(f"{list_tasks[2]} Done sampling\n")
-
+    if not run_sqd:
+        return
     for samples, task, data_filename in zip(
         list_samples, list_tasks, list_data_filenames
     ):
