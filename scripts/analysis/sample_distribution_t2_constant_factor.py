@@ -75,7 +75,7 @@ tasks = [
         symmetrize_spin=symmetrize_spin,
         entropy=entropy,
         max_dim=max_dim,
-        constant_factor=c,
+        t2_constant_factor=c,
     )
     for c in constant_factors
 ]
@@ -90,7 +90,7 @@ for task in tasks:
     if task.constant_factor is None:
         sample_filename = DATA_ROOT / task.operatorpath / "sample.pickle"
     else:
-        sample_filename = DATA_ROOT / task.operatorpath / f"constant_factor-{task.constant_factor:.6f}/sample.pickle"
+        sample_filename = DATA_ROOT / task.operatorpath / f"t2_constant_factor-{task.constant_factor:.6f}/sample.pickle"
 
     with open(sample_filename, "rb") as f:
         sample = pickle.load(f)

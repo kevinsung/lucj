@@ -292,7 +292,7 @@ for i, bond_distance in enumerate(bond_distance_range):
                 n_hardware_run=n_hardware_run
             )
             for n_hardware_run in n_hardware_run_range]
-    
+
     errors_n_reps = [results_truncated_t2[task]['error'] for task in tasks_truncated_t2 if task in results_truncated_t2]
     sci_vec_shape_n_reps = [results_truncated_t2[task]["sci_vec_shape"][0] for task in tasks_truncated_t2 if task in results_truncated_t2]
     # errors_n_reps = [results_truncated_t2[task]['error'] for task in tasks_truncated_t2]
