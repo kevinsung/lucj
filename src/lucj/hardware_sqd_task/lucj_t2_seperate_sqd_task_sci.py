@@ -252,12 +252,11 @@ def run_hardware_sqd_energy_batch_task(
 
     else:
         logging.info(f"{task} load sample...\n")
-        list_samples = [[], [], []]
-        for i, sample_filename in enumerate(list_sample_filenames):
+        list_samples = []
+        for sample_filename in list_sample_filenames:
             with open(sample_filename, "rb") as f:
                 samples = pickle.load(f)
-            if i % 3 == 0:
-                list_samples[i].append(samples)
+            list_samples.append(samples)
 
     logging.info(f"{list_tasks[0]} Done sampling\n")
     logging.info(f"{list_tasks[1]} Done sampling\n")

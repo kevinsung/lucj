@@ -30,6 +30,7 @@ entropies = list(range(1, 11))
 samples_per_batch = 2000
 max_dim = samples_per_batch
 dmrg_energy = -116.6056091 #ref: https://github.com/jrm874/sqd_data_repository/blob/main/classical_reference_energies/2Fe-2S/classical_methods_energies.txt
+n_hardware_run_range = list(range(0, 10))
 
 tasks_compressed_t2 = [HardwareSQDEnergyTask(
         molecule_basename=molecule_basename,
@@ -54,9 +55,11 @@ tasks_compressed_t2 = [HardwareSQDEnergyTask(
         symmetrize_spin=symmetrize_spin,
         entropy=entropy,
         max_dim=max_dim,
+        dynamic_decoupling=True,
+        n_hardware_run=n_hardware_run
     )
     for entropy in entropies
-]
+    for n_hardware_run in n_hardware_run_range]
 
 
 tasks_random = [HardwareSQDEnergyTask(
@@ -80,8 +83,11 @@ tasks_random = [HardwareSQDEnergyTask(
             symmetrize_spin=symmetrize_spin,
             entropy=entropy,
             max_dim=max_dim,
+            dynamic_decoupling=True,
+            n_hardware_run=n_hardware_run
         )
-    for entropy in entropies ]
+    for entropy in entropies 
+    for n_hardware_run in n_hardware_run_range]
 
 tasks_truncated_t2 = [HardwareSQDEnergyTask(
             molecule_basename=molecule_basename,
@@ -104,8 +110,11 @@ tasks_truncated_t2 = [HardwareSQDEnergyTask(
             symmetrize_spin=symmetrize_spin,
             entropy=entropy,
             max_dim=max_dim,
+            dynamic_decoupling=True,
+            n_hardware_run=n_hardware_run
         )
-    for entropy in entropies]
+    for entropy in entropies
+    for n_hardware_run in n_hardware_run_range]
 
 def load_data(filepath):
     if not os.path.exists(filepath):
@@ -166,7 +175,7 @@ row_sci_vec_dim = 1
 fig, axes = plt.subplots(
     2,
     1,
-    figsize=(6, 6),  # , layout="constrained"
+    figsize=(4, 6),  # , layout="constrained"
 )
 
 # random lucj
@@ -301,7 +310,7 @@ plt.tight_layout()
 plt.subplots_adjust(top=0.94,bottom=0.1)
 
 fig.suptitle(
-    f"CCSD initial parameters {molecule_name} ({nelectron}e, {norb}o)"
+    f"CCSD initial parameters 2Fe-2S ({nelectron}e, {norb}o)"
 )
 
 filepath = os.path.join(

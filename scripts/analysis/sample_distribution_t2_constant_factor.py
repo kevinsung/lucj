@@ -28,7 +28,7 @@ step = 2
 half_hf_state = "0" * (norb - nelectron // 2) + "1" * (nelectron // 2)
 hf_state = half_hf_state + half_hf_state
 
-plots_dir = os.path.join("paper", molecule_basename)
+plots_dir = os.path.join("plots", molecule_basename)
 os.makedirs(plots_dir, exist_ok=True)
 
 shots = 100_000
@@ -75,7 +75,7 @@ tasks = [
         symmetrize_spin=symmetrize_spin,
         entropy=entropy,
         max_dim=max_dim,
-        constant_factor=c,
+        t2_constant_factor=c,
     )
     for c in constant_factors
 ]
@@ -90,7 +90,7 @@ for task in tasks:
     if task.constant_factor is None:
         sample_filename = DATA_ROOT / task.operatorpath / "sample.pickle"
     else:
-        sample_filename = DATA_ROOT / task.operatorpath / f"constant_factor-{task.constant_factor:.6f}/sample.pickle"
+        sample_filename = DATA_ROOT / task.operatorpath / f"t2_constant_factor-{task.constant_factor:.6f}/sample.pickle"
 
     with open(sample_filename, "rb") as f:
         sample = pickle.load(f)

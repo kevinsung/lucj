@@ -21,7 +21,7 @@ from lucj.hardware_sqd_task.hardware_job.hardware_job_batch import (
     run_on_hardware,
 )
 
-hardware_path = "dynamic_decoupling_xy_opt_1"
+hardware_path = "dynamic_decoupling_xy_opt_0"
 
 logger = logging.getLogger(__name__)
 
@@ -183,6 +183,7 @@ def run_hardware_sqd_energy_batch_task(
     data_dir: Path,
     molecules_catalog_dir: Path | None = None,
     overwrite: bool = True,
+    run_sqd: bool = True,
 ) -> HardwareSQDEnergyTask:
     logging.info(f"{compressed_task} Starting...\n")
     os.makedirs(data_dir / random_task.dirpath, exist_ok=True)
@@ -226,10 +227,11 @@ def run_hardware_sqd_energy_batch_task(
     ):
         logging.info("Data for tasks already exists. Skipping...\n")
         return
-    
+
     rng = np.random.default_rng(list_tasks[0].entropy)
 
     if not os.path.exists(list_sample_filenames[0]):
+        assert 0
         list_operator = load_operator(compressed_task, data_dir, mol_data)
 
         if list_operator is None:
@@ -258,17 +260,17 @@ def run_hardware_sqd_energy_batch_task(
 
     else:
         logging.info(f"{task} load sample...\n")
-        list_samples = [[], [], []]
-        for i, sample_filename in enumerate(list_sample_filenames):
+        list_samples = []
+        for sample_filename in list_sample_filenames:
             with open(sample_filename, "rb") as f:
                 samples = pickle.load(f)
-            if i % 3 == 0:
-                list_samples[i].append(samples)
+            list_samples.append(samples)
 
     logging.info(f"{list_tasks[0]} Done sampling\n")
     logging.info(f"{list_tasks[1]} Done sampling\n")
     logging.info(f"{list_tasks[2]} Done sampling\n")
-
+    if not run_sqd:
+        return
     for samples, task, data_filename in zip(
         list_samples, list_tasks, list_data_filenames
     ):

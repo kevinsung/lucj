@@ -14,6 +14,8 @@ from collections import OrderedDict
 import numpy as np
 import matplotlib.pyplot as plt
 
+import json 
+
 DATA_ROOT = "/media/storage/WanHsuan.Lin/"
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 
@@ -49,35 +51,80 @@ connectivity = "all-to-all"
 
 n_reps = 1
 
-constant_factors = [None, 0.5, 1.5, 2, 2.5]
+task_lucj_full = SQDEnergyTask(
+    molecule_basename=molecule_basename,
+    bond_distance=bond_distance,
+    lucj_params=LUCJParams(
+        connectivity=connectivity,
+        n_reps=None,
+        with_final_orbital_rotation=True,
+    ),
+    compressed_t2_params=None,
+    connectivity_opt=False,
+    random_op=False,
+    shots=shots,
+    samples_per_batch=samples_per_batch,
+    n_batches=n_batches,
+    energy_tol=energy_tol,
+    occupancies_tol=occupancies_tol,
+    carryover_threshold=carryover_threshold,
+    max_iterations=max_iterations,
+    symmetrize_spin=symmetrize_spin,
+    entropy=entropy,
+    max_dim=max_dim,
+)
 
+task_lucj_truncated = SQDEnergyTask(
+    molecule_basename=molecule_basename,
+    bond_distance=bond_distance,
+    lucj_params=LUCJParams(
+        connectivity=connectivity,
+        n_reps=n_reps,
+        with_final_orbital_rotation=True,
+    ),
+    compressed_t2_params=None,
+    connectivity_opt=False,
+    random_op=False,
+    shots=shots,
+    samples_per_batch=samples_per_batch,
+    n_batches=n_batches,
+    energy_tol=energy_tol,
+    occupancies_tol=occupancies_tol,
+    carryover_threshold=carryover_threshold,
+    max_iterations=max_iterations,
+    symmetrize_spin=symmetrize_spin,
+    entropy=entropy,
+    max_dim=max_dim,
+)
+
+task_compressed_t2 = SQDEnergyTask(
+    molecule_basename=molecule_basename,
+    bond_distance=bond_distance,
+    lucj_params=LUCJParams(
+        connectivity=connectivity,
+        n_reps=n_reps,
+        with_final_orbital_rotation=True,
+    ),
+    compressed_t2_params=CompressedT2Params(
+        multi_stage_optimization=True, begin_reps=begin_reps, step=step
+    ),
+    regularization=False,
+    shots=shots,
+    samples_per_batch=samples_per_batch,
+    n_batches=n_batches,
+    energy_tol=energy_tol,
+    occupancies_tol=occupancies_tol,
+    carryover_threshold=carryover_threshold,
+    max_iterations=max_iterations,
+    symmetrize_spin=symmetrize_spin,
+    entropy=entropy,
+    max_dim=max_dim,
+)
 
 tasks = [
-    SQDEnergyTask(
-        molecule_basename=molecule_basename,
-        bond_distance=bond_distance,
-        lucj_params=LUCJParams(
-            connectivity=connectivity,
-            n_reps=n_reps,
-            with_final_orbital_rotation=True,
-        ),
-        compressed_t2_params=CompressedT2Params(
-            multi_stage_optimization=True, begin_reps=begin_reps, step=step
-        ),
-        regularization=False,
-        shots=shots,
-        samples_per_batch=samples_per_batch,
-        n_batches=n_batches,
-        energy_tol=energy_tol,
-        occupancies_tol=occupancies_tol,
-        carryover_threshold=carryover_threshold,
-        max_iterations=max_iterations,
-        symmetrize_spin=symmetrize_spin,
-        entropy=entropy,
-        max_dim=max_dim,
-        constant_factor=c,
-    )
-    for c in constant_factors
+    task_lucj_full,
+    task_lucj_truncated,
+    task_compressed_t2
 ]
 
 
@@ -87,10 +134,7 @@ colors = prop_cycle.by_key()["color"]
 samples = []
 
 for task in tasks:
-    if task.constant_factor is None:
-        sample_filename = DATA_ROOT / task.operatorpath / "sample.pickle"
-    else:
-        sample_filename = DATA_ROOT / task.operatorpath / f"constant_factor-{task.constant_factor:.6f}/sample.pickle"
+    sample_filename = DATA_ROOT / task.operatorpath / "sample.pickle"
 
     with open(sample_filename, "rb") as f:
         sample = pickle.load(f)
@@ -99,22 +143,12 @@ for task in tasks:
 
     samples.append(sample)
 
-legends = [f"factor-{c}" for c in constant_factors]
 
-color = [colors[i] for i in range(len(constant_factors))]
+color_keys = ["lucj_full", "lucj_truncated", "lucj_compressed"]
+legends = ["LUCJ-full", "LUCJ-truncated", "LUCJ-compressed"]
 
-# plot_distribution(
-#     samples,
-#     figsize=(30, 20),
-#     legend=legend,
-#     color=color,
-#     number_to_keep=20,
-#     sort="hamming",
-#     target_string=hf_state,
-#     title="Sample Distribution",
-#     filename=filepath,
-#     bar_labels=False,
-# )
+with open('scripts/paper/color.json', 'r') as file:
+    colors = json.load(file)
 
 
 def hamming_distance(str1, str2):
@@ -133,8 +167,11 @@ def hamming_distance(str1, str2):
 
 labels = sorted(functools.reduce(lambda x, y: x.union(y.keys()), samples, set()))
 dist = []
+prev_d = -1
 for item in labels:
-    dist.append(hamming_distance(item, hf_state) if item != "rest" else 0)
+    d = hamming_distance(item, hf_state) if item != "rest" else 0
+    dist.append(d)
+        
 labels = [list(x) for x in zip(*sorted(zip(dist, labels), key=lambda pair: pair[0]))][1]
 dist = [list(x) for x in zip(*sorted(zip(dist, labels), key=lambda pair: pair[0]))][0]
 
@@ -159,16 +196,16 @@ for execution in samples:
 fig = plt.plot(figsize=(3, 4), layout="constrained")
 # Cumulative distributions.
 x = np.arange(len(all_pvalues[0]))
-for value, legend, c in zip(all_pvalues, legends, color):
+for value, legend, c in zip(all_pvalues, legends, color_keys):
     # print(value[:10])
     # input()
     y = value.cumsum()
-    plt.plot(x, y, "-", label=legend, color=c)
+    plt.plot(x, y, "-", label=legend, color=colors[c])
     
     # plt.ecdf(value, label=legend, color=c)
 
 x = []
-x_ticks = [0, 6, 8, 10, 12, 14]
+x_ticks = [0, 4, 6, 8, 10, 12]
 for d in x_ticks:
     idx = dist.index(d)
     x.append(idx)

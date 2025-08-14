@@ -20,7 +20,8 @@ molecule_name = "n2"
 basis = "6-31g"
 nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
-bond_distance = 1.2
+# bond_distance = 1.2
+bond_distance = 2.4
 begin_reps = 20
 step = 2
 
@@ -86,15 +87,8 @@ task_truncated_t2_hardware = HardwareSQDEnergyTask(
     n_hardware_run = 0
 )
 
-
-dim = ffsim.dim(norb, (nelectron, nelectron))
-strings = ffsim.addresses_to_strings(
-    range(dim),
-    norb=norb,
-    nelec=(nelectron, nelectron),
-    bitstring_type=ffsim.BitstringType.STRING,
-)
-
+nelec = (nelectron // 2, nelectron // 2)
+dim = ffsim.dim(norb, nelec)
 
 def compute_score(task):
     sample_filename = DATA_ROOT / task.operatorpath / "hardware_sample.pickle"
@@ -106,7 +100,7 @@ def compute_score(task):
         samples = pickle.load(f)
 
     state_vector = np.load(state_vector_filename)
-
+    print(state_vector.shape)
     # Convert BitArray into bitstring and probability arrays
     raw_bitstrings, raw_probs = bit_array_to_arrays(samples)
 
@@ -114,22 +108,52 @@ def compute_score(task):
     # If we don't have average orbital occupancy information, simply postselect
     # bitstrings with the correct numbers of spin-up and spin-down electrons
     bitstrings, probs = postselect_by_hamming_right_and_left(
-        raw_bitstrings, raw_probs, hamming_right=nelectron, hamming_left=nelectron
+        raw_bitstrings, raw_probs, hamming_right=nelectron // 2, hamming_left=nelectron // 2
     )
     score = 0
     count = 0 # count for bitstring that has 0 amplitude in the state vector
-    for bitstr in samples:
-        index = strings.indexOf(bitstr)
-        if np.isclose(state_vector[index], 0):
+    print(bitstrings.shape)
+    converted_bitstrs = []
+    for bitstr in bitstrings:
+        converted_bitstr = ''
+        for bit in bitstr:
+            if bit:
+                converted_bitstr = converted_bitstr + '1'
+            else:
+                converted_bitstr = converted_bitstr + '0'
+        converted_bitstrs.append(converted_bitstr)
+    addresses = ffsim.strings_to_addresses(
+        converted_bitstrs,
+        norb,
+        nelec,
+    )
+    for address in addresses:
+        if np.isclose(state_vector[address], 0):
             count += 1
         else:
-            score += state_vector[index]
-    return score, count
+            score += (abs(state_vector[address]) ** 2)
 
+    return score, count
 
 score_compressed, count_compressed = compute_score(task_compressed_t2_hardware)
 
 score_truncated, count_truncated = compute_score(task_truncated_t2_hardware)
 
-print(f"Compressed Op - score: {score_compressed}, count: {count_compressed}")
-print(f"Truncated Op - score: {score_truncated}, count: {count_truncated}")
+print(f"Compressed Op - score: {score_compressed}, #bitstr with 0 amp: {count_compressed}")
+print(f"Truncated Op - score: {score_truncated}, #bitstr with 0 amp: {count_truncated}")
+
+# R=1.2
+# (19079424,)
+# (35952, 32)
+# (19079424,)
+# (24266, 32)
+# Compressed Op - score: 0.9944673870470951, #bitstr with 0 amp: 1800
+# Truncated Op - score: 0.9997713301041902, #bitstr with 0 amp: 22230
+
+# R.2=4
+# (19079424,)
+# (40638, 32)
+# (19079424,)
+# (25866, 32)
+# Compressed Op - score: 0.9945788605361614, #bitstr with 0 amp: 3276
+# Truncated Op - score: 0.9975553910834221, #bitstr with 0 amp: 22340
