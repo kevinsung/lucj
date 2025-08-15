@@ -28,7 +28,7 @@ from qiskit.circuit import QuantumCircuit, QuantumRegister
 import quimb.tensor
 from qiskit_quimb import quimb_circuit
 
-import PyNomad
+import rbfopt
 
 import pyscf
 import jax
@@ -260,10 +260,7 @@ def run_lucj_sqd_quimb_task(
 
     rng = np.random.default_rng(task.entropy)
 
-    def fun(bbo_x) -> bool:
-        dim = bbo_x.size()
-        print(dim)
-        x = np.array([bbo_x.get_coord(i) for i in range(dim)])
+    def fun(x) -> float:
         operator = ffsim.UCJOpSpinBalanced.from_parameters(
             x,
             norb=norb,
@@ -321,8 +318,7 @@ def run_lucj_sqd_quimb_task(
         )
         logger.info(f"{task}\n\tEnergy: {(result.energy + mol_data.core_energy)}")
         f = result.energy + mol_data.core_energy
-        bbo_x.setBBO(str(f).encode("UTF-8"))
-        return 1
+        return f
 
     if overwrite or (not os.path.exists(result_filename) and not os.path.exists(info_filename)):
         # Generate initial parameters
@@ -382,31 +378,20 @@ def run_lucj_sqd_quimb_task(
             #         raise StopIteration("Objective function value does not decrease for two iterations.")
 
         t0 = timeit.default_timer()
+        print(params.shape)
+        bb = rbfopt.RbfoptUserBlackBox(len(params), np.array([-2] * len(params)), np.array([2] * len(params)),
+                               np.array(['R'] * len(params)), fun)
+        settings = rbfopt.RbfoptSettings(max_evaluations=500)
+        alg = rbfopt.RbfoptAlgorithm(settings, bb, init_node_pos = np.reshape(params, (1, -1)))
+        val, x, itercount, evalcount, fast_evalcount = alg.optimize()
 
-        lb = []
-        ub = []
-
-        nomad_params = [
-            "BB_OUTPUT_TYPE OBJ",
-            "MAX_BB_EVAL 500",
-            # "NM_OPTIMIZATION yes",
-            # "UPPER_BOUND * 2",
-            # "LOWER_BOUND * -2",
-            "DISPLAY_DEGREE 2",
-            "DISPLAY_ALL_EVAL false",
-            # "DISPLAY_STATS BBE OBJNB_THREADS_PARALLEL_EVAL 4",
-            "PSD_MADS_OPTIMIZATION True",
-            "PSD_MADS_NB_VAR_IN_SUBPROBLEM 20",
-            "PSD_MADS_SUBPROBLEM_MAX_BB_EVAL 20",
-            "PSD_MADS_NB_SUBPROBLEM 4"
-        ]
-
-        result = PyNomad.optimize(fun, params, lb, ub, nomad_params)
-
-        fmt = ["{} = {}".format(n, v) for (n, v) in result.items() if n != 'x_best']
-        output = "\n".join(fmt)
-        print("\nNOMAD results \n" + output + " \n")
-        
+        result = {
+            "val": val,
+            "x": x,
+            "itercount": itercount,
+            "evalcount": evalcount,
+            "fast_evalcount": fast_evalcount,
+        }
         # result = scipy.optimize.minimize(
         #     fun,
         #     x0=params,
@@ -439,7 +424,7 @@ def run_lucj_sqd_quimb_task(
     if not os.path.exists(state_vector_filename):
         logging.info(f"{task} Computing state vector\n")
         operator = ffsim.UCJOpSpinBalanced.from_parameters(
-            np.array(result['x_best']),
+            np.array(x),
             norb=norb,
             n_reps=task.lucj_params.n_reps,
             interaction_pairs=(pairs_aa, pairs_ab),
