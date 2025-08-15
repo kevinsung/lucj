@@ -14,7 +14,7 @@ from lucj.quimb_task.lucj_sqd_quimb_task_sci_nomad import (
     run_lucj_sqd_quimb_task,
 )
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_nomad.log"
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_max_bound_50.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -36,7 +36,7 @@ nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 bond_distance_range = [1.2, 2.4]
-bond_distance_range = [2.4]
+bond_distance_range = [1.2]
 
 connectivities = [
     # "square",
@@ -61,9 +61,9 @@ max_bonds = [
     # 5,
     # 10,
     # 25,
-    # 50,
+    50,
     # 100,
-    200,
+    # 200,
     # None,
 ]
 cutoffs = [
