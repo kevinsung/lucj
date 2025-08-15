@@ -3,11 +3,13 @@ import pickle
 from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
-
+import matplotlib
 from lucj.params import LUCJParams, CompressedT2Params
 from lucj.hardware_sqd_task.lucj_t2_seperate_sqd_task_sci import HardwareSQDEnergyTask
 
 import json
+
+matplotlib.rcParams.update({'errorbar.capsize': 5})
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
@@ -414,10 +416,11 @@ for i, bond_distance in enumerate(bond_distance_range):
 
     axes[row_error, i].set_title(f"R: {bond_distance} Å ")
     axes[row_error, i].set_yscale("log")
-    axes[row_error, i].axhline(1.6e-3, linestyle="--", color="gray")
+    axes[row_error, i].axhline(1.6e-3, linestyle="--", color="black")
     axes[row_error, i].set_ylabel("Energy error (Hartree)")
     axes[row_error, i].set_xticks([])
-    
+    axes[row_error, i].set_ylim(0, 1)
+
     axes[row_sci_vec_dim, i].set_ylabel("SCI subspace")
     axes[row_sci_vec_dim, i].set_xticks([])
 
@@ -433,7 +436,7 @@ for i, bond_distance in enumerate(bond_distance_range):
     plt.subplots_adjust(bottom=0.1, top=0.88)
 
     fig.suptitle(
-        f"$N_2$ (6-31g, {nelectron}e, {norb}o)"
+        f"$N_2$/6-31G ({nelectron}e, {norb}o)"
     )
 
 filepath = os.path.join(

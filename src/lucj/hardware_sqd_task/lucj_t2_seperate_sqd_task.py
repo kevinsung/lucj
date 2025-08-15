@@ -320,6 +320,7 @@ def run_hardware_sqd_energy_batch_task(
                     solve_sci_batch(
                         ci_strings, one_body_tensor, two_body_tensor, norb, nelec
                     )
+                    solve = True
                 except DiceExecutionError:
                     logging.info(f"{task} Dice execution error\n")
 
@@ -334,7 +335,7 @@ def run_hardware_sqd_energy_batch_task(
             energy_tol=task.energy_tol,
             occupancies_tol=task.occupancies_tol,
             max_iterations=task.max_iterations,
-            sci_solver=solve_sci_batch_wrap,
+            sci_solver=solve_sci_batch,
             symmetrize_spin=task.symmetrize_spin,
             carryover_threshold=task.carryover_threshold,
             seed=rng,

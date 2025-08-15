@@ -6,8 +6,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 from lucj.params import LUCJParams, CompressedT2Params
-from lucj.uccsd_task.lucj_compressed_t2_task import UCCSDCompressedTask
-from lucj.uccsd_task.uccsd_sqd_initial_params_task import UCCSDSQDInitialParamsTask
 from lucj.sqd_energy_task.lucj_compressed_t2_task import SQDEnergyTask
 import json
 
@@ -236,7 +234,7 @@ for i, (bond_distance, connectivity) in enumerate(
 
     axes[i].set_title(f"R={bond_distance} Å / {connectivity}")
     axes[i].set_yscale("log")
-    axes[i].axhline(1.6e-3, linestyle="--", color="gray")
+    axes[i].axhline(1.6e-3, linestyle="--", color="black")
     axes[i].set_ylabel("Energy error (Hartree)")
     axes[i].set_xlabel("Repetitions")
     axes[i].set_xticks(n_reps_range)
@@ -252,7 +250,7 @@ for i, (bond_distance, connectivity) in enumerate(
     plt.tight_layout()
     plt.subplots_adjust(bottom=0.27, top=0.81)
 
-    fig.suptitle(f"$N_2$ (6-31g, {nelectron}e, {norb}o)")
+    fig.suptitle(f"$N_2$/6-31G ({nelectron}e, {norb}o)")
 
 filepath = os.path.join(
     plots_dir,

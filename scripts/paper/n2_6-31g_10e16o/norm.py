@@ -404,7 +404,7 @@ for i, (d, connectivity) in enumerate(
     plt.subplots_adjust(bottom=0.1)
 
 
-    fig.suptitle(f"Operator norm comparison: $N_2$ (6-31g, {nelectron}e, {norb}o)")
+    fig.suptitle(f"Operator norm comparison: $N_2$/6-31G ({nelectron}e, {norb}o)")
 filepath = os.path.join(
     plots_dir,
     f"{os.path.splitext(os.path.basename(__file__))[0]}.pdf",

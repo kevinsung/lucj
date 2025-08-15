@@ -322,7 +322,7 @@ for plot_type in ["vqe", "sqd"]:
     axes[1].set_ylabel("Energy erro (Hartree)")
     axes[1].set_yscale("log")
     axes[1].set_xlabel("Bond length (Å)")
-    axes[1].axhline(1.6e-3, linestyle="--", color="gray")
+    axes[1].axhline(1.6e-3, linestyle="--", color="black")
     plt.tight_layout()
     plt.subplots_adjust(top=0.93)
 
@@ -330,14 +330,14 @@ for plot_type in ["vqe", "sqd"]:
         # bbox_to_anchor=(-0.3, -0.28), loc="upper center", ncol=5
     )
     # plt.set_yscale("log")
-    # plt.axhline(1.6e-3, linestyle="--", color="gray")
+    # plt.axhline(1.6e-3, linestyle="--", color="black")
     # plt.set_ylabel("Energy error (Hartree)")
     # plt.set_xlabel("Bond length (Å)")
 
     if plot_type == "vqe":
-        fig.suptitle(f"$N_2$ (6-31g, {nelectron}e, {norb}o)")
+        fig.suptitle(f"$N_2$/6-31G ({nelectron}e, {norb}o)")
     else:
-        fig.suptitle(f"$N_2$ (6-31g, {nelectron}e, {norb}o)")
+        fig.suptitle(f"$N_2$/6-31G ({nelectron}e, {norb}o)")
 
 
     filepath = os.path.join(

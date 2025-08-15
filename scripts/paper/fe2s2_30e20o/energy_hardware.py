@@ -295,7 +295,7 @@ axes[row_sci_vec_dim].errorbar(
 )
 
 axes[row_error].set_yscale("log")
-axes[row_error].axhline(1.6e-3, linestyle="--", color="gray")
+axes[row_error].axhline(1.6e-3, linestyle="--", color="black")
 axes[row_error].set_ylabel("Energy error (Hartree)")
 axes[row_error].set_xticks([])
 

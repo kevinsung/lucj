@@ -406,7 +406,7 @@ for i, bond_distance in enumerate(bond_distance_range):
 
     axes[row_error, i].set_title(f"R: {bond_distance} Å ")
     axes[row_error, i].set_yscale("log")
-    axes[row_error, i].axhline(1.6e-3, linestyle="--", color="gray")
+    axes[row_error, i].axhline(1.6e-3, linestyle="--", color="black")
     axes[row_error, i].set_ylabel("Energy error (Hartree)")
     axes[row_error, i].set_xticks([])
     
@@ -425,7 +425,7 @@ for i, bond_distance in enumerate(bond_distance_range):
     plt.subplots_adjust(bottom=0.1, top=0.88)
 
     fig.suptitle(
-        f"$N_2$ (6-31g, {nelectron}e, {norb}o)"
+        f"$N_2$/6-31G ({electron}e, {norb}o)"
     )
 
 filepath = os.path.join(

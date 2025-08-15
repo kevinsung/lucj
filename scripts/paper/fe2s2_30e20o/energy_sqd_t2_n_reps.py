@@ -460,7 +460,7 @@ for i, connectivity in enumerate(connectivities):
 
     axes[0, i].set_title(connectivity)
     axes[0, i].set_yscale("log")
-    # axes[0, i].axhline(1.6e-3, linestyle="--", color="gray")
+    # axes[0, i].axhline(1.6e-3, linestyle="--", color="black")
     axes[0, i].set_ylabel("Energy error (Hartree)")
     axes[0, i].set_xlabel("Repetitions")
     axes[0, i].set_xticks(n_reps_range)

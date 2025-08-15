@@ -223,6 +223,6 @@ filepath = os.path.join(
     plots_dir,
     f"{os.path.splitext(os.path.basename(__file__))[0]}.pdf",
 )
-plt.title(f"CDF $N_2$ (6-31g, {nelectron}e, {norb}o)")
+plt.title(f"CDF $N_2$/6-31G ({nelectron}e, {norb}o)")
 plt.savefig(filepath)
 plt.close()
