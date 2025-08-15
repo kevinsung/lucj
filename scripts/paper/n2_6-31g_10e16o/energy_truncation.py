@@ -147,7 +147,7 @@ color_keys = ["ucj", "lucj_full_square", "lucj_full"]
 labels = ["UCJ", "LUCJ:square", "LUCJ:heavy-hex"]
 
 for plot_type in ["vqe", "sqd"]:
-    fig = plt.plot(figsize=(9, 12), layout="constrained")
+    fig = plt.figure(figsize=(6, 5), layout="constrained")
     for tasks, color_key, label in zip(list_tasks, color_keys, labels):
         results = {}
         for task in tasks:
@@ -178,12 +178,12 @@ for plot_type in ["vqe", "sqd"]:
     plt.yscale("log")
     plt.axhline(1.6e-3, linestyle="--", color="black")
 
-    if plot_type == "vqe":
-        plt.subplots_adjust(top=0.93, left=0.15)
-        plt.title(f"$N_2$/6-31G ({nelectron}e, {norb}o, 1.2Å)")
-    else:
-        plt.subplots_adjust(top=0.93)
-        plt.title(f"$N_2$/6-31G ({nelectron}e, {norb}o, 1.2Å)")
+    # if plot_type == "vqe":
+    #     plt.subplots_adjust(top=0.93, left=0.15)
+    #     plt.title(f"$N_2$/6-31G/R=1.2Å ({nelectron}e, {norb}o)")
+    # else:
+    plt.subplots_adjust(top=0.93)
+    plt.title(f"$N_2$/6-31G/R=1.2Å ({nelectron}e, {norb}o)")
     
     filepath = os.path.join(
         plots_dir, f"{os.path.splitext(os.path.basename(__file__))[0]}_{plot_type}.pdf"

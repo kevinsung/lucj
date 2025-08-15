@@ -210,7 +210,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     ]
 
     list_tasks = [tasks_truncated, tasks_compressed_t2, tasks_compressed_t2_reg]
-    color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_1stg"]
+    color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_quimb2"]
     labels = ["LUCJ-truncated", "LUCJ-compressed", "LUCJ-compressed-reg"]
 
     for tasks, color_key, label in zip(list_tasks, color_keys, labels):
@@ -247,6 +247,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     axes[0, i].set_ylabel("Energy error (Hartree)")
     axes[0, i].set_xlabel("Repetitions")
     axes[0, i].set_xticks(n_reps_range)
+    axes[0, i].set_ylim(0, 3e-1)
 
     axes[1, i].set_ylabel("SCI subspace")
     axes[1, i].set_xlabel("Repetitions")

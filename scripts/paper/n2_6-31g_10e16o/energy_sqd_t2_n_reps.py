@@ -282,6 +282,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     axes[0, i].set_ylabel("Energy error (Hartree)")
     axes[0, i].set_xlabel("Repetitions")
     axes[0, i].set_xticks(n_reps_range)
+    axes[0, i].set_ylim(0, 3e-1)
 
     axes[1, i].set_ylabel("SCI subspace")
     axes[1, i].set_xlabel("Repetitions")

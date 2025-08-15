@@ -19,7 +19,7 @@ basis = "6-31g"
 nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-plots_dir = os.path.join("plots", molecule_basename)
+plots_dir = os.path.join("paper", molecule_basename)
 os.makedirs(plots_dir, exist_ok=True)
 
 bond_distance_range = [1.2, 2.4]
@@ -115,8 +115,9 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         label="LUCJ-full",
         color=colors["lucj_full"],
     )
-    
-    for j, c in enumerate(constant_factors):
+    color_list = [colors["lucj_compressed"], colors["lucj_truncated"], colors["uccsd"], colors["ucj"], colors["lucj_compressed_quimb2"]]
+
+    for j, (c, color) in enumerate(zip(constant_factors, color_list)):
         tasks_compressed_t2 = [
             SQDEnergyTask(
                 molecule_basename=molecule_basename,
@@ -162,8 +163,8 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
             errors,
             f"{markers[j]}{linestyles[0]}",
             label="factor_{c}",
-            color=colors["lucj_compressed"],
-            alpha=c / 3 + 0.1 if c is not None else 1
+            color=color,
+            # alpha=c / 3 + 0.1 if c is not None else 1
         )
 
         axes[1, i].plot(
@@ -171,8 +172,8 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
             sci_vec_shape,
             f"{markers[j]}{linestyles[0]}",
             label=f"factor_{c}",
-            color=colors["lucj_compressed"],
-            alpha=c / 3 + 0.1 if c is not None else 1
+            color=color,
+            # alpha=c / 3 + 0.1 if c is not None else 1
         )
 
 
@@ -182,6 +183,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     axes[0, i].set_ylabel("Energy error (Hartree)")
     axes[0, i].set_xlabel("Repetitions")
     axes[0, i].set_xticks(n_reps_range)
+    axes[0, i].set_ylim(0, 1e-1)
 
     axes[1, i].set_ylabel("SCI subspace")
     axes[1, i].set_xlabel("Repetitions")
@@ -195,7 +197,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     plt.subplots_adjust(bottom=0.16, top=0.88)
 
     fig.suptitle(
-        f"$N_2$/6-31G ({electron}e, {norb}o)"
+        f"$N_2$/6-31G ({nelectron}e, {norb}o)"
     )
 
 filepath = os.path.join(

@@ -14,7 +14,7 @@ from lucj.hardware_sqd_task.lucj_t2_task import (
     run_hardware_sqd_energy_batch_task,
 )
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}.log"
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_no_loop.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
