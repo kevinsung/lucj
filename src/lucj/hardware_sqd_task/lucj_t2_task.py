@@ -230,7 +230,7 @@ def run_hardware_sqd_energy_batch_task(
     rng = np.random.default_rng(list_tasks[0].entropy)
 
     if not os.path.exists(list_sample_filenames[0]):
-        # assert 0
+        assert 0
         list_operator = load_operator(compressed_task, data_dir, mol_data)
         # print(list_operator)
         # input()
@@ -288,8 +288,7 @@ def run_hardware_sqd_energy_batch_task(
         for i, sample_filename in enumerate(list_sample_filenames):
             with open(sample_filename, "rb") as f:
                 samples = pickle.load(f)
-            if i % 3 == 0:
-                list_samples[i].append(samples)
+            list_samples[i % 3].append(samples)
 
     logging.info(f"{list_tasks[0]} Done sampling\n")
     logging.info(f"{list_tasks[1]} Done sampling\n")
@@ -367,6 +366,7 @@ def run_hardware_sqd_energy_batch_task(
                     solve_sci_batch(
                         ci_strings, one_body_tensor, two_body_tensor, norb, nelec
                     )
+                    solve = True
                 except DiceExecutionError:
                     logging.info(f"{task} Dice execution error\n")
 
