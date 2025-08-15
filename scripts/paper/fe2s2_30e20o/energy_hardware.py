@@ -7,6 +7,9 @@ import json
 from lucj.params import LUCJParams, CompressedT2Params
 from lucj.hardware_sqd_task.lucj_compressed_t2_task import HardwareSQDEnergyTask
 from lucj.sqd_energy_task.lucj_random_t2_task import RandomSQDEnergyTask
+import matplotlib
+
+matplotlib.rcParams.update({'errorbar.capsize': 5})
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))

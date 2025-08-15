@@ -14,6 +14,10 @@ import ffsim
 import numpy as np
 from opt_einsum import contract
 import pyscf
+import matplotlib
+
+matplotlib.rcParams.update({'errorbar.capsize': 2})
+
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
@@ -29,6 +33,7 @@ connectivities = [
     "all-to-all",
     "heavy-hex",
 ]
+
 
 n_reps_range = list(range(1, 11))
 
@@ -138,7 +143,7 @@ result_random = load_data(filepath)
 fig, axes = plt.subplots(
     3,
     len(connectivities),
-    figsize=(8, 5),  # , layout="constrained"
+    figsize=(6.4, 5),  # , layout="constrained"
 )
 
 
@@ -464,6 +469,7 @@ for i, connectivity in enumerate(connectivities):
     axes[0, i].set_ylabel("Energy error (Hartree)")
     axes[0, i].set_xlabel("Repetitions")
     axes[0, i].set_xticks(n_reps_range)
+    axes[0, i].set_ylim(0, 3)
 
     axes[1, i].set_ylabel("SCI subspace")
     axes[1, i].set_xlabel("Repetitions")
@@ -475,12 +481,12 @@ for i, connectivity in enumerate(connectivities):
     axes[2, i].set_xticks(n_reps_range)
     axes[2, i].set_yscale("log")
 
-    leg = axes[1, 1].legend(bbox_to_anchor=(-0.2, -2.3), loc="upper center", ncol=5)
+    leg = axes[1, 1].legend(bbox_to_anchor=(-0.3, -2.3), loc="upper center", ncol=5)
     leg.set_in_layout(False)
     plt.tight_layout()
     plt.subplots_adjust(bottom=0.16)
 
-    fig.suptitle(f"CCSD initial parameters 2Fe-2S ({nelectron}e, {norb}o)")
+    fig.suptitle(f"2Fe-2S ({nelectron}e, {norb}o)")
 
 filepath = os.path.join(
     plots_dir,
