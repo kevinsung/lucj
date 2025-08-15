@@ -180,10 +180,10 @@ for plot_type in ["vqe", "sqd"]:
 
     if plot_type == "vqe":
         plt.subplots_adjust(top=0.93, left=0.15)
-        plt.title(f"$N_2$/6-31G ({nelectron}e, {norb}o, 1.2Å)")
+        plt.title(f"$N_2$/6-31G/R=1.2Å ({nelectron}e, {norb}o)")
     else:
         plt.subplots_adjust(top=0.93)
-        plt.title(f"$N_2$/6-31G ({nelectron}e, {norb}o, 1.2Å)")
+        plt.title(f"$N_2$/6-31G/R=1.2Å ({nelectron}e, {norb}o)")
     
     filepath = os.path.join(
         plots_dir, f"{os.path.splitext(os.path.basename(__file__))[0]}_{plot_type}.pdf"

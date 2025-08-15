@@ -13,6 +13,7 @@ import functools
 from collections import OrderedDict
 import numpy as np
 import matplotlib.pyplot as plt
+import json
 
 DATA_ROOT = "/media/storage/WanHsuan.Lin/"
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
@@ -49,8 +50,11 @@ connectivity = "all-to-all"
 
 n_reps = 1
 
-constant_factors = [None, 0.5, 1.5, 2, 2.5]
+with open('scripts/paper/color.json', 'r') as file:
+    colors = json.load(file)
 
+constant_factors = [None, 0.5, 1.5, 2, 2.5]
+color_list = [colors["lucj_compressed"], colors["lucj_truncated"], colors["uccsd"], colors["ucj"], colors["lucj_compressed_quimb2"]]
 
 tasks = [
     SQDEnergyTask(
@@ -101,7 +105,7 @@ for task in tasks:
 
 legends = [f"factor-{c}" for c in constant_factors]
 
-color = [colors[i] for i in range(len(constant_factors))]
+# color = [colors[i] for i in range(len(constant_factors))]
 
 # plot_distribution(
 #     samples,
@@ -159,7 +163,7 @@ for execution in samples:
 fig = plt.plot(figsize=(3, 4), layout="constrained")
 # Cumulative distributions.
 x = np.arange(len(all_pvalues[0]))
-for value, legend, c in zip(all_pvalues, legends, color):
+for value, legend, c in zip(all_pvalues, legends, color_list):
     # print(value[:10])
     # input()
     y = value.cumsum()

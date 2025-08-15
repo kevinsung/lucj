@@ -313,6 +313,7 @@ for i, (bond_distance, connectivity) in enumerate(
     axes[0, i].set_ylabel("Energy error (Hartree)")
     axes[0, i].set_xlabel("Repetitions")
     axes[0, i].set_xticks(n_reps_range)
+    axes[0, i].set_ylim(0, 0.8e1)
 
     axes[1, i].set_ylabel("Operator loss")
     axes[1, i].set_xlabel("Repetitions")

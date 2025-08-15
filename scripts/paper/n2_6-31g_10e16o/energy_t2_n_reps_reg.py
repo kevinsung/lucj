@@ -213,7 +213,7 @@ for i, (bond_distance, connectivity) in enumerate(
         ]
     else:
         list_tasks = [tasks_truncated, tasks_compressed_t2, tasks_compressed_t2_reg]
-        color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_1stg"]
+        color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_quimb2"]
         labels = ["LUCJ-truncated", "LUCJ-compressed", "LUCJ-compressed-reg"]
 
     for tasks, color_key, label in zip(list_tasks, color_keys, labels):
@@ -238,9 +238,10 @@ for i, (bond_distance, connectivity) in enumerate(
     axes[i].set_ylabel("Energy error (Hartree)")
     axes[i].set_xlabel("Repetitions")
     axes[i].set_xticks(n_reps_range)
+    axes[i].set_ylim(0, 0.8e1)
 
     leg = axes[2].legend(
-        bbox_to_anchor=(-0.38, -0.23),
+        bbox_to_anchor=(-0.38, -0.25),
         loc="upper center",
         ncol=6,
         columnspacing=1,

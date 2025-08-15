@@ -40,8 +40,8 @@ os.makedirs(plots_dir, exist_ok=True)
 bond_distance_range = [1.2, 2.4]
 
 connectivities = [
-    "heavy-hex",
     "all-to-all",
+    "heavy-hex",
 ]
 n_reps_range = list(range(1, 11, 1))
 
@@ -49,9 +49,19 @@ with open("scripts/paper/color.json", "r") as file:
     colors = json.load(file)
 
 
-def loss(diag_coulomb_mats, orbital_rotations, t2):
+def loss(stacked_diag_coulomb_mats, orbital_rotations, t2, pairs_aa, pairs_ab):
     nocc, _, _, _ = t2.shape
-    diag_coulomb_mats = np.unstack(diag_coulomb_mats, axis=1)[0]
+    diag_coulomb_mats = np.zeros(orbital_rotations.shape)
+    if pairs_aa:
+        rows, cols = zip(*pairs_aa)
+        diag_coulomb_mats[:, rows, cols] = stacked_diag_coulomb_mats[:, 0, rows, cols]
+        diag_coulomb_mats[:, cols, rows] = stacked_diag_coulomb_mats[:, 0, rows, cols]
+        rows, cols = zip(*pairs_ab)
+        diag_coulomb_mats[:, rows, cols] = stacked_diag_coulomb_mats[:, 1, rows, cols]
+        diag_coulomb_mats[:, cols, rows] = stacked_diag_coulomb_mats[:, 1, rows, cols]
+    else:
+        diag_coulomb_mats = np.unstack(stacked_diag_coulomb_mats, axis=1)[0]
+
     reconstructed = (
         1j
         * contract(
@@ -71,7 +81,7 @@ def loss(diag_coulomb_mats, orbital_rotations, t2):
 fig, axes = plt.subplots(
     4,
     len(bond_distance_range) * len(connectivities),
-    figsize=(8, 10),  # , layout="constrained"
+    figsize=(8, 8),  # , layout="constrained"
 )
 
 markers = ["o", "s", "v", "D", "p", "*", "P", "X"]
@@ -87,6 +97,7 @@ for i, (d, connectivity) in enumerate(
     list_average_diff_norm_compressed_diagonal_coulumb_reg = []
     list_average_diff_norm_compressed_orbital_rotation = []
     list_average_diff_norm_compressed_orbital_rotation_reg = []
+    list_loss_truncation = []
     list_loss_compression = []
     list_loss_compression_reg = []
 
@@ -132,6 +143,14 @@ for i, (d, connectivity) in enumerate(
         )
         diag_coulomb_mats_reference = operator.diag_coulomb_mats
         orbital_rotations_reference = operator.orbital_rotations
+        t2_loss = loss(
+            diag_coulomb_mats_reference[:n_reps],
+            orbital_rotations_reference[:n_reps],
+            mol_data.ccsd_t2,
+            pairs_aa, 
+            pairs_ab
+        )
+        list_loss_truncation.append(t2_loss)
 
         task_compressed_t2 = LUCJCompressedT2Task(
             molecule_basename=molecule_basename,
@@ -155,6 +174,8 @@ for i, (d, connectivity) in enumerate(
             diag_coulomb_mats_compressed_t2,
             orbital_rotations_compressed_t2,
             mol_data.ccsd_t2,
+            pairs_aa, 
+            pairs_ab
         )
         list_loss_compression.append(t2_loss)
 
@@ -189,6 +210,8 @@ for i, (d, connectivity) in enumerate(
             diag_coulomb_mats_compressed_t2_reg,
             orbital_rotations_compressed_t2_reg,
             mol_data.ccsd_t2,
+            pairs_aa, 
+            pairs_ab
         )
         list_loss_compression_reg.append(t2_loss)
 
@@ -357,6 +380,14 @@ for i, (d, connectivity) in enumerate(
     # loss
     axes[3, i].plot(
         n_reps_range,
+        list_loss_truncation,
+        f"{markers[0]}{linestyles[0]}",
+        label="LUCJ truncated",
+        color=colors["lucj_truncated"],
+    )
+    
+    axes[3, i].plot(
+        n_reps_range,
         list_loss_compression,
         f"{markers[0]}{linestyles[0]}",
         label="LUCJ-compressed",
@@ -371,40 +402,38 @@ for i, (d, connectivity) in enumerate(
         color=colors["lucj_compressed_1stg"],
     )
 
-    axes[3, i].plot(
-        [],
-        [],
-        f"{markers[0]}{linestyles[0]}",
-        label="LUCJ truncated",
-        color=colors["lucj_truncated"],
-    )
 
     # axes[0, i].set_title(f"R={d} Å")
     axes[0, i].set_title(f"R={d} Å, {connectivity} \n diag coulomb, norm", fontsize="small", loc="left")
     axes[0, i].set_xlabel("Repetitions")
     axes[0, i].set_xticks(n_reps_range)
+    axes[0, i].set_ylim(0, 15)
 
     axes[1, i].set_title("diag coulomb, diff norm", fontsize="small", loc="left")
     axes[1, i].set_xlabel("Repetitions")
     axes[1, i].set_xticks(n_reps_range)
+    axes[1, i].set_ylim(0, 15)
 
     axes[2, i].set_title("orb rot, diff norm", fontsize="small", loc="left")
     axes[2, i].set_xlabel("Repetitions")
     axes[2, i].set_xticks(n_reps_range)
+    axes[2, i].set_ylim(0, 7)
 
     axes[3, i].set_title("loss", fontsize="small", loc="left")
     axes[3, i].set_xlabel("Repetitions")
     axes[3, i].set_xticks(n_reps_range)
+    # axes[3, i].set_ylim(0, 2)
+
 
     # axes[row_sci_vec_dim, 0].legend(ncol=2, )
-    leg = axes[3, 0].legend(bbox_to_anchor=(0.24, -0.3), loc="upper left", ncol=3)
+    leg = axes[3, 0].legend(bbox_to_anchor=(0.44, -0.36), loc="upper left", ncol=3)
     leg.set_in_layout(False)
     plt.tight_layout()
     # plt.subplots_adjust(top=0.9,left=0.06,bottom=0.15)
-    plt.subplots_adjust(bottom=0.1)
+    plt.subplots_adjust(bottom=0.1, top=0.9)
 
 
-    fig.suptitle(f"Operator norm comparison: $N_2$/6-31G ({nelectron}e, {norb}o)")
+    fig.suptitle(f"Operator norm: $N_2$/6-31G ({nelectron}e, {norb}o)")
 filepath = os.path.join(
     plots_dir,
     f"{os.path.splitext(os.path.basename(__file__))[0]}.pdf",
