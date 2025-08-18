@@ -487,6 +487,7 @@ for i, connectivity in enumerate(connectivities):
     plt.subplots_adjust(bottom=0.16)
 
     fig.suptitle(f"2Fe-2S ({nelectron}e, {norb}o)")
+    fig.suptitle(f"Fe$_2$S$_2$ ({nelectron}e, {norb}o)")
 
 filepath = os.path.join(
     plots_dir,

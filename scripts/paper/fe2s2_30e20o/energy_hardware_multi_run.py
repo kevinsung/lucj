@@ -253,7 +253,7 @@ plt.errorbar(
     color='black',
 )
 
-plt.title(f"2Fe-2S ({nelectron}e, {norb}o)")
+plt.title(f"Fe$_2$S$_2$ ({nelectron}e, {norb}o)")
 plt.yscale("log")
 plt.axhline(1.6e-3, linestyle="--", color="black")
 plt.ylabel("Energy error (Hartree)")

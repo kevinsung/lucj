@@ -144,9 +144,6 @@ def load_operator(task: HardwareSQDEnergyTask, data_dir: str, mol_data):
 
     logging.info(f"Generate truncated operator for {task}.\n")
     nelec = mol_data.nelec
-    pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
-        task.lucj_params.connectivity, norb
-    )
     if mol_data.ccsd_t2 is None:
         c0, c1, c2 = pyscf.ci.cisd.cisdvec_to_amplitudes(
             mol_data.cisd_vec, norb, nelec[0]
@@ -158,11 +155,12 @@ def load_operator(task: HardwareSQDEnergyTask, data_dir: str, mol_data):
             t2,
             t1=t1,
             n_reps=task.lucj_params.n_reps,
-            interaction_pairs=interaction_pairs_spin_balanced(
-                connectivity=task.lucj_params.connectivity, norb=norb
-            ),
+            interaction_pairs=(pairs_aa, pairs_ab),
         )
     else:
+        diag_coulomb_mats, orbital_rotations = ffsim.linalg.double_factorized_t2(
+            mol_data.ccsd_t2,
+        )
         truncated_operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
             mol_data.ccsd_t2,
             n_reps=task.lucj_params.n_reps,
@@ -171,7 +169,17 @@ def load_operator(task: HardwareSQDEnergyTask, data_dir: str, mol_data):
             else None,
             interaction_pairs=(pairs_aa, pairs_ab),
         )
-
+    # print(mol_data.ccsd_t1[0])
+    # input()
+    # print(compressed_operator.diag_coulomb_mats[0][0])
+    # print(truncated_operator.diag_coulomb_mats[0][0])
+    # input()
+    # print(compressed_operator.orbital_rotations.shape)
+    # print(compressed_operator.final_orbital_rotation.shape)
+    # print(truncated_operator.diag_coulomb_mats.shape)
+    # print(truncated_operator.orbital_rotations.shape)
+    # print(truncated_operator.final_orbital_rotation.shape)
+    # input()
     return [random_operator, truncated_operator, compressed_operator]
 
 
@@ -230,7 +238,8 @@ def run_hardware_sqd_energy_batch_task(
     rng = np.random.default_rng(list_tasks[0].entropy)
 
     if not os.path.exists(list_sample_filenames[0]):
-        assert 0
+    # if True:
+        # assert 0
         list_operator = load_operator(compressed_task, data_dir, mol_data)
         # print(list_operator)
         # input()

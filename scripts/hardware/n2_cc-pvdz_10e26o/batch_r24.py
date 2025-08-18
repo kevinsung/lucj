@@ -14,7 +14,7 @@ from lucj.hardware_sqd_task.lucj_t2_task import (
     run_hardware_sqd_energy_batch_task,
 )
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_no_loop.log"
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_no_loop_r24.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -37,7 +37,7 @@ molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 bond_distance_range = [1.2, 2.4]
 bond_distance_range = [2.4]
-bond_distance_range = [1.2]
+# bond_distance_range = [1.2]
 n_hardware_run = 10
 n_reps_range = [1]
 
