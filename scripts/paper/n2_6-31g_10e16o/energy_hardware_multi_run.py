@@ -289,6 +289,8 @@ for i, bond_distance in enumerate(bond_distance_range):
     sci_vec_shape_min.append(np.average(sci_vec_shape_n_reps) - np.min(sci_vec_shape_n_reps))
     sci_vec_shape_max.append(np.max(sci_vec_shape_n_reps) - np.average(sci_vec_shape_n_reps))
 
+    
+
     axes[i].bar(
         0,
         errors,
@@ -349,7 +351,12 @@ for i, bond_distance in enumerate(bond_distance_range):
     sci_vec_shape.append(np.average(sci_vec_shape_n_reps))
     sci_vec_shape_min.append(np.average(sci_vec_shape_n_reps) - np.min(sci_vec_shape_n_reps))
     sci_vec_shape_max.append(np.max(sci_vec_shape_n_reps) - np.average(sci_vec_shape_n_reps))
-
+    
+    if bond_distance == 2.4:
+        energy_n_reps = [results_truncated_t2[task]['energy'] for task in tasks_truncated_t2 if task in results_truncated_t2]
+        print(energy_n_reps)
+        energy_n_reps = [results_compressed_t2[task]['energy'] for task in tasks_compressed_t2 if task in results_compressed_t2]
+        print(energy_n_reps)
 
     axes[i].bar(
         width,

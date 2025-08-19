@@ -490,7 +490,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     axes[2, i].set_xticks(n_reps_range)
     axes[2, i].set_yscale("log")
 
-    leg = axes[2, 2].legend(bbox_to_anchor=(-0.2, -0.52), loc="upper center", ncol=5)
+    leg = axes[1, 2].legend(bbox_to_anchor=(-0.24, -2.35), loc="upper center", ncol=5)
 
     leg.set_in_layout(False)
     plt.tight_layout()

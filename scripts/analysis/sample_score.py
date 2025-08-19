@@ -90,6 +90,14 @@ task_truncated_t2_hardware = HardwareSQDEnergyTask(
 nelec = (nelectron // 2, nelectron // 2)
 dim = ffsim.dim(norb, nelec)
 
+half_hf_state = "0" * (norb - nelectron // 2) + "1" * (nelectron // 2)
+hf_state = half_hf_state + half_hf_state
+hf_address = ffsim.strings_to_addresses(
+        [hf_state],
+        norb,
+        nelec,
+    )[0]
+
 def compute_score(task):
     sample_filename = DATA_ROOT / task.operatorpath / "hardware_sample.pickle"
 
@@ -128,7 +136,9 @@ def compute_score(task):
         nelec,
     )
     for address in addresses:
-        if np.isclose(state_vector[address], 0):
+        if address == hf_address:
+            continue
+        if np.isclose(state_vector[address], 0, atol = 1e-15):
             count += 1
         else:
             score += (abs(state_vector[address]) ** 2)
@@ -142,6 +152,7 @@ score_truncated, count_truncated = compute_score(task_truncated_t2_hardware)
 print(f"Compressed Op - score: {score_compressed}, #bitstr with 0 amp: {count_compressed}")
 print(f"Truncated Op - score: {score_truncated}, #bitstr with 0 amp: {count_truncated}")
 
+# with default atol
 # R=1.2
 # (19079424,)
 # (35952, 32)
@@ -150,10 +161,18 @@ print(f"Truncated Op - score: {score_truncated}, #bitstr with 0 amp: {count_trun
 # Compressed Op - score: 0.9944673870470951, #bitstr with 0 amp: 1800
 # Truncated Op - score: 0.9997713301041902, #bitstr with 0 amp: 22230
 
-# R.2=4
+# R=2.4
 # (19079424,)
 # (40638, 32)
 # (19079424,)
 # (25866, 32)
 # Compressed Op - score: 0.9945788605361614, #bitstr with 0 amp: 3276
 # Truncated Op - score: 0.9975553910834221, #bitstr with 0 amp: 22340
+
+# with atol=1e-15
+# (19079424,)
+# (40638, 32)
+# (19079424,)
+# (25866, 32)
+# Compressed Op - score: 0.9945788605361986, #bitstr with 0 amp: 0
+# Truncated Op - score: 0.9975553910834319, #bitstr with 0 amp: 17283
