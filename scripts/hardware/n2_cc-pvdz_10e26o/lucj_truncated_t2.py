@@ -27,7 +27,7 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 1
+MAX_PROCESSES = 2
 OVERWRITE = False
 
 molecule_name = "n2"
@@ -41,7 +41,7 @@ bond_distance_range = [1.2, 2.4]
 n_reps_range = [1]
 
 # shots = 100_000
-shots = 1_000_000
+shots = 10_000_000
 n_batches = 10
 energy_tol = 1e-8
 occupancies_tol = 1e-5

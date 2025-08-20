@@ -34,7 +34,7 @@ def run_on_hardware(
     #     operational=True, simulator=False, min_num_qubits=127
     # )
     # backend = service.backend("alt_pittsburgh")
-    backend = service.backend("ibm_pittsburgh")
+    backend = service.backend("ibm_pittsburgh", use_fractional_gates=True)
     # backend = service.backend("ibm_pittsburgh", use_fractional_gates=True)
 
     initial_layout, _ = get_zigzag_physical_layout(norb, backend=backend)
@@ -62,7 +62,7 @@ def run_on_hardware(
 
     # print(list_sample_filenames)
     assert len(list_isa_circuit) == 3
-    assert 0
+    # assert 0
     sampler = Sampler(mode=backend)
 
     if dynamic_decoupling:

@@ -9,7 +9,7 @@ from pathlib import Path
 from tqdm import tqdm
 
 from lucj.params import LUCJParams, CompressedT2Params
-from lucj.hardware_sqd_task.lucj_t2_seperate_sqd_task_sci import (
+from lucj.hardware_sqd_task.lucj_t2_seperate_sqd_task_sci_fg import (
     HardwareSQDEnergyTask,
     run_hardware_sqd_energy_batch_task,
 )
@@ -18,7 +18,7 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 10
+MAX_PROCESSES = 11
 OVERWRITE = False
 
 molecule_name = "n2"
@@ -39,7 +39,7 @@ max_iterations = 1
 symmetrize_spin = True
 entropies = [1]
 
-max_dim = 4000
+max_dim = 1000
 samples_per_batch = 4000
 
 filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_max_dim-{max_dim}_fractional_gate.log"

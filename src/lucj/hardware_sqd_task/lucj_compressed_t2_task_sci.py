@@ -19,6 +19,7 @@ from lucj.hardware_sqd_task.hardware_job.hardware_job import (
 )
 
 hardware_path = "dynamic_decoupling_xy_opt_0"
+hardware_path = "dynamic_decoupling_xy_opt_0_remove_identity_equivalent-None"
 
 logger = logging.getLogger(__name__)
 
@@ -216,8 +217,7 @@ def run_hardware_sqd_energy_task(
             data_dir
             / task.operatorpath
             / hardware_path
-            / f"n_hardware_run-{task.n_hardware_run}"
-            / "hardware_sample.pickle"
+            / f"hardware_sample_{task.n_hardware_run}.pickle"
         )
     else:
         sample_filename = data_dir / task.operatorpath / "hardware_sample.pickle"
@@ -225,7 +225,7 @@ def run_hardware_sqd_energy_task(
     rng = np.random.default_rng(task.entropy)
 
     if not os.path.exists(sample_filename):
-        assert 0
+        # assert 0
         operator = load_operator(task, data_dir, mol_data)
         if operator is None:
             return

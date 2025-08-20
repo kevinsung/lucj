@@ -152,6 +152,7 @@ score_truncated, count_truncated = compute_score(task_truncated_t2_hardware)
 print(f"Compressed Op - score: {score_compressed}, #bitstr with 0 amp: {count_compressed}")
 print(f"Truncated Op - score: {score_truncated}, #bitstr with 0 amp: {count_truncated}")
 
+# n2 6-31g
 # with default atol
 # R=1.2
 # (19079424,)

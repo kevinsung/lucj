@@ -18,6 +18,7 @@ from lucj.quimb_task.lucj_sqd_quimb_task import LUCJSQDQuimbTask
 
 logger = logging.getLogger(__name__)
 
+hardware_path = "dynamic_decoupling_xy_opt_0"
 
 @dataclass(frozen=True, kw_only=True)
 class HardwareSQDQuimbEnergyTask:
@@ -32,11 +33,15 @@ class HardwareSQDQuimbEnergyTask:
     symmetrize_spin: bool
     entropy: int | None
     max_dim: int | None
+    dynamic_decoupling: bool = True
+    n_hardware_run: int
 
     @property
     def dirpath(self) -> Path:
         return (
             self.lucj_sqd_quimb_task.dirpath
+            / ("" if self.dynamic_decoupling is False else hardware_path)
+            / f"n_hardware_run-{self.n_hardware_run}"
             / f"shots-{self.shots}"
             / f"samples_per_batch-{self.samples_per_batch}"
             / f"n_batches-{self.n_batches}"
@@ -54,6 +59,8 @@ def load_operator(task: HardwareSQDQuimbEnergyTask, data_dir: str, mol_data):
     result_filename = data_dir / task.lucj_sqd_quimb_task.dirpath / "data.pickle"
     if not os.path.exists(result_filename):
         logging.info(f"Operator for {task} does not exists.\n")
+        print(result_filename)
+        input()
         return None
     logging.info(f"Load operator for {task}.\n")
     with open(result_filename, "rb") as f:
@@ -65,7 +72,7 @@ def load_operator(task: HardwareSQDQuimbEnergyTask, data_dir: str, mol_data):
     )
 
     operator = ffsim.UCJOpSpinBalanced.from_parameters(
-        result.x,
+        np.array(result['x_best']),
         norb=norb,
         n_reps=task.lucj_sqd_quimb_task.lucj_params.n_reps,
         interaction_pairs=(pairs_aa, pairs_ab),
@@ -105,12 +112,12 @@ def run_hardware_sqd_energy_task(
     mol_hamiltonian = mol_data.hamiltonian
 
     # use CCSD to initialize parameters
-    sample_filename = data_dir / task.lucj_sqd_quimb_task.dirpath / "hardware_sample.pickle"
+    sample_filename = data_dir / task.lucj_sqd_quimb_task.dirpath / f"hardware_sample_{task.n_hardware_run}.pickle"
 
     rng = np.random.default_rng(task.entropy)
 
     if not os.path.exists(sample_filename):
-        assert 0
+        # assert 0
         operator = load_operator(task, data_dir, mol_data)
         if operator is None:
             return
@@ -119,11 +126,7 @@ def run_hardware_sqd_energy_task(
 
         # run on hardware and get the sample
         logging.info(f"{task} Sampling from real device...\n")
-        samples = run_on_hardware(circuit, norb, 1_000_000)
-
-        with open(sample_filename, "wb") as f:
-            pickle.dump(samples, f)
-
+        samples = run_on_hardware(circuit, norb, 1_000_000, sample_filename, task.dynamic_decoupling)
     else:
         logging.info(f"{task} load sample...\n")
         with open(sample_filename, "rb") as f:

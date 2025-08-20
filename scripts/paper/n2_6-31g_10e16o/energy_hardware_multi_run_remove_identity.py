@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 from lucj.params import LUCJParams, CompressedT2Params
 from lucj.hardware_sqd_task.lucj_t2_seperate_sqd_task_sci import HardwareSQDEnergyTask
-from lucj.sqd_energy_task.lucj_compressed_t2_task import SQDEnergyTask
+from lucj.hardware_sqd_task.lucj_compressed_t2_task_sci import HardwareSQDEnergyTask as HardwareSQDEnergyTaskIndentityRemove
 
 import json
 
@@ -20,7 +20,7 @@ basis = "6-31g"
 nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-plots_dir = os.path.join("plots", molecule_basename)
+plots_dir = os.path.join("paper", molecule_basename)
 os.makedirs(plots_dir, exist_ok=True)
 
 bond_distance_range = [1.2, 2.4]
@@ -103,7 +103,7 @@ tasks_random = [
         for n_hardware_run in n_hardware_run_range]
 
 tasks_truncated_t2 = [
-        HardwareSQDEnergyTask(
+        HardwareSQDEnergyTaskIndentityRemove(
             molecule_basename=molecule_basename,
             bond_distance=d,
             lucj_params=LUCJParams(
@@ -129,63 +129,6 @@ tasks_truncated_t2 = [
     for d in bond_distance_range
     for n_hardware_run in n_hardware_run_range]
 
-tasks_compressed_t2_exact = [
-        SQDEnergyTask(
-            molecule_basename=molecule_basename,
-            bond_distance=d,
-            lucj_params=LUCJParams(
-                connectivity="heavy-hex",
-                n_reps=n_reps,
-                with_final_orbital_rotation=True,
-            ),
-            compressed_t2_params=CompressedT2Params(
-                multi_stage_optimization=True,
-                begin_reps=20,
-                step=2
-            ),
-            regularization=False,
-            regularization_option=None,
-            shots=100_000,
-            samples_per_batch=4000,
-            n_batches=n_batches,
-            energy_tol=1e-5,
-            occupancies_tol=1e-3,
-            carryover_threshold=1e-3,
-            max_iterations=max_iterations,
-            symmetrize_spin=symmetrize_spin,
-            entropy=0,
-            max_dim=4000,
-        )
-        for d in bond_distance_range
-    ]
-
-tasks_truncated_exact = [
-        SQDEnergyTask(
-            molecule_basename=molecule_basename,
-            bond_distance=d,
-            lucj_params=LUCJParams(
-                connectivity="heavy-hex",
-                n_reps=n_reps,
-                with_final_orbital_rotation=True,
-            ),
-            random_op=False,
-            compressed_t2_params=None,
-            connectivity_opt=False,
-            regularization=False,
-            regularization_option=None,
-            shots=100_000,
-            samples_per_batch=4000,
-            n_batches=n_batches,
-            energy_tol=1e-5,
-            occupancies_tol=1e-3,
-            carryover_threshold=1e-3,
-            max_iterations=max_iterations,
-            symmetrize_spin=symmetrize_spin,
-            entropy=0,
-            max_dim=4000,
-        )
-        for d in bond_distance_range
-    ]
 
 def load_data(filepath):
     if not os.path.exists(filepath):
@@ -221,22 +164,6 @@ for task in tasks_compressed_t2:
     if os.path.exists(filepath):
         results_compressed_t2[task] = load_data(filepath)
 
-results_compressed_t2_exact = {}
-for task in tasks_compressed_t2_exact:
-    filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
-    if os.path.exists(filepath):
-        results_compressed_t2_exact[task] = load_data(filepath)
-    else:
-        print(filepath)
-
-results_truncated_t2_exact = {}
-for task in tasks_truncated_exact:
-    filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
-    if os.path.exists(filepath):
-        results_truncated_t2_exact[task] = load_data(filepath)
-    else:
-        print(filepath)
-
 print("Done loading data.")
 
 width = 0.15
@@ -255,7 +182,7 @@ row_sci_vec_dim = 1
 fig, axes = plt.subplots(
     1,
     len(bond_distance_range),
-    figsize=(6, 4),  # , layout="constrained"
+    figsize=(5, 4),  # , layout="constrained"
 )
 
 for i, bond_distance in enumerate(bond_distance_range):
@@ -319,44 +246,6 @@ for i, bond_distance in enumerate(bond_distance_range):
         color=colors["lucj_random"],
     )
     # LUCJ data
-    task_truncated_exact = SQDEnergyTask(
-            molecule_basename=molecule_basename,
-            bond_distance=bond_distance,
-            lucj_params=LUCJParams(
-                connectivity="heavy-hex",
-                n_reps=n_reps,
-                with_final_orbital_rotation=True,
-            ),
-            random_op=False,
-            compressed_t2_params=None,
-            connectivity_opt=False,
-            regularization=False,
-            regularization_option=None,
-            shots=100_000,
-            samples_per_batch=4000,
-            n_batches=n_batches,
-            energy_tol=1e-5,
-            occupancies_tol=1e-3,
-            carryover_threshold=1e-3,
-            max_iterations=max_iterations,
-            symmetrize_spin=symmetrize_spin,
-            entropy=0,
-            max_dim=4000,
-        )
-        
-    
-    
-    errors = [results_truncated_t2_exact[task_truncated_exact]["error"]]
-    axes[i].bar(
-        0,
-        errors,
-        alpha=0.5,
-        width=width,
-        label="LUCJ-truncated (exact)",
-        color=colors["lucj_truncated"],
-    )
-    
-
     errors = []
     errors_min = []
     errors_max = []
@@ -365,7 +254,7 @@ for i, bond_distance in enumerate(bond_distance_range):
     sci_vec_shape_max = []
 
     tasks_truncated_t2 = [
-        HardwareSQDEnergyTask(
+        HardwareSQDEnergyTaskIndentityRemove(
                 molecule_basename=molecule_basename,
                 bond_distance=bond_distance,
                 lucj_params=LUCJParams(
@@ -416,43 +305,6 @@ for i, bond_distance in enumerate(bond_distance_range):
         errors,
         [errors_min, errors_max],
         color='black',
-    )
-
-
-    task_compressed_t2_exact = SQDEnergyTask(
-            molecule_basename=molecule_basename,
-            bond_distance=bond_distance,
-            lucj_params=LUCJParams(
-                connectivity="heavy-hex",
-                n_reps=n_reps,
-                with_final_orbital_rotation=True,
-            ),
-            compressed_t2_params=CompressedT2Params(
-                multi_stage_optimization=True,
-                begin_reps=20,
-                step=2
-            ),
-            regularization=False,
-            regularization_option=None,
-            shots=100_000,
-            samples_per_batch=4000,
-            n_batches=10,
-            energy_tol=1e-5,
-            occupancies_tol=1e-3,
-            carryover_threshold=1e-3,
-            max_iterations=1,
-            symmetrize_spin=True,
-            entropy=0,
-            max_dim=4000,
-        )
-    errors = [results_compressed_t2_exact[task_compressed_t2_exact]["error"]]
-    axes[i].bar(
-        width,
-        errors,
-        alpha=0.5,
-        width=width,
-        label="LUCJ-compressed (exact)",
-        color=colors["lucj_compressed"],
     )
 
     # compressed_t2
@@ -522,9 +374,6 @@ for i, bond_distance in enumerate(bond_distance_range):
         color='black',
     )
 
-
-    
-
     axes[i].set_title(f"R: {bond_distance} Å ")
     axes[i].set_yscale("log")
     axes[i].axhline(1.6e-3, linestyle="--", color="black")
@@ -534,7 +383,7 @@ for i, bond_distance in enumerate(bond_distance_range):
 
     # axes[row_sci_vec_dim, 0].legend(ncol=2, )
     leg = axes[1].legend(
-        bbox_to_anchor=(-0.32, -0.0), loc="upper center", ncol=3, columnspacing=0.8, handletextpad=0.2
+        bbox_to_anchor=(-0.32, -0.05), loc="upper center", ncol=4, columnspacing=0.8, handletextpad=0.2
     )
     # leg = axes[row_sci_vec_dim, 1].legend(
     #     bbox_to_anchor=(0.5, -0.4), loc="upper center", ncol=3

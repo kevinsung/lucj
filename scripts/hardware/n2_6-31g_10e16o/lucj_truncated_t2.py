@@ -27,7 +27,7 @@ nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 bond_distance_range = [1.2, 2.4]
-bond_distance_range = [2.4]
+# bond_distance_range = [2.4]
 
 n_reps_range = [1]
 
@@ -45,8 +45,7 @@ entropies = [1]
 
 max_dim = 1000
 samples_per_batch = 4000
-n_hardware_run_range = list(range(11, 12))
-n_hardware_run_range = [11]
+n_hardware_run_range = list(range(0, 10))
 
 tasks = [
     HardwareSQDEnergyTask(

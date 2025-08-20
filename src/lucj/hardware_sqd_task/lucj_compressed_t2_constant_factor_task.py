@@ -20,8 +20,7 @@ from lucj.hardware_sqd_task.hardware_job.hardware_job import (
     run_on_hardware,
 )
 
-hardware_path = "dynamic_decoupling_xy_opt_0"
-hardware_path = "dynamic_decoupling_xy_opt_0_remove_identity_equivalent"
+hardware_path = "constant_factor_dynamic_decoupling_xy_opt_0"
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +121,7 @@ def load_operator(task: HardwareSQDEnergyTask, data_dir: str, mol_data):
             return None
         logging.info(f"Load operator for {task}.\n")
         operator = np.load(operator_filename)
-        diag_coulomb_mats = operator["diag_coulomb_mats"]
+        diag_coulomb_mats = operator["diag_coulomb_mats"] * 2.5
         orbital_rotations = operator["orbital_rotations"]
 
         final_orbital_rotation = None
@@ -228,7 +227,8 @@ def run_hardware_sqd_energy_task(
 
     rng = np.random.default_rng(task.entropy)
 
-    if not os.path.exists(sample_filename):
+    # if not os.path.exists(sample_filename):
+    if True:
         # assert 0
         operator = load_operator(task, data_dir, mol_data)
         if operator is None:
@@ -241,7 +241,7 @@ def run_hardware_sqd_energy_task(
         samples = run_on_hardware(
             circuit,
             norb,
-            task.shots,
+            10_000_000,
             sample_filename=sample_filename,
             dynamic_decoupling=task.dynamic_decoupling,
         )
@@ -291,16 +291,6 @@ def run_hardware_sqd_energy_task(
 
     # return 
 
-    def solve_sci_batch_wrap(ci_strings, one_body_tensor, two_body_tensor, norb, nelec):
-        solve = False
-        while not solve:
-            try:
-                solve_sci_batch(ci_strings, one_body_tensor, two_body_tensor, norb, nelec)
-                solve = True
-            except DiceExecutionError:
-                logging.info(f"{task} Dice execution error\n")
-        
-
     result = diagonalize_fermionic_hamiltonian(
         mol_hamiltonian.one_body_tensor,
         mol_hamiltonian.two_body_tensor,
@@ -312,7 +302,7 @@ def run_hardware_sqd_energy_task(
         energy_tol=task.energy_tol,
         occupancies_tol=task.occupancies_tol,
         max_iterations=task.max_iterations,
-        sci_solver=solve_sci_batch_wrap,
+        sci_solver=solve_sci_batch,
         symmetrize_spin=task.symmetrize_spin,
         carryover_threshold=task.carryover_threshold,
         seed=rng,

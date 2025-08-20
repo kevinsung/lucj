@@ -14,12 +14,12 @@ from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, SCIResul
 from qiskit_addon_sqd.counts import bit_array_to_arrays, bitstring_matrix_to_integers
 from qiskit_addon_sqd.subsampling import postselect_by_hamming_right_and_left
 from qiskit.primitives import BitArray
-from lucj.hardware_sqd_task.hardware_job.hardware_job_batch import (
+from lucj.hardware_sqd_task.hardware_job.hardware_job_batch_fractional_gate import (
     constrcut_lucj_circuit,
     run_on_hardware,
 )
 
-hardware_path = "dynamic_decoupling_xy_opt_0"
+hardware_path = "dynamic_decoupling_xy_opt_0_fractional_gate"
 
 logger = logging.getLogger(__name__)
 
