@@ -10,9 +10,11 @@ from molecules_catalog.util import load_molecular_data
 from ffsim.variational.util import interaction_pairs_spin_balanced
 from lucj.params import LUCJParams, CompressedT2Params
 
-from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, SCIResult, solve_sci_batch
+from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, SCIResult
 from qiskit_addon_sqd.counts import bit_array_to_arrays, bitstring_matrix_to_integers
 from qiskit_addon_sqd.subsampling import postselect_by_hamming_right_and_left
+from qiskit_addon_dice_solver import solve_sci_batch
+from qiskit_addon_dice_solver.dice_solver import DiceExecutionError
 from qiskit.primitives import BitArray
 from lucj.hardware_sqd_task.hardware_job.hardware_job_batch_fractional_gate import (
     constrcut_lucj_circuit,
@@ -107,6 +109,7 @@ def load_operator(task: HardwareSQDEnergyTask, data_dir: str, mol_data):
         interaction_pairs=(pairs_aa, pairs_ab),
         with_final_orbital_rotation=True,
     )
+
     logging.info(f"Load operator for {task}.\n")
     operator_filename = data_dir / task.operatorpath / "operator.npz"
     if not os.path.exists(operator_filename):
@@ -141,6 +144,9 @@ def load_operator(task: HardwareSQDEnergyTask, data_dir: str, mol_data):
 
     logging.info(f"Generate truncated operator for {task}.\n")
     nelec = mol_data.nelec
+    pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
+        task.lucj_params.connectivity, norb
+    )
     if mol_data.ccsd_t2 is None:
         c0, c1, c2 = pyscf.ci.cisd.cisdvec_to_amplitudes(
             mol_data.cisd_vec, norb, nelec[0]
@@ -177,6 +183,7 @@ def run_hardware_sqd_energy_batch_task(
     data_dir: Path,
     molecules_catalog_dir: Path | None = None,
     overwrite: bool = True,
+    run_sqd: bool = True,
 ) -> HardwareSQDEnergyTask:
     logging.info(f"{compressed_task} Starting...\n")
     os.makedirs(data_dir / random_task.dirpath, exist_ok=True)
@@ -219,14 +226,14 @@ def run_hardware_sqd_energy_batch_task(
         and os.path.exists(list_data_filenames[2])
     ):
         logging.info("Data for tasks already exists. Skipping...\n")
-        return 
-    
+        return
+
     rng = np.random.default_rng(list_tasks[0].entropy)
 
     if not os.path.exists(list_sample_filenames[0]):
-    # if True:
+        # assert 0
         list_operator = load_operator(compressed_task, data_dir, mol_data)
-        # assert 0 
+
         if list_operator is None:
             return
         # construct lucj circuit
@@ -262,7 +269,8 @@ def run_hardware_sqd_energy_batch_task(
     logging.info(f"{list_tasks[0]} Done sampling\n")
     logging.info(f"{list_tasks[1]} Done sampling\n")
     logging.info(f"{list_tasks[2]} Done sampling\n")
-
+    if not run_sqd:
+        return
     for samples, task, data_filename in zip(
         list_samples, list_tasks, list_data_filenames
     ):
@@ -302,6 +310,19 @@ def run_hardware_sqd_energy_batch_task(
         logging.info(
             f"{task} #Total valid bitstr: {bitstrings.shape}, #total unique bitstr: {len(unique_valid_bitstr)}\n"
         )
+
+        def solve_sci_batch_wrap(
+            ci_strings, one_body_tensor, two_body_tensor, norb, nelec
+        ):
+            solve = False
+            while not solve:
+                try:
+                    solve_sci_batch(
+                        ci_strings, one_body_tensor, two_body_tensor, norb, nelec
+                    )
+                    solve = True
+                except DiceExecutionError:
+                    logging.info(f"{task} Dice execution error\n")
 
         result = diagonalize_fermionic_hamiltonian(
             mol_hamiltonian.one_body_tensor,

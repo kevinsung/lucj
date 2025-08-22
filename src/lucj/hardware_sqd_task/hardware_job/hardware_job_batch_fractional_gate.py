@@ -6,6 +6,7 @@ from qiskit.transpiler.passes import RemoveIdentityEquivalent
 from qiskit.transpiler import PassManager
 from qiskit_ibm_runtime import QiskitRuntimeService
 from qiskit_ibm_runtime import SamplerV2 as Sampler
+from qiskit_ibm_runtime.transpiler.passes import FoldRzzAngle
 
 from lucj.hardware_sqd_task.hardware_job.layout import get_zigzag_physical_layout
 from qiskit.primitives import BitArray
@@ -55,6 +56,12 @@ def run_on_hardware(
         # print(ffsim_pass)
         pass_manager.pre_init = ffsim_pass
         pass_manager.post_init = PassManager([RemoveIdentityEquivalent()])
+        pass_manager.post_optimization = PassManager(
+        [
+            FoldRzzAngle(),
+            RemoveIdentityEquivalent(target=backend.target),
+        ]
+    )
         isa_circuit = pass_manager.run(circuit)
         print(f"Circuit: Gate counts (w/ pre-init passes): {isa_circuit.count_ops()}")
         print(f"Circuit: gate depth: {isa_circuit.depth()}")
