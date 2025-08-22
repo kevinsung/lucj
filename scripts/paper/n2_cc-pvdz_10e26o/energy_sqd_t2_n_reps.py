@@ -261,8 +261,8 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     # print(error_avg)
     # print(error_min)
     # print(error_max)
-    if connectivity == "all-to-all":
-    # if True:
+    # if connectivity == "all-to-all":
+    if True:
         axes[0, i].axhline(
             error_avg,
             linestyle="--",
@@ -497,7 +497,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     plt.subplots_adjust(bottom=0.16)
 
     fig.suptitle(
-        f"$N_2$/cc-PVDZ ({nelectron}e, {norb}o)"
+        f"N$_2$/cc-PVDZ ({nelectron}e, {norb}o)"
     )
 
 filepath = os.path.join(

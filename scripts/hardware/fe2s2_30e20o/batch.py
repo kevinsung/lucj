@@ -27,7 +27,7 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 4
+MAX_PROCESSES = 1
 OVERWRITE = False
 
 molecule_name = "fe2s2"
@@ -46,7 +46,7 @@ max_iterations = 1
 symmetrize_spin = True
 entropies = [1]
 
-max_dim = 2000
+max_dim = 4000
 samples_per_batch = 4000
 
 compressed_tasks = [

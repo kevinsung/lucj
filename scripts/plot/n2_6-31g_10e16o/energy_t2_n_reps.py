@@ -333,7 +333,7 @@ for i, (bond_distance, connectivity) in enumerate(
     plt.tight_layout()
     plt.subplots_adjust(bottom=0.25, top=0.88)
 
-    fig.suptitle(f"$N_2$/6-31G ({nelectron}e, {norb}o)")
+    fig.suptitle(f"N$_2$/6-31G ({nelectron}e, {norb}o)")
 
 filepath = os.path.join(
     plots_dir,

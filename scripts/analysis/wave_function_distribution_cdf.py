@@ -13,8 +13,10 @@ import functools
 from collections import OrderedDict
 import numpy as np
 import matplotlib.pyplot as plt
-
+import matplotlib
 import json 
+matplotlib.rcParams.update({'font.size': 13})
+DATA_ROOT = "/media/storage/WanHsuan.Lin/"
 
 DATA_ROOT = "/media/storage/WanHsuan.Lin/"
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
@@ -131,18 +133,13 @@ tasks = [
 prop_cycle = plt.rcParams["axes.prop_cycle"]
 colors = prop_cycle.by_key()["color"]
 
-samples = []
+wave_functions = []
 
 for task in tasks:
-    sample_filename = DATA_ROOT / task.operatorpath / "sample.pickle"
+    wave_function_filename = DATA_ROOT / task.operatorpath / "state_vector.npy"
 
-    with open(sample_filename, "rb") as f:
-        sample = pickle.load(f)
-        sample = BitArray.from_counts(sample)
-        sample = BitArray.get_counts(sample)
-
-    samples.append(sample)
-
+    wave_function = np.load(wave_function_filename)
+    wave_functions.append(wave_function)
 
 color_keys = ["lucj_full", "lucj_truncated", "lucj_compressed"]
 legends = ["LUCJ-full", "LUCJ-truncated", "LUCJ-compressed"]
@@ -164,36 +161,41 @@ def hamming_distance(str1, str2):
     """
     return sum(s1 != s2 for s1, s2 in zip(str1, str2))
 
+nelec = (nelectron // 2, nelectron // 2)
 
-labels = sorted(functools.reduce(lambda x, y: x.union(y.keys()), samples, set()))
+tol = 1e-15
+
+effective_address = [] 
+for wave_function in wave_functions:
+    effective_address += np.nonzero(wave_function > tol)[0].tolist()
+effective_address = list(set(effective_address))
+effective_strings = ffsim.addresses_to_strings(
+    effective_address, norb=norb, nelec=nelec, bitstring_type=ffsim.BitstringType.STRING
+)
+
 dist = []
 prev_d = -1
-for item in labels:
-    d = hamming_distance(item, hf_state) if item != "rest" else 0
+for item in effective_strings:
+    d = hamming_distance(item, hf_state)
     dist.append(d)
-        
-labels = [list(x) for x in zip(*sorted(zip(dist, labels), key=lambda pair: pair[0]))][1]
-dist = [list(x) for x in zip(*sorted(zip(dist, labels), key=lambda pair: pair[0]))][0]
-
-labels_dict = OrderedDict()
+# print(dist)
+dist = [list(x) for x in zip(*sorted(zip(dist, effective_strings, effective_address), key=lambda pair: pair[0]))][0]
+effective_strings = [list(x) for x in zip(*sorted(zip(dist, effective_strings, effective_address), key=lambda pair: pair[0]))][1]
+effective_address = [list(x) for x in zip(*sorted(zip(dist, effective_strings, effective_address), key=lambda pair: pair[0]))][2]
 all_pvalues = []
 
-for execution in samples:
+
+for wave_function in wave_functions:
     values = []
-    for key in labels:
-        if key not in execution:
-            labels_dict[key] = 1
-            values.append(0)
-        else:
-            labels_dict[key] = 1
-            values.append(execution[key])
-    pvalues = np.array(values, dtype=float)
-    pvalues /= np.sum(pvalues)
-    all_pvalues.append(pvalues)
+    for address in effective_address:
+        values.append(abs(wave_function[address]) ** 2)
+    # pvalues = np.array(values, dtype=float)
+    # pvalues /= np.sum(pvalues)
+    all_pvalues.append(np.array(values))
 
 
 
-fig = plt.plot(figsize=(3, 4), layout="constrained")
+fig = plt.plot(figsize=(2, 2), layout="constrained")
 # Cumulative distributions.
 x = np.arange(len(all_pvalues[0]))
 for value, legend, c in zip(all_pvalues, legends, color_keys):
@@ -205,7 +207,7 @@ for value, legend, c in zip(all_pvalues, legends, color_keys):
     # plt.ecdf(value, label=legend, color=c)
 
 x = []
-x_ticks = [0, 4, 6, 8, 10, 12]
+x_ticks = [0, 10, 14, 18]
 for d in x_ticks:
     idx = dist.index(d)
     x.append(idx)

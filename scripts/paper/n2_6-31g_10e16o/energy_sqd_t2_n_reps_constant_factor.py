@@ -26,7 +26,7 @@ bond_distance_range = [1.2, 2.4]
 
 connectivities = [
     "all-to-all",
-    "heavy-hex",
+    # "heavy-hex",
 ]
 
 n_reps_range = list(range(1, 11))
@@ -71,7 +71,7 @@ with open('scripts/paper/color.json', 'r') as file:
 fig, axes = plt.subplots(
     2,
     len(bond_distance_range) * len(connectivities),
-    figsize=(10, 5),  # , layout="constrained"
+    figsize=(6, 5),  # , layout="constrained"
 )
 
 for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distance_range, connectivities)):
@@ -157,12 +157,15 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
 
         errors = [results[task]["error"] for task in tasks_compressed_t2]
         sci_vec_shape = [results[task]["sci_vec_shape"][0] for task in tasks_compressed_t2]
-        
+        if c is not None:
+            label = f"factor_{c}"
+        else:
+            label = "factor_1"
         axes[0, i].plot(
             n_reps_range,
             errors,
             f"{markers[j]}{linestyles[0]}",
-            label="factor_{c}",
+            label=label,
             color=color,
             # alpha=c / 3 + 0.1 if c is not None else 1
         )
@@ -171,7 +174,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
             n_reps_range,
             sci_vec_shape,
             f"{markers[j]}{linestyles[0]}",
-            label=f"factor_{c}",
+            label=label,
             color=color,
             # alpha=c / 3 + 0.1 if c is not None else 1
         )
@@ -189,15 +192,15 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     axes[1, i].set_xlabel("Repetitions")
     axes[1, i].set_xticks(n_reps_range)
 
-    leg = axes[1, 2].legend(
-        bbox_to_anchor=(-0.4, -0.28), loc="upper center", ncol=6
+    leg = axes[1, 1].legend(
+        bbox_to_anchor=(-0.4, -0.28), loc="upper center", ncol=3
     )
     leg.set_in_layout(False)
     plt.tight_layout()
-    plt.subplots_adjust(bottom=0.16, top=0.88)
+    plt.subplots_adjust(bottom=0.2, top=0.88)
 
     fig.suptitle(
-        f"$N_2$/6-31G ({nelectron}e, {norb}o)"
+        f"N$_2$/6-31G$ ({nelectron}e, {norb}o)"
     )
 
 filepath = os.path.join(

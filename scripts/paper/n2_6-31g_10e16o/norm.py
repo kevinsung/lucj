@@ -338,9 +338,9 @@ for i, (d, connectivity) in enumerate(
     axes[0, i].plot(
         n_reps_range,
         list_average_norm_compressed_diagonal_coulumb_reg,
-        f"{markers[1]}{linestyles[0]}",
+        f"{markers[0]}{linestyles[0]}",
         label="LUCJ-compressed-reg",
-        color=colors["lucj_compressed_1stg"],
+        color=colors["lucj_compressed_quimb2"],
     )
 
     # diag coulumn norm diff
@@ -357,7 +357,7 @@ for i, (d, connectivity) in enumerate(
         list_average_diff_norm_compressed_diagonal_coulumb_reg,
         f"{markers[0]}{linestyles[0]}",
         label="LUCJ-compressed-reg",
-        color=colors["lucj_compressed_1stg"],
+        color=colors["lucj_compressed_quimb2"],
     )
 
     # diag coulumn norm diff
@@ -374,7 +374,7 @@ for i, (d, connectivity) in enumerate(
         list_average_diff_norm_compressed_orbital_rotation_reg,
         f"{markers[0]}{linestyles[0]}",
         label="LUCJ-compressed-reg",
-        color=colors["lucj_compressed_1stg"],
+        color=colors["lucj_compressed_quimb2"],
     )
 
     # loss
@@ -399,7 +399,7 @@ for i, (d, connectivity) in enumerate(
         list_loss_compression_reg,
         f"{markers[0]}{linestyles[0]}",
         label="LUCJ-compressed-reg",
-        color=colors["lucj_compressed_1stg"],
+        color=colors["lucj_compressed_quimb2"],
     )
 
 
@@ -426,14 +426,14 @@ for i, (d, connectivity) in enumerate(
 
 
     # axes[row_sci_vec_dim, 0].legend(ncol=2, )
-    leg = axes[3, 0].legend(bbox_to_anchor=(0.44, -0.36), loc="upper left", ncol=3)
+    leg = axes[3, 0].legend(bbox_to_anchor=(0.44, -0.4), loc="upper left", ncol=3)
     leg.set_in_layout(False)
     plt.tight_layout()
     # plt.subplots_adjust(top=0.9,left=0.06,bottom=0.15)
     plt.subplots_adjust(bottom=0.1, top=0.9)
 
 
-    fig.suptitle(f"Operator norm: $N_2$/6-31G ({nelectron}e, {norb}o)")
+    fig.suptitle(f"Operator norm: N$_2$/6-31G ({nelectron}e, {norb}o)")
 filepath = os.path.join(
     plots_dir,
     f"{os.path.splitext(os.path.basename(__file__))[0]}.pdf",

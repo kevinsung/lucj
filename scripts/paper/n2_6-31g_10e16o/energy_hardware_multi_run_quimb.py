@@ -517,7 +517,7 @@ for i, bond_distance in enumerate(bond_distance_range):
     plt.subplots_adjust(bottom=0.15, top=0.85)
 
     fig.suptitle(
-        f"$N_2$/6-31G ({nelectron}e, {norb}o)"
+        f"N$_2$/6-31G ({nelectron}e, {norb}o)"
     )
 
 filepath = os.path.join(

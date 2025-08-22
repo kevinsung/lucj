@@ -336,9 +336,9 @@ for plot_type in ["vqe", "sqd"]:
     # plt.set_xlabel("Bond length (Å)")
 
     if plot_type == "vqe":
-        fig.suptitle(f"$N_2$/6-31G ({nelectron}e, {norb}o)")
+        fig.suptitle(f"N$_2$/6-31G ({nelectron}e, {norb}o)")
     else:
-        fig.suptitle(f"$N_2$/6-31G ({nelectron}e, {norb}o)")
+        fig.suptitle(f"N$_2$/6-31G ({nelectron}e, {norb}o)")
 
 
     filepath = os.path.join(

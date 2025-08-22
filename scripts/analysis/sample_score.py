@@ -5,13 +5,17 @@ from pathlib import Path
 from qiskit.primitives import BitArray
 import ffsim
 from lucj.params import LUCJParams, CompressedT2Params
-from lucj.hardware_sqd_task.lucj_compressed_t2_task import HardwareSQDEnergyTask
 
 from qiskit_addon_sqd.counts import bit_array_to_arrays, bitstring_matrix_to_integers
 from qiskit_addon_sqd.subsampling import postselect_by_hamming_right_and_left
 
-
 import numpy as np
+
+fractional_gate = True
+if fractional_gate:
+    from lucj.hardware_sqd_task.lucj_t2_seperate_sqd_task_sci_fg import HardwareSQDEnergyTask
+else:
+    from lucj.hardware_sqd_task.lucj_compressed_t2_task import HardwareSQDEnergyTask
 
 DATA_ROOT = "/media/storage/WanHsuan.Lin/"
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
@@ -40,7 +44,7 @@ n_reps = 1
 
 max_dim = 1000
 samples_per_batch = 4000
-
+n_hardware_run = 1
 task_compressed_t2_hardware = HardwareSQDEnergyTask(
     molecule_basename=molecule_basename,
     bond_distance=bond_distance,
@@ -62,7 +66,8 @@ task_compressed_t2_hardware = HardwareSQDEnergyTask(
     symmetrize_spin=symmetrize_spin,
     entropy=entropy,
     max_dim=max_dim,
-    n_hardware_run = 0
+    n_hardware_run = n_hardware_run,
+    dynamic_decoupling=True
 )
 
 task_truncated_t2_hardware = HardwareSQDEnergyTask(
@@ -84,7 +89,8 @@ task_truncated_t2_hardware = HardwareSQDEnergyTask(
     symmetrize_spin=symmetrize_spin,
     entropy=entropy,
     max_dim=max_dim,
-    n_hardware_run = 0
+    n_hardware_run = n_hardware_run,
+    dynamic_decoupling=True
 )
 
 nelec = (nelectron // 2, nelectron // 2)
@@ -99,7 +105,10 @@ hf_address = ffsim.strings_to_addresses(
     )[0]
 
 def compute_score(task):
-    sample_filename = DATA_ROOT / task.operatorpath / "hardware_sample.pickle"
+    if fractional_gate:
+        sample_filename = DATA_ROOT / task.operatorpath / f"dynamic_decoupling_xy_opt_0_fractional_gate/hardware_sample_{task.n_hardware_run}.pickle"
+    else:
+        sample_filename = DATA_ROOT / task.operatorpath / f"dynamic_decoupling_xy_opt_0/hardware_sample_{task.n_hardware_run}.pickle"
 
     state_vector_filename = DATA_ROOT / task.operatorpath / "state_vector.npy"
 
@@ -136,8 +145,8 @@ def compute_score(task):
         nelec,
     )
     for address in addresses:
-        if address == hf_address:
-            continue
+        # if address == hf_address:
+        #     continue
         if np.isclose(state_vector[address], 0, atol = 1e-15):
             count += 1
         else:
