@@ -46,7 +46,7 @@ max_iterations = 1
 symmetrize_spin = True
 entropies = [1]
 
-max_dim = 2000
+max_dim = 4000
 samples_per_batch = 4000
 
 compressed_tasks = [

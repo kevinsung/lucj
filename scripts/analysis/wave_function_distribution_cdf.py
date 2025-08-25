@@ -141,6 +141,9 @@ for task in tasks:
     wave_function = np.load(wave_function_filename)
     wave_functions.append(wave_function)
 
+for wave_function in wave_functions:
+    np.testing.assert_allclose(np.sum(np.abs(wave_function)**2), 1, atol=1e-8)
+
 color_keys = ["lucj_full", "lucj_truncated", "lucj_compressed"]
 legends = ["LUCJ-full", "LUCJ-truncated", "LUCJ-compressed"]
 
@@ -180,18 +183,16 @@ for item in effective_strings:
     dist.append(d)
 # print(dist)
 dist = [list(x) for x in zip(*sorted(zip(dist, effective_strings, effective_address), key=lambda pair: pair[0]))][0]
-effective_strings = [list(x) for x in zip(*sorted(zip(dist, effective_strings, effective_address), key=lambda pair: pair[0]))][1]
+# effective_strings = [list(x) for x in zip(*sorted(zip(dist, effective_strings, effective_address), key=lambda pair: pair[0]))][1]
 effective_address = [list(x) for x in zip(*sorted(zip(dist, effective_strings, effective_address), key=lambda pair: pair[0]))][2]
 all_pvalues = []
 
 
 for wave_function in wave_functions:
-    values = []
-    for address in effective_address:
-        values.append(abs(wave_function[address]) ** 2)
+    values = np.abs(wave_function[effective_address])**2
     # pvalues = np.array(values, dtype=float)
     # pvalues /= np.sum(pvalues)
-    all_pvalues.append(np.array(values))
+    all_pvalues.append(values)
 
 
 
@@ -219,7 +220,7 @@ plt.xlabel("Hamming distance to HF state")
 plt.ylabel("CDF")
 plt.legend()
 plt.tight_layout()
-plt.subplots_adjust(left=0.15,bottom=0.1, top=0.92)
+plt.subplots_adjust(left=0.17,bottom=0.13, top=0.92)
 plt.yscale("log")
 filepath = os.path.join(
     plots_dir,

@@ -40,7 +40,7 @@ entropy = 1
 n_hardware_run_range = list(range(0, 10))
 
 
-max_dim = 1000
+max_dim = 4000
 samples_per_batch = 4000
 
 tasks_compressed_t2 = [
@@ -179,9 +179,9 @@ row_error = 0
 row_sci_vec_dim = 1
 
 fig, axes = plt.subplots(
-    1,
+    2,
     len(bond_distance_range),
-    figsize=(5, 4),  # , layout="constrained"
+    figsize=(5, 5),  # , layout="constrained"
 )
 
 for i, bond_distance in enumerate(bond_distance_range):
@@ -230,19 +230,35 @@ for i, bond_distance in enumerate(bond_distance_range):
     sci_vec_shape_max.append(np.max(sci_vec_shape_n_reps) - np.average(sci_vec_shape_n_reps))
 
                  
-    axes[i].errorbar(
+    axes[row_error, i].errorbar(
         - width,
         errors,
         [errors_min, errors_max],
         color='black',
     )
 
-    axes[i].bar(
+    axes[row_error, i].bar(
         - width,
         errors,
         width=width,
         label="LUCJ-random",
         color=colors["lucj_random"],
+    )
+
+    axes[row_sci_vec_dim, i].bar(
+        - width,
+        sci_vec_shape,
+        width=width,
+        label="LUCJ random",
+        color=colors["lucj_random"],
+    )
+
+
+    axes[row_sci_vec_dim, i].errorbar(
+        - width,
+        sci_vec_shape,
+        [sci_vec_shape_min, sci_vec_shape_max],
+        color='black',
     )
     # LUCJ data
     errors = []
@@ -291,7 +307,7 @@ for i, bond_distance in enumerate(bond_distance_range):
 
     
 
-    axes[i].bar(
+    axes[row_error, i].bar(
         0,
         errors,
         width=width,
@@ -299,10 +315,25 @@ for i, bond_distance in enumerate(bond_distance_range):
         color=colors["lucj_truncated"],
     )
                
-    axes[i].errorbar(
+    axes[row_error, i].errorbar(
         0,
         errors,
         [errors_min, errors_max],
+        color='black',
+    )
+
+    axes[row_sci_vec_dim, i].bar(
+        0,
+        sci_vec_shape,
+        width=width,
+        label="LUCJ truncated",
+        color=colors["lucj_truncated"],
+    )
+
+    axes[row_sci_vec_dim, i].errorbar(
+        0,
+        sci_vec_shape,
+        [sci_vec_shape_min, sci_vec_shape_max],
         color='black',
     )
 
@@ -358,7 +389,7 @@ for i, bond_distance in enumerate(bond_distance_range):
         energy_n_reps = [results_compressed_t2[task]['energy'] for task in tasks_compressed_t2 if task in results_compressed_t2]
         print(energy_n_reps)
 
-    axes[i].bar(
+    axes[row_error, i].bar(
         width,
         errors,
         width=width,
@@ -366,30 +397,48 @@ for i, bond_distance in enumerate(bond_distance_range):
         color=colors["lucj_compressed"],
     )
            
-    axes[i].errorbar(
+    axes[row_error, i].errorbar(
         width,
         errors,
         [errors_min, errors_max],
         color='black',
     )
 
-    axes[i].set_title(f"R: {bond_distance} Å ")
-    axes[i].set_yscale("log")
-    axes[i].axhline(1.6e-3, linestyle="--", color="black")
-    axes[i].set_ylabel("Energy error (Hartree)")
-    axes[i].set_xticks([])
-    axes[i].set_ylim(0, 1)
+    axes[row_sci_vec_dim, i].bar(
+        width,
+        sci_vec_shape,
+        width=width,
+        label="LUCJ compressed",
+        color=colors["lucj_compressed"],
+    )
+    axes[row_sci_vec_dim, i].errorbar(
+        width,
+        sci_vec_shape,
+        [sci_vec_shape_min, sci_vec_shape_max],
+        color='black',
+    )
+
+    axes[row_error, i].set_title(f"R: {bond_distance} Å ")
+    axes[row_error, i].set_yscale("log")
+    axes[row_error, i].axhline(1.6e-3, linestyle="--", color="black")
+    axes[row_error, i].set_ylabel("Energy error (Hartree)")
+    axes[row_error, i].set_xticks([])
+    axes[row_error, i].set_ylim(0, 1e-1)
+
+    axes[row_sci_vec_dim, i].set_ylabel("SCI subspace")
+    axes[row_sci_vec_dim, i].set_xticks([])
 
     # axes[row_sci_vec_dim, 0].legend(ncol=2, )
-    leg = axes[1].legend(
-        bbox_to_anchor=(-0.32, -0.05), loc="upper center", ncol=4, columnspacing=0.8, handletextpad=0.2
-    )
-    # leg = axes[row_sci_vec_dim, 1].legend(
-    #     bbox_to_anchor=(0.5, -0.4), loc="upper center", ncol=3
+    # leg = axes[1].legend(
+    #     bbox_to_anchor=(-0.32, -0.05), loc="upper center", ncol=4, columnspacing=0.8, handletextpad=0.2
     # )
+    leg = axes[row_sci_vec_dim, 1].legend(
+        bbox_to_anchor=(-0.32, -0.05), loc="upper center", ncol=3
+    )
     leg.set_in_layout(False)
     plt.tight_layout()
-    plt.subplots_adjust(bottom=0.15, top=0.85)
+    # plt.subplots_adjust(bottom=0.15, top=0.85)
+    plt.subplots_adjust(bottom=0.1, top=0.88)
 
     fig.suptitle(
         f"N$_2$/6-31G ({nelectron}e, {norb}o)"

@@ -26,9 +26,9 @@ basis = "6-31g"
 nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-# bond_distance_range = [1.2, 2.4]
-bond_distance_range = [2.4]
-bond_distance_range = [1.2]
+bond_distance_range = [1.2, 2.4]
+# bond_distance_range = [2.4]
+# bond_distance_range = [1.2]
 n_hardware_run_range = list(range(0, 10))
 n_reps_range = [1]
 
@@ -41,7 +41,7 @@ max_iterations = 1
 symmetrize_spin = True
 entropies = [1]
 
-max_dim = 1000
+max_dim = 4000
 samples_per_batch = 4000
 
 filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_r12_max_dim-{max_dim}_fractional_gate.log"
