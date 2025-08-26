@@ -35,7 +35,7 @@ max_iterations = 1
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 1
-max_dim = 2500
+max_dim = 4000
 samples_per_batch = max_dim
 entropies = [1]
 
@@ -251,7 +251,7 @@ row_sci_vec_dim = 1
 fig, axes = plt.subplots(
     2,
     len(bond_distance_range),
-    figsize=(6, 5),  # , layout="constrained"
+    figsize=(6, 4),  # , layout="constrained"
 )
 
 for i, bond_distance in enumerate(bond_distance_range):
@@ -304,31 +304,31 @@ for i, bond_distance in enumerate(bond_distance_range):
 
                  
     axes[row_error, i].errorbar(
-        - width,
+        - width / 2 - width / 4,
         errors,
         [errors_min, errors_max],
         color='black',
     )
 
     axes[row_error, i].bar(
-        - width,
+        - width / 2 - width / 4,
         errors,
-        width=width,
+        width=width / 2,
         label="LUCJ random",
         color=colors["lucj_random"],
     )
     
     axes[row_sci_vec_dim, i].bar(
-        - width,
+        - width / 2 - width / 4,
         sci_vec_shape,
-        width=width,
+        width=width / 2,
         label="LUCJ random",
         color=colors["lucj_random"],
     )
 
 
     axes[row_sci_vec_dim, i].errorbar(
-        - width,
+        - width / 2 - width / 4,
         sci_vec_shape,
         [sci_vec_shape_min, sci_vec_shape_max],
         color='black',
@@ -382,32 +382,32 @@ for i, bond_distance in enumerate(bond_distance_range):
     sci_vec_shape_max.append(np.max(sci_vec_shape_n_reps) - np.average(sci_vec_shape_n_reps))
 
     axes[row_error, i].bar(
-        0,
+        width / 4,
         errors,
-        width=width,
+        width=width / 2,
         # alpha=0.5,
         label="LUCJ truncated",
         color=colors["lucj_truncated"],
     )
                
     axes[row_error, i].errorbar(
-        0,
+        width / 4,
         errors,
         [errors_min, errors_max],
         color='black',
     )
 
     axes[row_sci_vec_dim, i].bar(
-        0,
+        width / 4,
         sci_vec_shape,
         # alpha=0.5,
-        width=width,
+        width=width / 2,
         label="LUCJ truncated",
         color=colors["lucj_truncated"],
     )
 
     axes[row_sci_vec_dim, i].errorbar(
-        0,
+        width / 4,
         sci_vec_shape,
         [sci_vec_shape_min, sci_vec_shape_max],
         color='black',
@@ -441,14 +441,23 @@ for i, bond_distance in enumerate(bond_distance_range):
     
     
     errors = [results_truncated_t2_exact[task_truncated_exact]["energy"] - mol_data.sci_energy]
+    sci_vec_shape = [results_truncated_t2_exact[task_truncated_exact]["sci_vec_shape"][0]]
     axes[row_error, i].bar(
-        0,
+        - width / 4,
         errors,
-        alpha=1,
-        width=width,
+        alpha=0.5,
+        width=width / 2,
         label="LUCJ-truncated (exact)",
-        # color=colors["lucj_truncated"],
-        color="darkgreen",
+        color=colors["lucj_truncated"],
+    )
+
+    axes[row_sci_vec_dim, i].bar(
+        - width / 4,
+        errors,
+        alpha=0.5,
+        width=width / 2,
+        label="LUCJ-truncated (exact)",
+        color=colors["lucj_truncated"],
     )
 
     # compressed_t2
@@ -499,31 +508,31 @@ for i, bond_distance in enumerate(bond_distance_range):
 
 
     axes[row_error, i].bar(
-        width,
+        width + width / 4,
         errors,
-        width=width,
+        width=width / 2,
         # alpha=0.5,
         label="LUCJ compressed",
         color=colors["lucj_compressed"],
     )
            
     axes[row_error, i].errorbar(
-        width,
+        width + width / 4,
         errors,
         [errors_min, errors_max],
         color='black',
     )
 
     axes[row_sci_vec_dim, i].bar(
-        width,
+        width + width / 4,
         sci_vec_shape,
         # alpha=0.5,
-        width=width,
+        width=width / 2,
         label="LUCJ compressed",
         color=colors["lucj_compressed"],
     )
     axes[row_sci_vec_dim, i].errorbar(
-        width,
+        width + width / 4,
         sci_vec_shape,
         [sci_vec_shape_min, sci_vec_shape_max],
         color='black',
@@ -557,14 +566,23 @@ for i, bond_distance in enumerate(bond_distance_range):
             max_dim=4000,
         )
     errors = [results_compressed_t2_exact[task_compressed_t2_exact]["energy"] - mol_data.sci_energy]
+    sci_vec_shape = [results_compressed_t2_exact[task_compressed_t2_exact]["sci_vec_shape"][0]]
     axes[row_error, i].bar(
-        width,
+        width - width / 4,
         errors,
-        alpha=1,
-        width=width,
+        alpha=0.5,
+        width=width / 2,
         label="LUCJ-compressed (exact)",
-        # color=colors["lucj_compressed"],
-        color="royalblue",
+        color=colors["lucj_compressed"],
+    )
+
+    axes[row_sci_vec_dim, i].bar(
+        width - width / 4,
+        sci_vec_shape,
+        alpha=0.5,
+        width=width / 2,
+        label="LUCJ-compressed (exact)",
+        color=colors["lucj_compressed"],
     )
 
     axes[row_error, i].set_title(f"R: {bond_distance} Å ")

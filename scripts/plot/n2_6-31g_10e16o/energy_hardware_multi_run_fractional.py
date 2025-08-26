@@ -41,8 +41,7 @@ entropy = 1
 n_hardware_run_range = list(range(0, 10))
 
 
-max_dim = 1000
-# max_dim = 4000
+max_dim = 4000
 samples_per_batch = 4000
 
 tasks_compressed_t2 = [
@@ -208,8 +207,6 @@ results_random = {}
 for task in tasks_random:
     filepath = DATA_ROOT / task.dirpath / "hardware_sqd_data.pickle"
     if os.path.exists(filepath):
-    # print(filepath)
-    # input()
         results_random[task] = load_data(filepath)
 
 results_truncated_t2 = {}
@@ -256,7 +253,7 @@ row_error = 0
 row_sci_vec_dim = 1
 
 fig, axes = plt.subplots(
-    1,
+    2,
     len(bond_distance_range),
     figsize=(6, 4),  # , layout="constrained"
 )
@@ -307,17 +304,32 @@ for i, bond_distance in enumerate(bond_distance_range):
     sci_vec_shape_max.append(np.max(sci_vec_shape_n_reps) - np.average(sci_vec_shape_n_reps))
 
                  
-    axes[i].errorbar(
-        - width,
+    axes[row_error, i].errorbar(
+        - width / 2 - width / 4,
         errors,
         [errors_min, errors_max],
         color='black',
     )
 
-    axes[i].bar(
-        - width,
+    axes[row_error, i].bar(
+        - width / 2 - width / 4,
         errors,
-        width=width,
+        width=width / 2,
+        label="LUCJ-random",
+        color=colors["lucj_random"],
+    )
+
+    axes[row_sci_vec_dim, i].errorbar(
+        - width / 2 - width / 4,
+        sci_vec_shape,
+        [sci_vec_shape_min, sci_vec_shape_max],
+        color='black',
+    )
+
+    axes[row_sci_vec_dim, i].bar(
+        - width / 2 - width / 4,
+        sci_vec_shape,
+        width=width / 2,
         label="LUCJ-random",
         color=colors["lucj_random"],
     )
@@ -350,15 +362,24 @@ for i, bond_distance in enumerate(bond_distance_range):
     
     
     errors = [results_truncated_t2_exact[task_truncated_exact]["error"]]
-    axes[i].bar(
-        0,
+    sci_vec_shape = [results_truncated_t2_exact[task_truncated_exact]["sci_vec_shape"][0]]
+    axes[row_error, i].bar(
+        - width / 4,
         errors,
         alpha=0.5,
-        width=width,
+        width=width / 2,
         label="LUCJ-truncated (exact)",
         color=colors["lucj_truncated"],
     )
     
+    axes[row_sci_vec_dim, i].bar(
+        - width / 4,
+        sci_vec_shape,
+        alpha=0.5,
+        width=width / 2,
+        label="LUCJ-truncated (exact)",
+        color=colors["lucj_truncated"],
+    )
 
     errors = []
     errors_min = []
@@ -406,18 +427,33 @@ for i, bond_distance in enumerate(bond_distance_range):
 
     
 
-    axes[i].bar(
-        0,
+    axes[row_error, i].bar(
+        width / 4,
         errors,
-        width=width,
+        width=width / 2,
         label="LUCJ-truncated",
         color=colors["lucj_truncated"],
     )
                
-    axes[i].errorbar(
-        0,
+    axes[row_error, i].errorbar(
+        width / 4,
         errors,
         [errors_min, errors_max],
+        color='black',
+    )
+
+    axes[row_sci_vec_dim, i].bar(
+        width / 4,
+        sci_vec_shape,
+        width=width / 2,
+        label="LUCJ-truncated",
+        color=colors["lucj_truncated"],
+    )
+               
+    axes[row_sci_vec_dim, i].errorbar(
+        width / 4,
+        sci_vec_shape,
+        [sci_vec_shape_min, sci_vec_shape_max],
         color='black',
     )
 
@@ -449,11 +485,21 @@ for i, bond_distance in enumerate(bond_distance_range):
             max_dim=4000,
         )
     errors = [results_compressed_t2_exact[task_compressed_t2_exact]["error"]]
-    axes[i].bar(
-        width,
+    sci_vec_shape = [results_compressed_t2_exact[task_compressed_t2_exact]["sci_vec_shape"][0]]
+    axes[row_error, i].bar(
+        width - width / 4,
         errors,
         alpha=0.5,
-        width=width,
+        width=width / 2,
+        label="LUCJ-compressed (exact)",
+        color=colors["lucj_compressed"],
+    )
+
+    axes[row_sci_vec_dim, i].bar(
+        width - width / 4,
+        sci_vec_shape,
+        alpha=0.5,
+        width=width / 2,
         label="LUCJ-compressed (exact)",
         color=colors["lucj_compressed"],
     )
@@ -510,33 +556,48 @@ for i, bond_distance in enumerate(bond_distance_range):
         energy_n_reps = [results_compressed_t2[task]['energy'] for task in tasks_compressed_t2 if task in results_compressed_t2]
         print(energy_n_reps)
 
-    axes[i].bar(
-        width,
+    axes[row_error, i].bar(
+        width + width / 4,
         errors,
-        width=width,
+        width=width / 2,
         label="LUCJ-compressed",
         color=colors["lucj_compressed"],
     )
            
-    axes[i].errorbar(
-        width,
+    axes[row_error, i].errorbar(
+        width + width / 4,
         errors,
         [errors_min, errors_max],
         color='black',
     )
 
-
+    axes[row_sci_vec_dim, i].bar(
+        width + width / 4,
+        sci_vec_shape,
+        width=width / 2,
+        label="LUCJ-compressed",
+        color=colors["lucj_compressed"],
+    )
+           
+    axes[row_sci_vec_dim, i].errorbar(
+        width + width / 4,
+        sci_vec_shape,
+        [sci_vec_shape_min, sci_vec_shape_max],
+        color='black',
+    )
     
 
-    axes[i].set_title(f"R: {bond_distance} Å ")
-    axes[i].set_yscale("log")
-    axes[i].axhline(1.6e-3, linestyle="--", color="black")
-    axes[i].set_ylabel("Energy error (Hartree)")
-    axes[i].set_xticks([])
-    axes[i].set_ylim(0, 1)
+    axes[row_error, i].set_title(f"R: {bond_distance} Å ")
+    axes[row_error, i].set_yscale("log")
+    axes[row_error, i].axhline(1.6e-3, linestyle="--", color="black")
+    axes[row_error, i].set_ylabel("Energy error (Hartree)")
+    axes[row_error, i].set_xticks([])
+    axes[row_error, i].set_ylim(0, 2e-1)
 
+    axes[row_sci_vec_dim, i].set_ylabel("SCI subspace")
+    axes[row_sci_vec_dim, i].set_xticks([])
     # axes[row_sci_vec_dim, 0].legend(ncol=2, )
-    leg = axes[1].legend(
+    leg = axes[row_sci_vec_dim, 1].legend(
         bbox_to_anchor=(-0.32, -0.0), loc="upper center", ncol=3, columnspacing=0.8, handletextpad=0.2
     )
     # leg = axes[row_sci_vec_dim, 1].legend(

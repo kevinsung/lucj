@@ -134,6 +134,7 @@ def load_data(filepath):
             "sci_vec_shape": (0, 0),
             "n_reps": 0,
         }
+        print(filepath)
     else:
         with open(filepath, "rb") as f:
             result = pickle.load(f)
@@ -351,6 +352,7 @@ axes[row_error].set_xlim(- 2 * width, 2*width)
 
 axes[row_sci_vec_dim].set_ylabel("SCI subspace")
 axes[row_sci_vec_dim].set_xticks([])
+axes[row_sci_vec_dim].set_xlim(- 2 * width, 2*width)
 
 # axes[row_sci_vec_dim, 0].legend(ncol=2, )
 leg = axes[row_sci_vec_dim].legend(

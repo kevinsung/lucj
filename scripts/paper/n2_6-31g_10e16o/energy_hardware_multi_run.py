@@ -423,7 +423,7 @@ for i, bond_distance in enumerate(bond_distance_range):
     axes[row_error, i].axhline(1.6e-3, linestyle="--", color="black")
     axes[row_error, i].set_ylabel("Energy error (Hartree)")
     axes[row_error, i].set_xticks([])
-    axes[row_error, i].set_ylim(0, 1e-1)
+    axes[row_error, i].set_ylim(0, 2e-1)
 
     axes[row_sci_vec_dim, i].set_ylabel("SCI subspace")
     axes[row_sci_vec_dim, i].set_xticks([])
@@ -433,7 +433,7 @@ for i, bond_distance in enumerate(bond_distance_range):
     #     bbox_to_anchor=(-0.32, -0.05), loc="upper center", ncol=4, columnspacing=0.8, handletextpad=0.2
     # )
     leg = axes[row_sci_vec_dim, 1].legend(
-        bbox_to_anchor=(-0.32, -0.05), loc="upper center", ncol=3
+        bbox_to_anchor=(-0.32, -0.05), loc="upper center", ncol=3, columnspacing=0.8, handletextpad=0.2
     )
     leg.set_in_layout(False)
     plt.tight_layout()

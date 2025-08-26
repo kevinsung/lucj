@@ -5,8 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from lucj.params import LUCJParams, CompressedT2Params
-from lucj.hardware_sqd_task.lucj_compressed_t2_task import HardwareSQDEnergyTask
-from lucj.sqd_energy_task.lucj_random_t2_task import RandomSQDEnergyTask
+from lucj.hardware_sqd_task.lucj_t2_task import HardwareSQDEnergyTask
 
 import json
 from molecules_catalog.util import load_molecular_data
@@ -81,7 +80,6 @@ tasks_random = [
                 with_final_orbital_rotation=True,
             ),
             compressed_t2_params=None,
-            connectivity_opt=False,
             random_op =True,
             shots=shots,
             samples_per_batch=samples_per_batch,
@@ -109,7 +107,6 @@ tasks_truncated_t2 = [
                 with_final_orbital_rotation=True,
             ),
             compressed_t2_params=None,
-            connectivity_opt=False,
             random_op =False,
             shots=shots,
             samples_per_batch=samples_per_batch,
@@ -207,7 +204,6 @@ for i, bond_distance in enumerate(bond_distance_range):
                     with_final_orbital_rotation=True,
                 ),
                 compressed_t2_params=None,
-                connectivity_opt=False,
                 random_op =True,
                 shots=shots,
                 samples_per_batch=samples_per_batch,
@@ -282,7 +278,6 @@ for i, bond_distance in enumerate(bond_distance_range):
                     with_final_orbital_rotation=True,
                 ),
                 compressed_t2_params=None,
-                connectivity_opt=False,
                 random_op =False,
                 shots=shots,
                 samples_per_batch=samples_per_batch,
