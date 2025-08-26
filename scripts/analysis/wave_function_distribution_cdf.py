@@ -1,6 +1,5 @@
 import itertools
 import os
-import pickle
 from pathlib import Path
 from qiskit.primitives import BitArray
 import ffsim
@@ -8,9 +7,6 @@ import matplotlib.pyplot as plt
 
 from lucj.params import LUCJParams, CompressedT2Params
 from lucj.sqd_energy_task.lucj_compressed_t2_task_sci import SQDEnergyTask
-from qiskit.visualization import plot_distribution
-import functools
-from collections import OrderedDict
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
@@ -166,15 +162,23 @@ def hamming_distance(str1, str2):
 
 nelec = (nelectron // 2, nelectron // 2)
 
-tol = 1e-15
+# Get the dimension of the vector space.
+dim = ffsim.dim(norb, nelec)
+# tol = 1e-15
 
-effective_address = [] 
-for wave_function in wave_functions:
-    effective_address += np.nonzero(wave_function > tol)[0].tolist()
-effective_address = list(set(effective_address))
+# effective_address = [] 
+# for wave_function in wave_functions:
+#     effective_address += np.nonzero(wave_function)[0].tolist()
+# effective_address = list(set(effective_address))
+# effective_strings = ffsim.addresses_to_strings(
+#     effective_address, norb=norb, nelec=nelec, bitstring_type=ffsim.BitstringType.STRING
+# )
+
+effective_address = list(range(dim))
 effective_strings = ffsim.addresses_to_strings(
-    effective_address, norb=norb, nelec=nelec, bitstring_type=ffsim.BitstringType.STRING
+    range(dim), norb=norb, nelec=nelec, bitstring_type=ffsim.BitstringType.STRING
 )
+
 
 dist = []
 prev_d = -1
@@ -208,7 +212,7 @@ for value, legend, c in zip(all_pvalues, legends, color_keys):
     # plt.ecdf(value, label=legend, color=c)
 
 x = []
-x_ticks = [0, 10, 14, 18]
+x_ticks = [0, 14, 18]
 for d in x_ticks:
     idx = dist.index(d)
     x.append(idx)
@@ -220,7 +224,7 @@ plt.xlabel("Hamming distance to HF state")
 plt.ylabel("CDF")
 plt.legend()
 plt.tight_layout()
-plt.subplots_adjust(left=0.17,bottom=0.13, top=0.92)
+plt.subplots_adjust(left=0.18,bottom=0.13, top=0.92)
 plt.yscale("log")
 filepath = os.path.join(
     plots_dir,
