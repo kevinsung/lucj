@@ -414,6 +414,8 @@ def run_hardware_sqd_energy_batch_task(
             "result_history": result_history,
             "spin_squared": spin_squared,
             "sci_vec_shape": sci_state.amplitudes.shape,
+            "valid_bit_string": bitstrings.shape[0],
+            "unique_valid_bitstr": len(unique_valid_bitstr)
         }
 
         logging.info(f"{task} Saving SQD data...\n")

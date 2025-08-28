@@ -57,12 +57,16 @@ def run_on_hardware(
         pass_manager.post_init = PassManager([RemoveIdentityEquivalent()])
         isa_circuit = pass_manager.run(circuit)
         print(f"Circuit: Gate counts (w/ pre-init passes): {isa_circuit.count_ops()}")
-        print(f"Circuit: gate depth: {isa_circuit.depth()}")
+        op = isa_circuit.count_ops()
+        num_1q_gates = op["rz"] + op["sx"] + op["x"]
+        num_2q_gates = op["cz"]
+        print(f"Circuit: gate depth: {isa_circuit.depth()}, qubit num: {isa_circuit.num_qubits}")
+        print(f"Circuit: 1q gates: {num_1q_gates}, 2q gates: {num_2q_gates}")
         list_isa_circuit.append(isa_circuit)
 
     # print(list_sample_filenames)
     assert len(list_isa_circuit) == 3
-    assert 0
+    # assert 0
     sampler = Sampler(mode=backend)
 
     if dynamic_decoupling:

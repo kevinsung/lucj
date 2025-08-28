@@ -21,7 +21,7 @@ from lucj.hardware_sqd_task.hardware_job.hardware_job_batch import (
     run_on_hardware,
 )
 
-hardware_path = "dynamic_decoupling_xy_opt_0"
+hardware_path = "dynamic_decoupling_xy_opt_0_0828"
 
 logger = logging.getLogger(__name__)
 
@@ -231,7 +231,6 @@ def run_hardware_sqd_energy_batch_task(
     rng = np.random.default_rng(list_tasks[0].entropy)
 
     if not os.path.exists(list_sample_filenames[0]):
-        assert 0
         list_operator = load_operator(compressed_task, data_dir, mol_data)
 
         if list_operator is None:
@@ -359,6 +358,8 @@ def run_hardware_sqd_energy_batch_task(
             "result_history": result_history,
             "spin_squared": spin_squared,
             "sci_vec_shape": sci_state.amplitudes.shape,
+            "valid_bit_string": bitstrings.shape[0],
+            "unique_valid_bitstr": len(unique_valid_bitstr)
         }
 
         logging.info(f"{task} Saving SQD data...\n")

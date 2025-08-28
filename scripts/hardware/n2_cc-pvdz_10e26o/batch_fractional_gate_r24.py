@@ -9,7 +9,7 @@ from pathlib import Path
 from tqdm import tqdm
 
 from lucj.params import LUCJParams, CompressedT2Params
-from lucj.hardware_sqd_task.lucj_t2_seperate_sqd_task_sci_fg import (
+from lucj.hardware_sqd_task.lucj_t2_seperate_sqd_task_fg import (
     HardwareSQDEnergyTask,
     run_hardware_sqd_energy_batch_task,
 )
@@ -22,12 +22,12 @@ MAX_PROCESSES = 10
 OVERWRITE = False
 
 molecule_name = "n2"
-basis = "6-31g"
-nelectron, norb = 10, 16
+basis = "cc-pvdz"
+nelectron, norb = 10, 26
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-bond_distance_range = [1.2, 2.4]
-# bond_distance_range = [2.4]
+# bond_distance_range = [1.2, 2.4]
+bond_distance_range = [2.4]
 # bond_distance_range = [1.2]
 n_hardware_run_range = list(range(0, 10))
 # n_hardware_run_range = [100]
@@ -45,7 +45,7 @@ entropies = [1]
 max_dim = 4000
 samples_per_batch = 4000
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_0828__max_dim-{max_dim}_fractional_gate.log"
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_0828_r24_max_dim-{max_dim}_fractional_gate.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -66,7 +66,7 @@ compressed_tasks = [
         ),
         compressed_t2_params=CompressedT2Params(
             multi_stage_optimization=True,
-            begin_reps=20,
+            begin_reps=50,
             step=2
         ),
         n_hardware_run=n_hardware_run,
@@ -157,6 +157,7 @@ if MAX_PROCESSES == 1:
             data_dir=DATA_DIR,
             molecules_catalog_dir=MOLECULES_CATALOG_DIR,
             overwrite=OVERWRITE,
+            run_sqd=False,
         )
 else:
     with tqdm(total=len(random_tasks)) as progress:
@@ -170,7 +171,19 @@ else:
                         data_dir=DATA_DIR,
                         molecules_catalog_dir=MOLECULES_CATALOG_DIR,
                         overwrite=OVERWRITE,
+                        run_sqd=False,
                     )
                 )
                 future.add_done_callback(lambda _: progress.update())
+
+for random_task, truncated_task, compressed_task in tqdm(zip(random_tasks, truncated_tasks, compressed_tasks)):
+    run_hardware_sqd_energy_batch_task(
+        random_task,
+        truncated_task,
+        compressed_task,
+        data_dir=DATA_DIR,
+        molecules_catalog_dir=MOLECULES_CATALOG_DIR,
+        overwrite=OVERWRITE,
+        run_sqd=True,
+    )
 

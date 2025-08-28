@@ -42,7 +42,7 @@ entropies = [1]
 max_dim = 4000
 samples_per_batch = 4000
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_max_dim-{max_dim}.log"
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_0828_max_dim-{max_dim}.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,

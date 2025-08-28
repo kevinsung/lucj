@@ -14,7 +14,7 @@ from lucj.hardware_sqd_task.lucj_t2_seperate_sqd_task_fg import (
     run_hardware_sqd_energy_batch_task,
 )
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}.log"
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_0828.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -148,7 +148,7 @@ if MAX_PROCESSES == 1:
             data_dir=DATA_DIR,
             molecules_catalog_dir=MOLECULES_CATALOG_DIR,
             overwrite=OVERWRITE,
-            run_sqd=True,
+            run_sqd=False,
         )
 else:
     with tqdm(total=len(random_tasks)) as progress:
@@ -162,8 +162,18 @@ else:
                         data_dir=DATA_DIR,
                         molecules_catalog_dir=MOLECULES_CATALOG_DIR,
                         overwrite=OVERWRITE,
-                        run_sqd=True,
+                        run_sqd=False,
                     )
                 )
                 future.add_done_callback(lambda _: progress.update())
 
+for random_task, truncated_task, compressed_task in tqdm(zip(random_tasks, truncated_tasks, compressed_tasks)):
+    run_hardware_sqd_energy_batch_task(
+        random_task,
+        truncated_task,
+        compressed_task,
+        data_dir=DATA_DIR,
+        molecules_catalog_dir=MOLECULES_CATALOG_DIR,
+        overwrite=OVERWRITE,
+        run_sqd=True,
+    )

@@ -9,12 +9,12 @@ from pathlib import Path
 from tqdm import tqdm
 
 from lucj.params import LUCJParams, CompressedT2Params
-from lucj.hardware_sqd_task.lucj_t2_task_fg import (
+from lucj.hardware_sqd_task.lucj_t2_task import (
     HardwareSQDEnergyTask,
     run_hardware_sqd_energy_batch_task,
 )
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}.log"
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_no_loop_max_dim_4000.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -36,8 +36,8 @@ nelectron, norb = 10, 26
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 bond_distance_range = [1.2, 2.4]
-bond_distance_range = [2.4]
-bond_distance_range = [1.2]
+# bond_distance_range = [2.4]
+# bond_distance_range = [1.2]
 n_hardware_run = 10
 n_reps_range = [1]
 

@@ -22,6 +22,7 @@ from lucj.hardware_sqd_task.hardware_job.hardware_job_batch_fractional_gate impo
 )
 
 hardware_path = "dynamic_decoupling_xy_opt_0_fractional_gate"
+hardware_path = "ibm_fez_dynamic_decoupling_xy_opt_0_fractional_gate"
 
 logger = logging.getLogger(__name__)
 
@@ -305,7 +306,9 @@ def run_hardware_sqd_energy_batch_task(
 
     for samples, task, data_filename in zip(
         list_samples, list_tasks, list_data_filenames
-    ):
+    ):  
+        if os.path.exists(data_filename): 
+            continue
         for i, sample in enumerate(samples):
             # Convert BitArray into bitstring and probability arrays
             raw_bitstrings, raw_probs = bit_array_to_arrays(sample)
@@ -414,6 +417,8 @@ def run_hardware_sqd_energy_batch_task(
             "result_history": result_history,
             "spin_squared": spin_squared,
             "sci_vec_shape": sci_state.amplitudes.shape,
+            "valid_bit_string": bitstrings.shape[0],
+            "unique_valid_bitstr": len(unique_valid_bitstr)
         }
 
         logging.info(f"{task} Saving SQD data...\n")

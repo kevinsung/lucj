@@ -35,8 +35,8 @@ def run_on_hardware(
     #     operational=True, simulator=False, min_num_qubits=127
     # )
     # backend = service.backend("alt_pittsburgh")
+    # backend = service.backend("ibm_fez", use_fractional_gates=True)
     backend = service.backend("ibm_pittsburgh", use_fractional_gates=True)
-    # backend = service.backend("ibm_pittsburgh", use_fractional_gates=True)
 
     initial_layout, _ = get_zigzag_physical_layout(norb, backend=backend)
     # initial_layout: [1, 4, 0] program qubit 0 is mapped to physical qubit 1
@@ -64,7 +64,11 @@ def run_on_hardware(
     )
         isa_circuit = pass_manager.run(circuit)
         print(f"Circuit: Gate counts (w/ pre-init passes): {isa_circuit.count_ops()}")
+        op = isa_circuit.count_ops()
+        num_1q_gates = op["rz"] + op["sx"] + op["rx"]
+        num_2q_gates = op["cz"] + op["rzz"]
         print(f"Circuit: gate depth: {isa_circuit.depth()}")
+        print(f"Circuit: 1q gates: {num_1q_gates}, 2q gates: {num_2q_gates}")
         list_isa_circuit.append(isa_circuit)
 
     # print(list_sample_filenames)
