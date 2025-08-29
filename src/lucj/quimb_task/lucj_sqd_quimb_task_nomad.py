@@ -231,6 +231,7 @@ def run_lucj_sqd_quimb_task(
     state_vector_filename = data_dir / task.dirpath / "state_vector.npy"
     sample_filename = data_dir / task.dirpath / "sample.pickle"
     sqd_result_filename = data_dir / task.dirpath / "sqd_data.pickle"
+    cache_file = data_dir / task.dirpath / "cache.txt"
 
     if (
         (not overwrite)
@@ -240,7 +241,7 @@ def run_lucj_sqd_quimb_task(
     ):
         logger.info(f"Data for {task} already exists. Skipping...\n")
         return task
-    intermediate_result_filename = data_dir / task.dirpath / "intermediate_data.pickle"
+    # intermediate_result_filename = data_dir / task.dirpath / "intermediate_data.pickle"
 
     # Get molecular data and molecular Hamiltonian
     molecule_basename = task.molecule_basename
@@ -260,10 +261,31 @@ def run_lucj_sqd_quimb_task(
 
     rng = np.random.default_rng(task.entropy)
 
+    result_history_energy = []
+    result_history_subspace_dim = []
+    result_history = []
+
+    def callback(results: list[SCIResult]):
+        result_energy = []
+        result_subspace_dim = []
+        iteration = len(result_history)
+        result_history.append(results)
+        logging.info(f"Iteration {iteration}")
+        for i, result in enumerate(results):
+            result_energy.append(result.energy + mol_data.core_energy)
+            result_subspace_dim.append(result.sci_state.amplitudes.shape)
+            logging.info(f"\tSubsample {i}")
+            logging.info(f"\t\tEnergy: {result.energy + mol_data.core_energy}")
+            logging.info(
+                f"\t\tSubspace dimension: {np.prod(result.sci_state.amplitudes.shape)}"
+            )
+        result_history_energy.append(result_energy)
+        result_history_subspace_dim.append(result_subspace_dim)
+
     def fun(bbo_x) -> bool:
         dim = bbo_x.size()
-        print(dim)
         x = np.array([bbo_x.get_coord(i) for i in range(dim)])
+        # x = bbo_x
         operator = ffsim.UCJOpSpinBalanced.from_parameters(
             x,
             norb=norb,
@@ -318,6 +340,7 @@ def run_lucj_sqd_quimb_task(
             carryover_threshold=task.carryover_threshold,
             seed=rng,
             max_dim=task.max_dim,
+            callback=callback,
         )
         logger.info(f"{task}\n\tEnergy: {(result.energy + mol_data.core_energy)}")
         f = result.energy + mol_data.core_energy
@@ -366,23 +389,19 @@ def run_lucj_sqd_quimb_task(
 
         # Optimize ansatz
         logger.info(f"{task} Optimizing ansatz...\n")
-        info = defaultdict(list)
-        info["nit"] = 0
-
-        def callback(intermediate_result: scipy.optimize.OptimizeResult):
-            logger.info(f"Task {task} is on iteration {info['nit']}.\n")
-            logger.info(f"\tObjective function value: {intermediate_result.fun}.\n")
-            info["x"].append(intermediate_result.x)
-            info["fun"].append(intermediate_result.fun)
-            info["nit"] += 1
-            with open(intermediate_result_filename, "wb") as f:
-                pickle.dump(intermediate_result, f)
-            # if info["nit"] > 3:
-            #     if (abs(info["fun"][-1] - info["fun"][-2]) < 1e-5) and (abs(info["fun"][-2] - info["fun"][-3]) < 1e-5):
-            #         raise StopIteration("Objective function value does not decrease for two iterations.")
 
         t0 = timeit.default_timer()
 
+        # fun(params)
+        # data = {
+        #     "history_energy": result_history_energy,
+        #     "history_sci_vec_shape": result_history_subspace_dim,
+        # }
+        # sqd_init_result_filename = data_dir / task.dirpath / "init_mps_sqd_result_filename.pickle"
+        # logger.info(f"{task} Saving SQD data..\n")
+        # with open(sqd_init_result_filename, "wb") as f:
+        #     pickle.dump(data, f)
+        # return
         lb = []
         ub = []
 
@@ -398,7 +417,8 @@ def run_lucj_sqd_quimb_task(
             "PSD_MADS_OPTIMIZATION True",
             "PSD_MADS_NB_VAR_IN_SUBPROBLEM 20",
             "PSD_MADS_SUBPROBLEM_MAX_BB_EVAL 20",
-            "PSD_MADS_NB_SUBPROBLEM 4"
+            "PSD_MADS_NB_SUBPROBLEM 6",
+            f"CACHE_FILE {cache_file}"
         ]
 
         result = PyNomad.optimize(fun, params, lb, ub, nomad_params)
@@ -407,30 +427,12 @@ def run_lucj_sqd_quimb_task(
         output = "\n".join(fmt)
         print("\nNOMAD results \n" + output + " \n")
         
-        # result = scipy.optimize.minimize(
-        #     fun,
-        #     x0=params,
-        #     method="COBYQA",
-        #     options=dataclasses.asdict(task.cobyqa_params),
-        #     callback=callback,
-        # )
-        # result = scipy.optimize.differential_evolution(
-        #     fun,
-        #     [(-10, 10) for x in params],
-        #     callback=callback,
-        #     x0=params,
-        #     popsize=5,
-        #     maxiter=task.cobyqa_params.maxiter
-        #     # workers=2,
-        # )
         t1 = timeit.default_timer()
         logger.info(f"{task} Done optimizing ansatz in {t1 - t0} seconds.\n")
 
         logger.info(f"{task} Saving data...\n")
         with open(result_filename, "wb") as f:
             pickle.dump(result, f)
-        with open(info_filename, "wb") as f:
-            pickle.dump(info, f)
     else:
         with open(result_filename, "rb") as f:
             result = pickle.load(f)
@@ -483,22 +485,6 @@ def run_lucj_sqd_quimb_task(
     result_history_subspace_dim = []
     result_history = []
 
-    def callback(results: list[SCIResult]):
-        result_energy = []
-        result_subspace_dim = []
-        iteration = len(result_history)
-        result_history.append(results)
-        logging.info(f"Iteration {iteration}")
-        for i, result in enumerate(results):
-            result_energy.append(result.energy + mol_data.core_energy)
-            result_subspace_dim.append(result.sci_state.amplitudes.shape)
-            logging.info(f"\tSubsample {i}")
-            logging.info(f"\t\tEnergy: {result.energy + mol_data.core_energy}")
-            logging.info(
-                f"\t\tSubspace dimension: {np.prod(result.sci_state.amplitudes.shape)}"
-            )
-        result_history_energy.append(result_energy)
-        result_history_subspace_dim.append(result_subspace_dim)
 
     result = diagonalize_fermionic_hamiltonian(
         mol_ham.one_body_tensor,
