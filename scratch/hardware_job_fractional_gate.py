@@ -65,7 +65,7 @@ def run_on_hardware(
     isa_circuit = pass_manager.run(circuit)
     print(f"Circuit: Gate counts (w/ pre-init passes): {isa_circuit.count_ops()}")
     print(f"Circuit: gate depth: {isa_circuit.depth()}")
-    n_runs = 5
+    n_runs = 3
     for _ in range(n_runs):
         list_isa_circuit.append(isa_circuit)
 
@@ -78,7 +78,8 @@ def run_on_hardware(
 
     # job = sampler.run(list_isa_circuit, shots=shots)
 
-    job = service.job('d2mar94g59ks73c6ac4g') # ibm pit
+    # job = service.job('d2o7g4b7d31s73acuph0') # ibm pit fe2s2 fg
+    job = service.job('d2o7fek94j0s73a2hljg') # ibm pit fe2s2 
     # job = service.job('d2nk4dm97thc73au3e50')
     # job = service.job('d2nh1ssg59ks73c7eva0')
     # job = service.job('d2ngvlfa6cjs73fcpom0')
