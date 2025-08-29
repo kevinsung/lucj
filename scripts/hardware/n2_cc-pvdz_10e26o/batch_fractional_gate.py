@@ -29,7 +29,7 @@ molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 # bond_distance_range = [1.2, 2.4]
 # bond_distance_range = [2.4]
 bond_distance_range = [1.2]
-n_hardware_run_range = list(range(0, 10))
+n_hardware_run_range = list(range(8, 10))
 # n_hardware_run_range = [100]
 n_reps_range = [1]
 

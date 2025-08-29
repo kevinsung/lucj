@@ -9,25 +9,33 @@ from pathlib import Path
 from tqdm import tqdm
 
 from lucj.params import LUCJParams, CompressedT2Params
-from lucj.hardware_sqd_task.lucj_t2_seperate_sqd_task_sci import (
+from lucj.hardware_sqd_task.lucj_t2_seperate_sqd_task import (
     HardwareSQDEnergyTask,
     run_hardware_sqd_energy_batch_task,
+)
+
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_0828_sqd.log"
+os.makedirs(os.path.dirname(filename), exist_ok=True)
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S %z",
+    filename=filename,
 )
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 10
+MAX_PROCESSES = 1
 OVERWRITE = False
 
-molecule_name = "n2"
-basis = "6-31g"
-nelectron, norb = 10, 16
-molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
+molecule_name = "fe2s2"
+nelectron, norb = 30, 20
+molecule_basename = f"{molecule_name}_{nelectron}e{norb}o"
 
-bond_distance_range = [1.2, 2.4]
-n_hardware_run_range = list(range(8, 10))
+# n_hardware_run_range = list(range(0, 10))
+n_hardware_run_range = [0]
 n_reps_range = [1]
 
 shots = 1_000_000
@@ -42,20 +50,10 @@ entropies = [1]
 max_dim = 4000
 samples_per_batch = 4000
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_0828_max_dim-{max_dim}.log"
-os.makedirs(os.path.dirname(filename), exist_ok=True)
-logging.basicConfig(
-    level=logging.INFO,
-    format="[%(asctime)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S %z",
-    filename=filename,
-)
-
-
 compressed_tasks = [
     HardwareSQDEnergyTask(
         molecule_basename=molecule_basename,
-        bond_distance=d,
+        bond_distance=None,
         lucj_params=LUCJParams(
             connectivity="heavy-hex",
             n_reps=n_reps,
@@ -80,7 +78,6 @@ compressed_tasks = [
         dynamic_decoupling=True,
     )
     for n_reps in n_reps_range
-    for d in bond_distance_range
     for entropy in entropies
     for n_hardware_run in n_hardware_run_range
 ]
@@ -88,7 +85,7 @@ compressed_tasks = [
 random_tasks = [
     HardwareSQDEnergyTask(
         molecule_basename=molecule_basename,
-        bond_distance=d,
+        bond_distance=None,
         lucj_params=LUCJParams(
             connectivity="heavy-hex",
             n_reps=n_reps,
@@ -110,7 +107,6 @@ random_tasks = [
         dynamic_decoupling=True,
     )
     for n_reps in n_reps_range
-    for d in bond_distance_range
     for entropy in entropies
     for n_hardware_run in n_hardware_run_range
 ]
@@ -118,7 +114,7 @@ random_tasks = [
 truncated_tasks = [
     HardwareSQDEnergyTask(
         molecule_basename=molecule_basename,
-        bond_distance=d,
+        bond_distance=None,
         lucj_params=LUCJParams(
             connectivity="heavy-hex",
             n_reps=n_reps,
@@ -140,7 +136,6 @@ truncated_tasks = [
         dynamic_decoupling=True,
     )
     for n_reps in n_reps_range
-    for d in bond_distance_range
     for entropy in entropies
     for n_hardware_run in n_hardware_run_range
 ]
@@ -154,6 +149,7 @@ if MAX_PROCESSES == 1:
             data_dir=DATA_DIR,
             molecules_catalog_dir=MOLECULES_CATALOG_DIR,
             overwrite=OVERWRITE,
+            run_sqd=True,
         )
 else:
     with tqdm(total=len(random_tasks)) as progress:
@@ -167,7 +163,7 @@ else:
                         data_dir=DATA_DIR,
                         molecules_catalog_dir=MOLECULES_CATALOG_DIR,
                         overwrite=OVERWRITE,
+                        run_sqd=True,
                     )
                 )
                 future.add_done_callback(lambda _: progress.update())
-

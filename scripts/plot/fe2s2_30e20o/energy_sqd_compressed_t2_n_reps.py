@@ -7,7 +7,6 @@ import ffsim
 import matplotlib.pyplot as plt
 
 from lucj.params import LUCJParams, CompressedT2Params
-from lucj.tasks.lucj_sqd_initial_params_task import LUCJSQDInitialParamsTask
 from lucj.sqd_energy_task.lucj_compressed_t2_task import SQDEnergyTask
 from lucj.sqd_energy_task.lucj_random_t2_task import RandomSQDEnergyTask
 

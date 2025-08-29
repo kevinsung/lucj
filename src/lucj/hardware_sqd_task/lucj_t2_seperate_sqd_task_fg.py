@@ -311,19 +311,6 @@ def run_hardware_sqd_energy_batch_task(
             f"{task} #Total valid bitstr: {bitstrings.shape}, #total unique bitstr: {len(unique_valid_bitstr)}\n"
         )
 
-        def solve_sci_batch_wrap(
-            ci_strings, one_body_tensor, two_body_tensor, norb, nelec
-        ):
-            solve = False
-            while not solve:
-                try:
-                    solve_sci_batch(
-                        ci_strings, one_body_tensor, two_body_tensor, norb, nelec
-                    )
-                    solve = True
-                except DiceExecutionError:
-                    logging.info(f"{task} Dice execution error\n")
-
         result = diagonalize_fermionic_hamiltonian(
             mol_hamiltonian.one_body_tensor,
             mol_hamiltonian.two_body_tensor,

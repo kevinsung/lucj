@@ -24,8 +24,8 @@ molecule_name = "n2"
 basis = "6-31g"
 nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
-# bond_distance = 1.2
-bond_distance = 2.4
+bond_distance = 1.2
+# bond_distance = 2.4
 begin_reps = 20
 step = 2
 
@@ -44,7 +44,7 @@ n_reps = 1
 
 max_dim = 1000
 samples_per_batch = 4000
-n_hardware_run = 1
+n_hardware_run = 0
 task_compressed_t2_hardware = HardwareSQDEnergyTask(
     molecule_basename=molecule_basename,
     bond_distance=bond_distance,
@@ -128,6 +128,7 @@ def compute_score(task):
         raw_bitstrings, raw_probs, hamming_right=nelectron // 2, hamming_left=nelectron // 2
     )
     score = 0
+    list_score = []
     count = 0 # count for bitstring that has 0 amplitude in the state vector
     print(bitstrings.shape)
     converted_bitstrs = []
@@ -145,13 +146,14 @@ def compute_score(task):
         nelec,
     )
     for address in addresses:
-        # if address == hf_address:
-        #     continue
+        if address == hf_address:
+            continue
         if np.isclose(state_vector[address], 0, atol = 1e-15):
             count += 1
         else:
             score += (abs(state_vector[address]) ** 2)
-
+            list_score.append(abs(state_vector[address]))
+    print(min(list_score))
     return score, count
 
 score_compressed, count_compressed = compute_score(task_compressed_t2_hardware)

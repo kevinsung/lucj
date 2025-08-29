@@ -29,7 +29,7 @@ molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 # bond_distance_range = [1.2, 2.4]
 bond_distance_range = [2.4]
 # bond_distance_range = [1.2]
-n_hardware_run_range = list(range(0, 10))
+n_hardware_run_range = list(range(8, 10))
 # n_hardware_run_range = [100]
 n_reps_range = [1]
 
@@ -160,6 +160,7 @@ if MAX_PROCESSES == 1:
             run_sqd=False,
         )
 else:
+    print("use multithread")
     with tqdm(total=len(random_tasks)) as progress:
         with ProcessPoolExecutor(MAX_PROCESSES) as executor:
             for random_task, truncated_task, compressed_task in zip(random_tasks, truncated_tasks, compressed_tasks):
