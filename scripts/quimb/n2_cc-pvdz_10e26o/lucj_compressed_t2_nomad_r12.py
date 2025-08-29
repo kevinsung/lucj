@@ -14,7 +14,7 @@ from lucj.quimb_task.lucj_sqd_quimb_task_nomad import (
     run_lucj_sqd_quimb_task,
 )
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_with_dice.log"
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_init_sqd_max_bound_50.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -28,11 +28,15 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 1
-OVERWRITE = False
+OVERWRITE = True
 
-molecule_name = "fe2s2"
-nelectron, norb = 30, 20
-molecule_basename = f"{molecule_name}_{nelectron}e{norb}o"
+molecule_name = "n2"
+basis = "cc-pvdz"
+nelectron, norb = 10, 26
+molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
+
+bond_distance_range = [1.2, 2.4]
+# bond_distance_range = [1.2]
 
 connectivities = [
     # "square",
@@ -75,7 +79,7 @@ samples_per_batch = max_dim
 tasks = [
     LUCJSQDQuimbTask(
         molecule_basename=molecule_basename,
-        bond_distance=None,
+        bond_distance=d,
         lucj_params=LUCJParams(
             connectivity=connectivity,
             n_reps=n_reps,
@@ -83,7 +87,7 @@ tasks = [
         ),
         compressed_t2_params=CompressedT2Params(
             multi_stage_optimization=True,
-            begin_reps=20,
+            begin_reps=50,
             step=2
         ),
         regularization=False,
@@ -106,6 +110,7 @@ tasks = [
     for (connectivity, n_reps, max_bond, cutoff) in itertools.product(
         connectivities, n_reps_range, max_bonds, cutoffs
     )
+    for d in bond_distance_range
 ]
 if MAX_PROCESSES == 1:
     for task in tqdm(tasks):
