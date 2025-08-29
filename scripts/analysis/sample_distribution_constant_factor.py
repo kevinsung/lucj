@@ -14,7 +14,8 @@ from collections import OrderedDict
 import numpy as np
 import matplotlib.pyplot as plt
 import json
-
+import matplotlib
+matplotlib.rcParams.update({'font.size': 13})
 DATA_ROOT = "/media/storage/WanHsuan.Lin/"
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 
@@ -103,6 +104,7 @@ for task in tasks:
 
     samples.append(sample)
 
+constant_factors = [1, 0.5, 1.5, 2, 2.5]
 legends = [f"factor-{c}" for c in constant_factors]
 
 # color = [colors[i] for i in range(len(constant_factors))]
@@ -160,7 +162,7 @@ for execution in samples:
 
 
 
-fig = plt.plot(figsize=(3, 4), layout="constrained")
+fig = plt.plot(figsize=(2, 2), layout="constrained")
 # Cumulative distributions.
 x = np.arange(len(all_pvalues[0]))
 for value, legend, c in zip(all_pvalues, legends, color_list):
@@ -184,12 +186,12 @@ plt.xlabel("Hamming distance to HF state")
 plt.ylabel("CDF")
 plt.legend()
 plt.tight_layout()
-plt.subplots_adjust(left=0.15,bottom=0.1, top=0.92)
+plt.subplots_adjust(left=0.18,bottom=0.13, top=0.92)
 plt.yscale("log")
 filepath = os.path.join(
     plots_dir,
     f"{os.path.splitext(os.path.basename(__file__))[0]}.pdf",
 )
-plt.title(f"CDF $N_2$/6-31G ({nelectron}e, {norb}o)")
+plt.title(f"CDF N$_2$/6-31G ({nelectron}e, {norb}o), R={bond_distance} Å")
 plt.savefig(filepath)
 plt.close()

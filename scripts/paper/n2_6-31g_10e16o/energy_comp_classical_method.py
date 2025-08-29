@@ -222,7 +222,7 @@ for plot_type in ["vqe", "sqd"]:
     fig, axes = plt.subplots(
         2,
         1,
-        figsize=(9, 8),  # , layout="constrained"
+        figsize=(6, 7),  # , layout="constrained"
     )
 
     axes[0].plot(
@@ -323,6 +323,7 @@ for plot_type in ["vqe", "sqd"]:
     axes[1].set_yscale("log")
     axes[1].set_xlabel("Bond length (Å)")
     axes[1].axhline(1.6e-3, linestyle="--", color="black")
+    axes[1].set_ylim(0, 2e0)
     plt.tight_layout()
     plt.subplots_adjust(top=0.93)
 
@@ -335,9 +336,9 @@ for plot_type in ["vqe", "sqd"]:
     # plt.set_xlabel("Bond length (Å)")
 
     if plot_type == "vqe":
-        fig.suptitle(f"$N_2$/6-31G ({nelectron}e, {norb}o)")
+        fig.suptitle(f"N$_2$/6-31G ({nelectron}e, {norb}o)")
     else:
-        fig.suptitle(f"$N_2$/6-31G ({nelectron}e, {norb}o)")
+        fig.suptitle(f"N$_2$/6-31G ({nelectron}e, {norb}o)")
 
 
     filepath = os.path.join(

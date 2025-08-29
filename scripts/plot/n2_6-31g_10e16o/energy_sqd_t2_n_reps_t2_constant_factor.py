@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 
 from lucj.params import LUCJParams, CompressedT2Params
 from lucj.sqd_energy_task.lucj_compressed_t2_task_sci import SQDEnergyTask
-from molecules_catalog.util import load_molecular_data
 import json
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
@@ -194,7 +193,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     plt.subplots_adjust(bottom=0.16, top=0.88)
 
     fig.suptitle(
-        f"$N_2$/6-31G ({nelectron}e, {norb}o)"
+        f"N$_2$/6-31G ({nelectron}e, {norb}o)"
     )
 
 filepath = os.path.join(

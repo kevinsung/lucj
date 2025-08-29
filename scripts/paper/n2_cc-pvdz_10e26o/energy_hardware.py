@@ -5,8 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from lucj.params import LUCJParams, CompressedT2Params
-from lucj.hardware_sqd_task.lucj_compressed_t2_task import HardwareSQDEnergyTask
-from lucj.sqd_energy_task.lucj_random_t2_task import RandomSQDEnergyTask
+from lucj.hardware_sqd_task.lucj_t2_task import HardwareSQDEnergyTask
 
 import json
 from molecules_catalog.util import load_molecular_data
@@ -26,16 +25,16 @@ bond_distance_range = [1.2, 2.4]
 
 n_reps = 1
 
-shots = 100_000
-n_batches = 3
+shots = 1_000_000
+n_batches = 10
 energy_tol = 1e-8
 occupancies_tol = 1e-5
 carryover_threshold = 1e-4
-max_iterations = 20
+max_iterations = 1
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 1
-max_dim = 2500
+max_dim = 4000
 samples_per_batch = max_dim
 entropies = [1]
 
@@ -64,6 +63,8 @@ tasks_compressed_t2 = [
         symmetrize_spin=symmetrize_spin,
         entropy=entropy,
         max_dim=max_dim,
+        n_hardware_run=10,
+        dynamic_decoupling=True,
     )
     for d in bond_distance_range
     for entropy in entropies]
@@ -79,7 +80,6 @@ tasks_random = [
                 with_final_orbital_rotation=True,
             ),
             compressed_t2_params=None,
-            connectivity_opt=False,
             random_op =True,
             shots=shots,
             samples_per_batch=samples_per_batch,
@@ -91,6 +91,8 @@ tasks_random = [
             symmetrize_spin=symmetrize_spin,
             entropy=entropy,
             max_dim=max_dim,
+            n_hardware_run=10,
+            dynamic_decoupling=True,
         )
         for d in bond_distance_range
         for entropy in entropies]
@@ -105,7 +107,6 @@ tasks_truncated_t2 = [
                 with_final_orbital_rotation=True,
             ),
             compressed_t2_params=None,
-            connectivity_opt=False,
             random_op =False,
             shots=shots,
             samples_per_batch=samples_per_batch,
@@ -117,6 +118,8 @@ tasks_truncated_t2 = [
             symmetrize_spin=symmetrize_spin,
             entropy=entropy,
             max_dim=max_dim,
+            n_hardware_run=10,
+            dynamic_decoupling=True,
         )
         for d in bond_distance_range
         for entropy in entropies]
@@ -131,6 +134,8 @@ def load_data(filepath):
             "sci_vec_shape": (0, 0),
             "n_reps": 0,
         }
+        print(filepath)
+        input()
     else:
         with open(filepath, "rb") as f:
             result = pickle.load(f)
@@ -172,7 +177,7 @@ row_sci_vec_dim = 1
 fig, axes = plt.subplots(
     2,
     len(bond_distance_range),
-    figsize=(6, 5),  # , layout="constrained"
+    figsize=(5, 5),  # , layout="constrained"
 )
 
 for i, bond_distance in enumerate(bond_distance_range):
@@ -199,7 +204,6 @@ for i, bond_distance in enumerate(bond_distance_range):
                     with_final_orbital_rotation=True,
                 ),
                 compressed_t2_params=None,
-                connectivity_opt=False,
                 random_op =True,
                 shots=shots,
                 samples_per_batch=samples_per_batch,
@@ -211,6 +215,8 @@ for i, bond_distance in enumerate(bond_distance_range):
                 symmetrize_spin=symmetrize_spin,
                 entropy=entropy,
                 max_dim=max_dim,
+                n_hardware_run=10,
+                dynamic_decoupling=True,
             )
             for entropy in entropies]
     errors_n_reps = [results_random[task]['energy'] - mol_data.sci_energy for task in tasks_random]
@@ -272,7 +278,6 @@ for i, bond_distance in enumerate(bond_distance_range):
                     with_final_orbital_rotation=True,
                 ),
                 compressed_t2_params=None,
-                connectivity_opt=False,
                 random_op =False,
                 shots=shots,
                 samples_per_batch=samples_per_batch,
@@ -284,6 +289,8 @@ for i, bond_distance in enumerate(bond_distance_range):
                 symmetrize_spin=symmetrize_spin,
                 entropy=entropy,
                 max_dim=max_dim,
+                n_hardware_run=10,
+                dynamic_decoupling=True,
             )
             for entropy in entropies]
     
@@ -360,6 +367,8 @@ for i, bond_distance in enumerate(bond_distance_range):
                 symmetrize_spin=symmetrize_spin,
                 entropy=entropy,
                 max_dim=max_dim,
+                n_hardware_run=10,
+                dynamic_decoupling=True,
             )
             for entropy in entropies]
     
@@ -425,7 +434,7 @@ for i, bond_distance in enumerate(bond_distance_range):
     plt.subplots_adjust(bottom=0.1, top=0.88)
 
     fig.suptitle(
-        f"$N_2$/6-31G ({electron}e, {norb}o)"
+        f"N$_2$/cc-PVDZ ({nelectron}e, {norb}o)"
     )
 
 filepath = os.path.join(

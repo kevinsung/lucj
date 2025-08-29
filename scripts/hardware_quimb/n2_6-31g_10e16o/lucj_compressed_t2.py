@@ -28,35 +28,37 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 8
+MAX_PROCESSES = 10
 OVERWRITE = False
 
 molecule_name = "n2"
-basis = "cc-pvdz"
-nelectron, norb = 10, 26
+basis = "6-31g"
+nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-bond_distance_range = [1.2, 2.4]
-# bond_distance_range = [1.2]
+# bond_distance_range = [1.2, 2.4]
+bond_distance_range = [2.4]
 
 n_reps_range = [1]
 
-shots = 100_000
-n_batches = 3
+shots = 1_000_000
+n_batches = 10
 energy_tol = 1e-8
 occupancies_tol = 1e-5
 carryover_threshold = 1e-4
-max_iterations = 20
+max_iterations = 1
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
-entropies = list(range(1, 11))
+entropies = [1]
+n_hardware_run_ranges = list(range(10))
+
 
 max_dim = 1000
 samples_per_batch = max_dim
 
 tasks = [
     HardwareSQDQuimbEnergyTask(
-        LUCJSQDQuimbTask(
+        lucj_sqd_quimb_task = LUCJSQDQuimbTask(
             molecule_basename=molecule_basename,
             bond_distance=d,
             lucj_params=LUCJParams(
@@ -70,21 +72,21 @@ tasks = [
                 step=2
             ),
             regularization=False,
-            cobyqa_params=COBYQAParams(maxiter=25),
+            cobyqa_params=COBYQAParams(maxiter=0),
             shots=10_000,
-            samples_per_batch=samples_per_batch,
+            samples_per_batch=4000,
             n_batches=n_batches,
-            energy_tol=energy_tol,
-            occupancies_tol=occupancies_tol,
-            carryover_threshold=carryover_threshold,
-            max_iterations=max_iterations,
+            energy_tol=1e-5,
+            occupancies_tol=1e-3,
+            carryover_threshold=1e-3,
+            max_iterations = 1,
             symmetrize_spin=symmetrize_spin,
-            entropy=entropy,
-            max_bond = 100,
+            entropy= 0,
+            max_bond = 50,
             perm_mps = False,
             cutoff = 1e-10,
             seed = 0,
-            max_dim = max_dim,
+            max_dim = 4000,
         ),
         shots=shots,
         samples_per_batch=samples_per_batch,
@@ -96,10 +98,13 @@ tasks = [
         symmetrize_spin=symmetrize_spin,
         entropy=entropy,
         max_dim=max_dim,
+        n_hardware_run=n_hardware_run,
+        dynamic_decoupling=True
     )
     for n_reps in n_reps_range
     for d in bond_distance_range
     for entropy in entropies
+    for n_hardware_run in n_hardware_run_ranges
 ]
 
 if MAX_PROCESSES == 1:
@@ -122,3 +127,5 @@ else:
                     overwrite=OVERWRITE,
                 )
                 future.add_done_callback(lambda _: progress.update())
+
+# /media/storage/WanHsuan.Lin/n2_6-31g_10e16o/bond_distance-2.40000/connectivity-heavy-hex/n_reps-1/with_final_orbital_rotation-True/multi_stage_optimization-True/begin_reps-20/step-2/quimb/maxiter-0/shots-10000/samples_per_batch-4000/n_batches-10/energy_tol-1e-05/occupancies_tol-0.001/carryover_threshold-0.001/max_iterations-1/symmetrize_spin-True/entropy-0/max_dim-4000/max_bond-200/cutoff-1e-10/perm_mps-False/seed-0/data.pickle

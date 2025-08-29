@@ -9,7 +9,6 @@ from lucj.params import LUCJParams, CompressedT2Params, COBYQAParams
 from lucj.sqd_energy_task.lucj_compressed_t2_task import SQDEnergyTask
 from lucj.sqd_energy_task.lucj_random_t2_task import RandomSQDEnergyTask
 from lucj.quimb_task.lucj_sqd_quimb_task import LUCJSQDQuimbTask
-from molecules_catalog.util import load_molecular_data
 import json
 
 

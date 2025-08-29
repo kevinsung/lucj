@@ -9,12 +9,16 @@ from pathlib import Path
 from tqdm import tqdm
 
 from lucj.params import LUCJParams, CompressedT2Params, COBYQAParams
+<<<<<<< HEAD
 from lucj.quimb_task.lucj_sqd_quimb_task_nomad import (
+=======
+from lucj.quimb_task.lucj_sqd_quimb_task_sci_nomad import (
+>>>>>>> b82a1c5926b9c5884b7f7d15b924e0d0e4151c7b
     LUCJSQDQuimbTask,
     run_lucj_sqd_quimb_task,
 )
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_init_sqd_max_bound_50.log"
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_max_bound_50.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -36,7 +40,7 @@ nelectron, norb = 10, 26
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 bond_distance_range = [1.2, 2.4]
-# bond_distance_range = [1.2]
+bond_distance_range = [1.2]
 
 connectivities = [
     # "square",
@@ -87,7 +91,11 @@ tasks = [
         ),
         compressed_t2_params=CompressedT2Params(
             multi_stage_optimization=True,
+<<<<<<< HEAD
             begin_reps=50,
+=======
+            begin_reps=20,
+>>>>>>> b82a1c5926b9c5884b7f7d15b924e0d0e4151c7b
             step=2
         ),
         regularization=False,

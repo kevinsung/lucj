@@ -2,7 +2,8 @@ import ffsim
 from qiskit.circuit import QuantumCircuit, QuantumRegister
 from qiskit import QuantumCircuit, QuantumRegister
 from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
-
+from qiskit.transpiler.passes import RemoveIdentityEquivalent
+from qiskit.transpiler import PassManager
 from qiskit_ibm_runtime import QiskitRuntimeService
 from qiskit_ibm_runtime import SamplerV2 as Sampler
 
@@ -34,6 +35,7 @@ def run_on_hardware(
     # )
     # backend = service.backend("alt_pittsburgh")
     backend = service.backend("ibm_pittsburgh")
+    # backend = service.backend("ibm_pittsburgh", use_fractional_gates=True)
 
     initial_layout, _ = get_zigzag_physical_layout(norb, backend=backend)
     # initial_layout: [1, 4, 0] program qubit 0 is mapped to physical qubit 1
@@ -48,10 +50,18 @@ def run_on_hardware(
             initial_layout=initial_layout,
             seed_transpiler=0,
         )
-        pass_manager.pre_init = ffsim.qiskit.PRE_INIT
+        ffsim_pass = ffsim.qiskit.PRE_INIT
+        # ffsim_pass.append(RemoveIdentityEquivalent())
+        # print(ffsim_pass)
+        pass_manager.pre_init = ffsim_pass
+        pass_manager.post_init = PassManager([RemoveIdentityEquivalent()])
         isa_circuit = pass_manager.run(circuit)
         print(f"Circuit: Gate counts (w/ pre-init passes): {isa_circuit.count_ops()}")
-        print(f"Circuit: gate depth: {isa_circuit.depth()}")
+        op = isa_circuit.count_ops()
+        num_1q_gates = op["rz"] + op["sx"] + op["x"]
+        num_2q_gates = op["cz"]
+        print(f"Circuit: gate depth: {isa_circuit.depth()}, qubit num: {isa_circuit.num_qubits}")
+        print(f"Circuit: 1q gates: {num_1q_gates}, 2q gates: {num_2q_gates}")
         list_isa_circuit.append(isa_circuit)
 
     # print(list_sample_filenames)
@@ -76,3 +86,35 @@ def run_on_hardware(
             pickle.dump(pub_result.data.meas, f)
         print(f"save file to {sample_filename}")
     return meas_circuit
+
+# n2_6-31g_10e16o/batch.py vanilla
+# Circuit: Gate counts (w/ pre-init passes): OrderedDict([('rz', 9506), ('sx', 3696), ('cz', 798), ('measure', 32), ('x', 10), ('barrier', 1)])
+# Circuit: gate depth: 821
+# Circuit: Gate counts (w/ pre-init passes): OrderedDict([('rz', 9506), ('sx', 3696), ('cz', 798), ('measure', 32), ('x', 10), ('barrier', 1)])
+# Circuit: gate depth: 821
+# Circuit: Gate counts (w/ pre-init passes): OrderedDict([('rz', 9506), ('sx', 3696), ('cz', 798), ('measure', 32), ('x', 10), ('barrier', 1)])
+# Circuit: gate depth: 821
+
+# pass_manager.optimization = PassManager([RemoveIdentityEquivalent()])
+# Circuit: Gate counts (w/ pre-init passes): OrderedDict([('rz', 8806), ('sx', 3696), ('cz', 798), ('measure', 32), ('x', 10), ('barrier', 1)])
+# Circuit: gate depth: 790
+# Circuit: Gate counts (w/ pre-init passes): OrderedDict([('rz', 8761), ('sx', 3696), ('cz', 798), ('measure', 32), ('x', 10), ('barrier', 1)])
+# Circuit: gate depth: 785
+# Circuit: Gate counts (w/ pre-init passes): OrderedDict([('rz', 8806), ('sx', 3696), ('cz', 798), ('measure', 32), ('x', 10), ('barrier', 1)])
+# Circuit: gate depth: 790
+
+# pass_manager.post_init = PassManager([RemoveIdentityEquivalent()])
+# Circuit: Gate counts (w/ pre-init passes): OrderedDict([('rz', 9506), ('sx', 3696), ('cz', 798), ('measure', 32), ('x', 10), ('barrier', 1)])
+# Circuit: gate depth: 821
+# Circuit: Gate counts (w/ pre-init passes): OrderedDict([('rz', 9133), ('sx', 3532), ('cz', 740), ('measure', 32), ('x', 10), ('barrier', 1)])
+# Circuit: gate depth: 773
+# Circuit: Gate counts (w/ pre-init passes): OrderedDict([('rz', 9506), ('sx', 3696), ('cz', 798), ('measure', 32), ('x', 10), ('barrier', 1)])
+# Circuit: gate depth: 821
+
+# fractional gates
+# Circuit: Gate counts (w/ pre-init passes): OrderedDict([('rz', 3600), ('sx', 1460), ('rx', 1400), ('rzz', 734), ('x', 54), ('measure', 32), ('cz', 30), ('barrier', 1)])
+# Circuit: gate depth: 370
+# Circuit: Gate counts (w/ pre-init passes): OrderedDict([('rz', 3600), ('sx', 1460), ('rx', 1400), ('rzz', 734), ('measure', 32), ('cz', 30), ('x', 14), ('barrier', 1)])
+# Circuit: gate depth: 366
+# Circuit: Gate counts (w/ pre-init passes): OrderedDict([('rz', 3600), ('sx', 1460), ('rx', 1400), ('rzz', 734), ('x', 32), ('measure', 32), ('cz', 30), ('barrier', 1)])
+# Circuit: gate depth: 367

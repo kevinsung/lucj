@@ -14,20 +14,11 @@ from lucj.hardware_sqd_task.lucj_t2_seperate_sqd_task_sci import (
     run_hardware_sqd_energy_batch_task,
 )
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}.log"
-os.makedirs(os.path.dirname(filename), exist_ok=True)
-logging.basicConfig(
-    level=logging.INFO,
-    format="[%(asctime)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S %z",
-    filename=filename,
-)
-
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 1
+MAX_PROCESSES = 10
 OVERWRITE = False
 
 molecule_name = "n2"
@@ -36,7 +27,7 @@ nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 bond_distance_range = [1.2, 2.4]
-n_hardware_run_range = list(range(0, 10))
+n_hardware_run_range = list(range(8, 10))
 n_reps_range = [1]
 
 shots = 1_000_000
@@ -48,8 +39,18 @@ max_iterations = 1
 symmetrize_spin = True
 entropies = [1]
 
-max_dim = 1000
+max_dim = 4000
 samples_per_batch = 4000
+
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_0828_max_dim-{max_dim}.log"
+os.makedirs(os.path.dirname(filename), exist_ok=True)
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S %z",
+    filename=filename,
+)
+
 
 compressed_tasks = [
     HardwareSQDEnergyTask(
