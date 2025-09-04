@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 from lucj.params import LUCJParams, CompressedT2Params
-from lucj.hardware_sqd_task.lucj_t2_seperate_sqd_task_sci import HardwareSQDEnergyTask
+from lucj.hardware_sqd_task.lucj_t2_seperate_sqd_task_fg import HardwareSQDEnergyTask
 
 import json
 
@@ -15,15 +15,14 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 
 molecule_name = "n2"
-basis = "6-31g"
-nelectron, norb = 10, 16
+basis = "cc-pvdz"
+nelectron, norb = 10, 26
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 plots_dir = os.path.join("paper", molecule_basename)
 os.makedirs(plots_dir, exist_ok=True)
 
 bond_distance_range = [1.2, 2.4]
-# bond_distance_range = [1.2]
 
 n_reps = 1
 
@@ -54,7 +53,7 @@ tasks_compressed_t2 = [
         ),
         compressed_t2_params=CompressedT2Params(
             multi_stage_optimization=True,
-            begin_reps=20,
+            begin_reps=50,
             step=2
         ),
         shots=shots,
@@ -150,21 +149,27 @@ for task in tasks_random:
     filepath = DATA_ROOT / task.dirpath / "hardware_sqd_data.pickle"
     if os.path.exists(filepath):
         results_random[task] = load_data(filepath)
-    else:
-        print(filepath)
-        input()
+    # else:
+    #     print(filepath)
+    #     input()
 
 results_truncated_t2 = {}
 for task in tasks_truncated_t2:
     filepath = DATA_ROOT / task.dirpath / "hardware_sqd_data.pickle"
     if os.path.exists(filepath):
         results_truncated_t2[task] = load_data(filepath)
+    # else:
+    #     print(filepath)
+    #     input()
     
 results_compressed_t2 = {}
 for task in tasks_compressed_t2:
     filepath = DATA_ROOT / task.dirpath / "hardware_sqd_data.pickle"
     if os.path.exists(filepath):
         results_compressed_t2[task] = load_data(filepath)
+    # else:
+    #     print(filepath)
+    #     input()
 
 print("Done loading data.")
 
@@ -188,7 +193,6 @@ fig, axes = plt.subplots(
 )
 
 for i, bond_distance in enumerate(bond_distance_range):
-
     # random lucj
     
     errors = []
@@ -359,7 +363,7 @@ for i, bond_distance in enumerate(bond_distance_range):
                 ),
                 compressed_t2_params=CompressedT2Params(
                     multi_stage_optimization=True,
-                    begin_reps=20,
+                    begin_reps=50,
                     step=2
                 ),
                 shots=shots,
@@ -376,7 +380,6 @@ for i, bond_distance in enumerate(bond_distance_range):
                 n_hardware_run=n_hardware_run
             )
             for n_hardware_run in n_hardware_run_range]   
-    
     errors_n_reps = [results_compressed_t2[task]['error'] for task in tasks_compressed_t2 if task in results_compressed_t2]
     sci_vec_shape_n_reps = [results_compressed_t2[task]["sci_vec_shape"][0] for task in tasks_compressed_t2 if task in results_compressed_t2]
     errors.append(np.average(errors_n_reps))
@@ -426,7 +429,7 @@ for i, bond_distance in enumerate(bond_distance_range):
     axes[row_error, i].axhline(1.6e-3, linestyle="--", color="black")
     axes[row_error, i].set_ylabel("Energy error (Hartree)")
     axes[row_error, i].set_xticks([])
-    axes[row_error, i].set_ylim(0, 2e-1)
+    # axes[row_error, i].set_ylim(0, 5e-1)
 
     axes[row_sci_vec_dim, i].set_ylabel("SCI subspace")
     axes[row_sci_vec_dim, i].set_xticks([])
@@ -444,7 +447,7 @@ for i, bond_distance in enumerate(bond_distance_range):
     plt.subplots_adjust(bottom=0.1, top=0.88)
 
     fig.suptitle(
-        f"N$_2$/6-31G ({nelectron}e, {norb}o)"
+        f"N$_2$/cc-PVDZ ({nelectron}e, {norb}o)"
     )
 
 filepath = os.path.join(

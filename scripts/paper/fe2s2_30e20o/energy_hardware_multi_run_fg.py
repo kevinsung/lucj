@@ -147,6 +147,9 @@ for task in tasks_random:
     filepath = DATA_ROOT / task.dirpath / "hardware_sqd_data.pickle"
     if os.path.exists(filepath):
         results_random[task] = load_data(filepath)
+    else:
+        print(filepath)
+        input()
 
 results_truncated_t2 = {}
 for task in tasks_truncated_t2:

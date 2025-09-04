@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 from lucj.params import LUCJParams, CompressedT2Params
-from lucj.hardware_sqd_task.lucj_t2_seperate_sqd_task_sci import HardwareSQDEnergyTask
+from lucj.hardware_sqd_task.lucj_t2_seperate_sqd_task_sci_fg import HardwareSQDEnergyTask
 
 import json
 
@@ -159,12 +159,18 @@ for task in tasks_truncated_t2:
     filepath = DATA_ROOT / task.dirpath / "hardware_sqd_data.pickle"
     if os.path.exists(filepath):
         results_truncated_t2[task] = load_data(filepath)
+    else:
+        print(filepath)
+        input()
     
 results_compressed_t2 = {}
 for task in tasks_compressed_t2:
     filepath = DATA_ROOT / task.dirpath / "hardware_sqd_data.pickle"
     if os.path.exists(filepath):
         results_compressed_t2[task] = load_data(filepath)
+    else:
+        print(filepath)
+        input()
 
 print("Done loading data.")
 
@@ -426,7 +432,7 @@ for i, bond_distance in enumerate(bond_distance_range):
     axes[row_error, i].axhline(1.6e-3, linestyle="--", color="black")
     axes[row_error, i].set_ylabel("Energy error (Hartree)")
     axes[row_error, i].set_xticks([])
-    axes[row_error, i].set_ylim(0, 2e-1)
+    axes[row_error, i].set_ylim(0, 1e-1)
 
     axes[row_sci_vec_dim, i].set_ylabel("SCI subspace")
     axes[row_sci_vec_dim, i].set_xticks([])
