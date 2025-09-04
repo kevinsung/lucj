@@ -22,6 +22,8 @@ set `LUCJ_DATA_ROOT`, where all data except the plots will be stored to, and `MO
 - `csv`: csv files for bitstring number and quimb result
 
 ### Scripts
+To generate everything from scratch, begin witih producing compressed operators via scripts in `operator`.
+
 - `analysis`: files to 1) check operator norm, 2) plot sample distribution, and 3) plot CDF wave function
 - `hardware`: run circuits on hardware and run SQD on the samples. Files `batch*.py` submit LUCJ-random, LUCJ-truncated, and LUCJ-compressed in one job. Files whose names contain `fractional_gate` use fractional gates. For scripts in `hardware/n2_cc-pvdz_10e26o/accumulate/`, we run `n_hardware_run` times on the hardware and run one SQD based on the accumelated samples across all the runs.
 - `hardware_quimb`: run circuits optimized by tensor network optimization on hardware and run SQD on the samples.
