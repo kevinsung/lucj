@@ -229,6 +229,12 @@ for i, bond_distance in enumerate(bond_distance_range):
             for n_hardware_run in n_hardware_run_range]
     errors_n_reps = [results_random[task]['error'] for task in tasks_random  if task in results_random]
     sci_vec_shape_n_reps = [results_random[task]["sci_vec_shape"][0] for task in tasks_random if task in results_random]
+
+    errors_n_reps = [list(x) for x in zip(*sorted(zip(errors_n_reps, sci_vec_shape_n_reps), key=lambda pair: pair[0]))][0]
+    sci_vec_shape_n_reps = [list(x) for x in zip(*sorted(zip(errors_n_reps, sci_vec_shape_n_reps), key=lambda pair: pair[0]))][1]
+    errors_n_reps = errors_n_reps[:-1]
+    sci_vec_shape_n_reps = sci_vec_shape_n_reps[:-1]
+    
     errors.append(np.average(errors_n_reps))
     errors_min.append(np.average(errors_n_reps) - np.min(errors_n_reps))
     errors_max.append(np.max(errors_n_reps) - np.average(errors_n_reps))
@@ -305,6 +311,12 @@ for i, bond_distance in enumerate(bond_distance_range):
     sci_vec_shape_n_reps = [results_truncated_t2[task]["sci_vec_shape"][0] for task in tasks_truncated_t2 if task in results_truncated_t2]
     # errors_n_reps = [results_truncated_t2[task]['error'] for task in tasks_truncated_t2]
     # sci_vec_shape_n_reps = [results_truncated_t2[task]["sci_vec_shape"][0] for task in tasks_truncated_t2]
+
+    errors_n_reps = [list(x) for x in zip(*sorted(zip(errors_n_reps, sci_vec_shape_n_reps), key=lambda pair: pair[0]))][0]
+    sci_vec_shape_n_reps = [list(x) for x in zip(*sorted(zip(errors_n_reps, sci_vec_shape_n_reps), key=lambda pair: pair[0]))][1]
+    errors_n_reps = errors_n_reps[:-1]
+    sci_vec_shape_n_reps = sci_vec_shape_n_reps[:-1]
+
     errors.append(np.average(errors_n_reps))
     errors_min.append(np.average(errors_n_reps) - np.min(errors_n_reps))
     errors_max.append(np.max(errors_n_reps) - np.average(errors_n_reps))
@@ -382,6 +394,12 @@ for i, bond_distance in enumerate(bond_distance_range):
             for n_hardware_run in n_hardware_run_range]   
     errors_n_reps = [results_compressed_t2[task]['error'] for task in tasks_compressed_t2 if task in results_compressed_t2]
     sci_vec_shape_n_reps = [results_compressed_t2[task]["sci_vec_shape"][0] for task in tasks_compressed_t2 if task in results_compressed_t2]
+    
+    errors_n_reps = [list(x) for x in zip(*sorted(zip(errors_n_reps, sci_vec_shape_n_reps), key=lambda pair: pair[0]))][0]
+    sci_vec_shape_n_reps = [list(x) for x in zip(*sorted(zip(errors_n_reps, sci_vec_shape_n_reps), key=lambda pair: pair[0]))][1]
+    errors_n_reps = errors_n_reps[:-1]
+    sci_vec_shape_n_reps = sci_vec_shape_n_reps[:-1]
+
     errors.append(np.average(errors_n_reps))
     errors_min.append(np.average(errors_n_reps) - np.min(errors_n_reps))
     errors_max.append(np.max(errors_n_reps) - np.average(errors_n_reps))
