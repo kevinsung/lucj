@@ -82,7 +82,8 @@ def run_on_hardware(
         sampler.options.dynamical_decoupling.sequence_type = "XY4"
 
     job = sampler.run(list_isa_circuit, shots=shots)
-
+    # job = service.job('d2s5oicaumss73e8se2g') # for n_hardware_run = 3
+    print(f"job id: {job.job_id()}")
     meas_circuit = []
 
     primitive_result = job.result()

@@ -75,11 +75,11 @@ def run_on_hardware(
         sampler.options.dynamical_decoupling.sequence_type = "XY4"
 
     job = sampler.run(list_isa_circuit, shots=shots)
+    print(f"job id: {job.job_id()}")
 
     meas_circuit = []
 
     primitive_result = job.result()
-
     for pub_result, sample_filename in zip(primitive_result, list_sample_filenames):
         meas_circuit.append(pub_result.data.meas)
         with open(sample_filename, "wb") as f:
