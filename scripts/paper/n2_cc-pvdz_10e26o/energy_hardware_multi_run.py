@@ -54,7 +54,7 @@ tasks_compressed_t2 = [
         ),
         compressed_t2_params=CompressedT2Params(
             multi_stage_optimization=True,
-            begin_reps=20,
+            begin_reps=50,
             step=2
         ),
         shots=shots,
@@ -359,7 +359,7 @@ for i, bond_distance in enumerate(bond_distance_range):
                 ),
                 compressed_t2_params=CompressedT2Params(
                     multi_stage_optimization=True,
-                    begin_reps=20,
+                    begin_reps=50,
                     step=2
                 ),
                 shots=shots,
