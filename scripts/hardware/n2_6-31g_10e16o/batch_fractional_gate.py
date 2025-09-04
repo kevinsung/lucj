@@ -27,10 +27,7 @@ nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 bond_distance_range = [1.2, 2.4]
-# bond_distance_range = [2.4]
-# bond_distance_range = [1.2]
-n_hardware_run_range = list(range(8, 10))
-# n_hardware_run_range = [100]
+n_hardware_run_range = list(range(0, 10))
 n_reps_range = [1]
 
 shots = 1_000_000
@@ -45,7 +42,7 @@ entropies = [1]
 max_dim = 4000
 samples_per_batch = 4000
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_0828_max_dim-{max_dim}_fractional_gate.log"
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_max_dim-{max_dim}.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,

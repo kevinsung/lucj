@@ -14,7 +14,7 @@ from lucj.hardware_sqd_task.lucj_t2_seperate_sqd_task import (
     run_hardware_sqd_energy_batch_task,
 )
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_sqd_4.log"
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -27,7 +27,7 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 10
+MAX_PROCESSES = 1
 OVERWRITE = False
 
 molecule_name = "fe2s2"
@@ -148,7 +148,7 @@ if MAX_PROCESSES == 1:
             data_dir=DATA_DIR,
             molecules_catalog_dir=MOLECULES_CATALOG_DIR,
             overwrite=OVERWRITE,
-            run_sqd=False,
+            run_sqd=True,
         )
 else:
     with tqdm(total=len(random_tasks)) as progress:
@@ -162,20 +162,7 @@ else:
                         data_dir=DATA_DIR,
                         molecules_catalog_dir=MOLECULES_CATALOG_DIR,
                         overwrite=OVERWRITE,
-                        run_sqd=False,
+                        run_sqd=True,
                     )
                 )
                 future.add_done_callback(lambda _: progress.update())
-
-
-
-for random_task, truncated_task, compressed_task in tqdm(zip(random_tasks, truncated_tasks, compressed_tasks)):
-    run_hardware_sqd_energy_batch_task(
-        random_task,
-        truncated_task,
-        compressed_task,
-        data_dir=DATA_DIR,
-        molecules_catalog_dir=MOLECULES_CATALOG_DIR,
-        overwrite=OVERWRITE,
-        run_sqd=True,
-    )

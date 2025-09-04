@@ -26,7 +26,7 @@ basis = "cc-pvdz"
 nelectron, norb = 10, 26
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-bond_distance_range = [1.2]
+bond_distance_range = [1.2, 2.4]
 n_hardware_run_range = list(range(0, 10))
 n_reps_range = [1]
 
@@ -42,7 +42,7 @@ entropies = [1]
 max_dim = 4000
 samples_per_batch = 4000
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_0828_r12_max_dim-{max_dim}.log"
+filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_max_dim-{max_dim}.log"
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -154,7 +154,7 @@ if MAX_PROCESSES == 1:
             data_dir=DATA_DIR,
             molecules_catalog_dir=MOLECULES_CATALOG_DIR,
             overwrite=OVERWRITE,
-            run_sqd=False,
+            run_sqd=True,
         )
 else:
     with tqdm(total=len(random_tasks)) as progress:
@@ -168,18 +168,7 @@ else:
                         data_dir=DATA_DIR,
                         molecules_catalog_dir=MOLECULES_CATALOG_DIR,
                         overwrite=OVERWRITE,
-                        run_sqd=False,
+                        run_sqd=True,
                     )
                 )
                 future.add_done_callback(lambda _: progress.update())
-
-for random_task, truncated_task, compressed_task in tqdm(zip(random_tasks, truncated_tasks, compressed_tasks)):
-    run_hardware_sqd_energy_batch_task(
-        random_task,
-        truncated_task,
-        compressed_task,
-        data_dir=DATA_DIR,
-        molecules_catalog_dir=MOLECULES_CATALOG_DIR,
-        overwrite=OVERWRITE,
-        run_sqd=True,
-    )
