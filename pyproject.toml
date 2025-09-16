@@ -31,11 +31,8 @@ dependencies = [
 dev = ["mypy", "pytest", "pre-commit", "ruff"]
 
 [tool.uv.sources]
-qiskit-addon-aqc-tensor = { path = "../qiskit-addon-aqc-tensor", editable = true }
 # molecules-catalog = { path = "../../../../media/storage/kevinsung-public/molecules-catalog", editable = true }
 molecules-catalog = { path = "../molecules-catalog", editable = true }
-qiskit-addon-sqd = { path = "../qiskit-addon-sqd", editable = true }
-ffsim = { path = "../ffsim", editable = true }
 
 
 [dependency-groups]
