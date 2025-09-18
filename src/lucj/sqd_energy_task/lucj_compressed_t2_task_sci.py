@@ -240,8 +240,9 @@ def run_sqd_energy_task(
     
     rng = np.random.default_rng(task.entropy)
     
-    if not os.path.exists(sample_filename):
-        if os.path.exists(state_vector_filename):
+    if overwrite or not os.path.exists(sample_filename):
+        if not overwrite and os.path.exists(state_vector_filename):
+            logging.info(f"{task} State vector file exists, loading...\n")
             with open(state_vector_filename, "rb") as f:
                 final_state = np.load(f)
         else:
@@ -250,10 +251,10 @@ def run_sqd_energy_task(
                 return
             
             # Compute final state
-            if not os.path.exists(state_vector_filename):
-                final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
-                with open(state_vector_filename, "wb") as f:
-                    np.save(f, final_state)
+            logging.info(f"{task} Computing state vector...\n")
+            final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
+            with open(state_vector_filename, "wb") as f:
+                np.save(f, final_state)
         
         # record vqe energy
         if task.molecule_basename != "fe2s2_30e20o":
