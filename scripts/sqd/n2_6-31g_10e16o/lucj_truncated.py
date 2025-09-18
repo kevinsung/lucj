@@ -28,19 +28,19 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 16
-OVERWRITE = False
+OVERWRITE = True
 
 molecule_name = "n2"
 basis = "6-31g"
 nelectron, norb = 10, 16
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
-# bond_distance_range = [1.2]
-bond_distance_range = [2.4]
+bond_distance_range = [1.2]
+# bond_distance_range = [2.4]
 
 connectivities = [
     "heavy-hex",
-    # "square",
+    "square",
     "all-to-all",
 ]
 shots = 100_000

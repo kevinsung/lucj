@@ -5,7 +5,7 @@ from pathlib import Path
 import ffsim
 import matplotlib.pyplot as plt
 import numpy as np
-import json 
+import json
 
 from lucj.params import LUCJParams
 from lucj.uccsd_task.uccsd_sqd_initial_params_task import UCCSDSQDInitialParamsTask
@@ -94,6 +94,7 @@ fci_energies_experiment = np.array(
     [mol_data.fci_energy for mol_data in mol_datas_experiment.values()]
 )
 
+
 def load_data(filepath):
     if not os.path.exists(filepath):
         result = {
@@ -108,23 +109,24 @@ def load_data(filepath):
             result = pickle.load(f)
     return result
 
+
 tasks_uccsd = [
-        UCCSDSQDInitialParamsTask(
-            molecule_basename=molecule_basename,
-            bond_distance=d,
-            shots=shots,
-            samples_per_batch=samples_per_batch,
-            n_batches=n_batches,
-            energy_tol=energy_tol,
-            occupancies_tol=occupancies_tol,
-            carryover_threshold=carryover_threshold,
-            max_iterations=max_iterations,
-            symmetrize_spin=symmetrize_spin,
-            entropy=entropy,
-            max_dim=max_dim,
-        )
-        for d in bond_distance_range
-    ]
+    UCCSDSQDInitialParamsTask(
+        molecule_basename=molecule_basename,
+        bond_distance=d,
+        shots=shots,
+        samples_per_batch=samples_per_batch,
+        n_batches=n_batches,
+        energy_tol=energy_tol,
+        occupancies_tol=occupancies_tol,
+        carryover_threshold=carryover_threshold,
+        max_iterations=max_iterations,
+        symmetrize_spin=symmetrize_spin,
+        entropy=entropy,
+        max_dim=max_dim,
+    )
+    for d in bond_distance_range
+]
 
 tasks_ucj = [
     SQDEnergyTask(
@@ -207,15 +209,25 @@ tasks_lucj_heavy_hex = [
     for d in bond_distance_range
 ]
 
-with open('scripts/paper/color.json', 'r') as file:
+with open("scripts/paper/color.json", "r") as file:
     colors = json.load(file)
 alphas = [0.5, 1.0]
 linestyles = ["--", ":"]
 markers = ["o", "s", "v", "D", "p", "*", "P", "X"]
 
-list_tasks = [tasks_uccsd, tasks_ucj, tasks_lucj_square, tasks_lucj_heavy_hex]
+list_tasks = [
+    tasks_uccsd,
+    tasks_ucj,
+    # tasks_lucj_square,
+    # tasks_lucj_heavy_hex,
+]
 color_keys = ["uccsd", "ucj", "lucj_full_square", "lucj_full"]
-labels = ["UCCSD", "UCJ", "LUCJ:square", "LUCJ:heavy-hex"]
+labels = [
+    "UCCSD",
+    "UCJ",
+    # "LUCJ:square",
+    # "LUCJ:heavy-hex",
+]
 
 for plot_type in ["vqe", "sqd"]:
     # fig = plt.plot(figsize=(9, 12))
@@ -248,7 +260,7 @@ for plot_type in ["vqe", "sqd"]:
         label="CISD",
         color=colors["cisd"],
     )
-    
+
     for tasks, color_key, label in zip(list_tasks, color_keys, labels):
         results = {}
         for task in tasks:
@@ -270,7 +282,7 @@ for plot_type in ["vqe", "sqd"]:
             label=label,
             color=colors[color_key],
         )
-        
+
     # plt.legend()
     axes[0].set_ylabel("Energy (Hartree)")
     axes[0].set_ylim(-109.2, -107.7)
@@ -291,7 +303,7 @@ for plot_type in ["vqe", "sqd"]:
         label="CISD",
         color=colors["cisd"],
     )
-    
+
     for tasks, color_key, label in zip(list_tasks, color_keys, labels):
         results = {}
         for task in tasks:
@@ -314,10 +326,10 @@ for plot_type in ["vqe", "sqd"]:
             label=label,
             color=colors[color_key],
         )
-    
+
         # if plot_type == "vqe" and label == "UCJ":
         #     print(errors[3])
-        
+
     # plt.legend()
     axes[1].set_ylabel("Energy erro (Hartree)")
     axes[1].set_yscale("log")
@@ -340,7 +352,6 @@ for plot_type in ["vqe", "sqd"]:
     else:
         fig.suptitle(f"N$_2$/6-31G ({nelectron}e, {norb}o)")
 
-
     filepath = os.path.join(
         plots_dir,
         f"{os.path.splitext(os.path.basename(__file__))[0]}_{plot_type}.pdf",
@@ -348,4 +359,3 @@ for plot_type in ["vqe", "sqd"]:
     plt.savefig(filepath)
     print(f"Saved figure to {filepath}.")
     plt.close()
-
