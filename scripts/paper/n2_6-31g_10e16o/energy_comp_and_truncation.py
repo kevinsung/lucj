@@ -255,11 +255,7 @@ list_tasks_truncation = [
 color_keys_truncation = ["ucj", "lucj_full_square", "lucj_full"]
 labels_truncation = ["UCJ", "LUCJ:square", "LUCJ:heavy-hex"]
 
-fig, axes = plt.subplots(
-    3,
-    2,
-    figsize=(12, 10),
-)
+fig, axes = plt.subplots(3, 2, figsize=(12, 10))
 
 for col_idx, plot_type in enumerate(["vqe", "qsci"]):
     axes[0, col_idx].plot(
@@ -309,10 +305,10 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
             color=colors[color_key],
         )
 
-    axes[0, col_idx].set_ylabel("Energy (Hartree)")
+    axes[0, col_idx].set_ylabel("Energy (Hartree)", fontsize=12)
     axes[0, col_idx].set_ylim(-109.2, -108.5)
-    axes[0, col_idx].set_xlabel("Bond length (Å)")
-    axes[0, col_idx].set_title(f"{plot_type.upper()}", fontsize=14)
+    axes[0, col_idx].set_xlabel("Bond length (Å)", fontsize=12)
+    axes[0, col_idx].set_title(f"{plot_type.upper()}", fontsize=16)
     axes[0, col_idx].margins(x=0.02)
 
     axes[1, col_idx].plot(
@@ -354,10 +350,10 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
             color=colors[color_key],
         )
 
-    axes[1, col_idx].set_ylabel("Energy error (Hartree)")
+    axes[1, col_idx].set_ylabel("Energy error (Hartree)", fontsize=12)
     axes[1, col_idx].set_yscale("log")
     axes[1, col_idx].set_ylim(1e-3, 1)
-    axes[1, col_idx].set_xlabel("Bond length (Å)")
+    axes[1, col_idx].set_xlabel("Bond length (Å)", fontsize=12)
     axes[1, col_idx].margins(x=0.02)
 
     for tasks, color_key, label, marker in zip(
@@ -381,8 +377,8 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
             color=colors[color_key],
         )
 
-    axes[2, col_idx].set_ylabel("Energy error (Hartree)")
-    axes[2, col_idx].set_xlabel("Repetitions")
+    axes[2, col_idx].set_ylabel("Energy error (Hartree)", fontsize=12)
+    axes[2, col_idx].set_xlabel("Repetitions", fontsize=12)
     axes[2, col_idx].set_yscale("log")
     axes[2, col_idx].set_ylim(1e-3, 1)
     axes[2, col_idx].margins(x=0.02)
@@ -406,7 +402,7 @@ axes[2, 0].legend()
 plt.tight_layout()
 plt.subplots_adjust(top=0.93)
 
-fig.suptitle(f"N$_2$ 6-31G ({nelectron}e, {norb}o)", fontsize=16)
+fig.suptitle(f"N$_2$ 6-31G ({nelectron}e, {norb}o)", fontsize=18)
 
 filepath = os.path.join(
     plots_dir,
