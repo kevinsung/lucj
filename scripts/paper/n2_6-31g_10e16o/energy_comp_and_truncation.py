@@ -1,3 +1,4 @@
+import json
 import os
 import pickle
 from pathlib import Path
@@ -5,12 +6,10 @@ from pathlib import Path
 import ffsim
 import matplotlib.pyplot as plt
 import numpy as np
-import json
 
 from lucj.params import LUCJParams
-from lucj.uccsd_task.uccsd_sqd_initial_params_task import UCCSDSQDInitialParamsTask
 from lucj.sqd_energy_task.lucj_compressed_t2_task import SQDEnergyTask
-
+from lucj.uccsd_task.uccsd_sqd_initial_params_task import UCCSDSQDInitialParamsTask
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
@@ -241,7 +240,7 @@ with open("scripts/paper/color.json", "r") as file:
     colors = json.load(file)
 
 alphas = [0.5, 1.0]
-linestyles = ["--", "-.", ":"]
+linestyles = ["-.", ":", "--"]
 markers = ["o", "s", "v", "D", "p", "*", "P", "X"]
 
 list_tasks = [tasks_uccsd, tasks_ucj]
@@ -274,7 +273,7 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
     axes[0, col_idx].plot(
         reference_bond_distance_range,
         ccsd_energies_reference,
-        "-",
+        linestyle=(0, (5, 1)),
         label="CCSD",
         color=colors["ccsd"],
     )
@@ -282,7 +281,7 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
     axes[0, col_idx].plot(
         reference_bond_distance_range,
         cisd_energies_reference,
-        "-",
+        linestyle=(0, (5, 5)),
         label="CISD",
         color=colors["cisd"],
     )
@@ -314,11 +313,12 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
     axes[0, col_idx].set_ylim(-109.2, -108.5)
     axes[0, col_idx].set_xlabel("Bond length (Å)")
     axes[0, col_idx].set_title(f"{plot_type.upper()}")
+    axes[0, col_idx].margins(x=0.02)
 
     axes[1, col_idx].plot(
         reference_bond_distance_range,
         ccsd_errors_reference,
-        "-",
+        linestyle=(0, (5, 1)),
         label="CCSD",
         color=colors["ccsd"],
     )
@@ -326,7 +326,7 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
     axes[1, col_idx].plot(
         reference_bond_distance_range,
         cisd_errors_reference,
-        "-",
+        linestyle=(0, (5, 5)),
         label="CISD",
         color=colors["cisd"],
     )
@@ -358,6 +358,7 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
     axes[1, col_idx].set_yscale("log")
     axes[1, col_idx].set_ylim(1e-3, 1)
     axes[1, col_idx].set_xlabel("Bond length (Å)")
+    axes[1, col_idx].margins(x=0.02)
 
     for tasks, color_key, label, marker in zip(
         list_tasks_truncation, color_keys_truncation, labels_truncation, markers
@@ -376,15 +377,28 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
             errors,
             f"{marker}--",
             label=label,
+            markersize=5,
             color=colors[color_key],
         )
 
     axes[2, col_idx].set_ylabel("Energy error (Hartree)")
     axes[2, col_idx].set_xlabel("Repetitions")
-    axes[2, col_idx].set_xticks([1, 5] + list(range(10, 120, 10)))
     axes[2, col_idx].set_yscale("log")
     axes[2, col_idx].set_ylim(1e-3, 1)
-    # axes[2, col_idx].axhline(1.6e-3, linestyle="--", color="black")
+    axes[2, col_idx].margins(x=0.02)
+    axes[2, col_idx].minorticks_on()
+
+    axes[2, col_idx].text(
+        0.96,
+        0.05,
+        f"R = {bond_distance_truncation} Å",
+        transform=axes[2, col_idx].transAxes,
+        ha="right",
+        va="bottom",
+        fontsize=16,
+        # bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8),
+    )
+
 
 axes[0, 0].legend()
 axes[2, 0].legend()

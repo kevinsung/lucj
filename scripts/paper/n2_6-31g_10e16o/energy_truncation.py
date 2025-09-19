@@ -21,7 +21,7 @@ os.makedirs(plots_dir, exist_ok=True)
 
 bond_distance_range = [1.2, 2.4]
 
-n_reps_range = list(range(1, 10, 1)) + list(range(10, 110, 10)) 
+n_reps_range = list(range(1, 10, 1)) + list(range(10, 110, 10))
 
 shots = 100_000
 n_batches = 10
@@ -37,6 +37,7 @@ max_dim = 4000
 samples_per_batch = max_dim
 
 bond_distance = 1.2
+
 
 def load_data(filepath):
     if not os.path.exists(filepath):
@@ -58,7 +59,7 @@ print("Done loading data.")
 markers = ["o", "s", "v", "D", "p", "*", "P", "X"]
 linestyles = ["--", ":"]
 
-with open('scripts/paper/color.json', 'r') as file:
+with open("scripts/paper/color.json", "r") as file:
     colors = json.load(file)
 
 tasks_ucj = [
@@ -169,7 +170,7 @@ for plot_type in ["vqe", "sqd"]:
             label=label,
             color=colors[color_key],
         )
-        
+
     plt.legend()
     plt.ylabel("Energy error (Hartree)")
     plt.xlabel("Repetitions")
@@ -184,7 +185,7 @@ for plot_type in ["vqe", "sqd"]:
     # else:
     plt.subplots_adjust(top=0.93)
     plt.title(f"N$_2$/6-31G/R=1.2Å ({nelectron}e, {norb}o)")
-    
+
     filepath = os.path.join(
         plots_dir, f"{os.path.splitext(os.path.basename(__file__))[0]}_{plot_type}.pdf"
     )

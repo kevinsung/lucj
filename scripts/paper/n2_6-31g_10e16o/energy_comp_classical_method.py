@@ -334,8 +334,8 @@ for plot_type in ["vqe", "sqd"]:
     axes[1].set_ylabel("Energy erro (Hartree)")
     axes[1].set_yscale("log")
     axes[1].set_xlabel("Bond length (Å)")
-    axes[1].axhline(1.6e-3, linestyle="--", color="black")
-    axes[1].set_ylim(0, 2e0)
+    # axes[1].axhline(1.6e-3, linestyle="--", color="black")
+    # axes[1].set_ylim(0, 2e0)
     plt.tight_layout()
     plt.subplots_adjust(top=0.93)
 
