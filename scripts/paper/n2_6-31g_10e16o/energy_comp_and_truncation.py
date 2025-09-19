@@ -312,7 +312,7 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
     axes[0, col_idx].set_ylabel("Energy (Hartree)")
     axes[0, col_idx].set_ylim(-109.2, -108.5)
     axes[0, col_idx].set_xlabel("Bond length (Å)")
-    axes[0, col_idx].set_title(f"{plot_type.upper()}")
+    axes[0, col_idx].set_title(f"{plot_type.upper()}", fontsize=14)
     axes[0, col_idx].margins(x=0.02)
 
     axes[1, col_idx].plot(
@@ -391,11 +391,11 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
     axes[2, col_idx].text(
         0.96,
         0.05,
-        f"R = {bond_distance_truncation} Å",
+        f"Bond length {bond_distance_truncation} Å",
         transform=axes[2, col_idx].transAxes,
         ha="right",
         va="bottom",
-        fontsize=16,
+        fontsize=14,
         # bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8),
     )
 
@@ -406,7 +406,7 @@ axes[2, 0].legend()
 plt.tight_layout()
 plt.subplots_adjust(top=0.93)
 
-fig.suptitle(f"N$_2$ 6-31G ({nelectron}e, {norb}o)")
+fig.suptitle(f"N$_2$ 6-31G ({nelectron}e, {norb}o)", fontsize=16)
 
 filepath = os.path.join(
     plots_dir,
