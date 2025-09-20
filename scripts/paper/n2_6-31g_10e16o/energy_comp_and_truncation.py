@@ -350,6 +350,7 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
             color=colors[color_key],
         )
 
+    axes[1, col_idx].axhline(1.6e-3, linestyle="--", color=colors["chemical_precision"])
     axes[1, col_idx].set_ylabel("Energy error (Hartree)", fontsize=12)
     axes[1, col_idx].set_yscale("log")
     axes[1, col_idx].set_ylim(1e-3, 1)
@@ -385,7 +386,7 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
     axes[2, col_idx].minorticks_on()
 
     axes[2, col_idx].text(
-        0.96,
+        0.97,
         0.05,
         f"Bond length {bond_distance_truncation} Å",
         transform=axes[2, col_idx].transAxes,
@@ -395,6 +396,16 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
         # bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8),
     )
 
+axes[1, 0].text(
+    0.97,
+    0.1,
+    "1.6 milliHartrees",
+    transform=axes[1, 0].transAxes,
+    ha="right",
+    va="bottom",
+    fontsize=11,
+    color=colors["chemical_precision"],
+)
 
 axes[0, 0].legend()
 axes[2, 0].legend()
