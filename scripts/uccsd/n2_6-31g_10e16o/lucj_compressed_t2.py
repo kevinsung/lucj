@@ -28,8 +28,8 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 8
-OVERWRITE = False
+MAX_PROCESSES = 20
+OVERWRITE = True
 
 molecule_name = "n2"
 basis = "6-31g"

@@ -28,7 +28,7 @@ DATA_ROOT = "/media/storage/WanHsuan.Lin/"
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 2
+MAX_PROCESSES = 4
 OVERWRITE = False
 
 molecule_name = "fe2s2"
@@ -41,7 +41,6 @@ connectivities = [
     "all-to-all",
 ]
 n_reps_range = list(range(2, 12, 2)) + [None, 1, 3, 5, 7]
-n_reps_range = [9]
 
 tasks = [
     LUCJCompressedT2Task(
