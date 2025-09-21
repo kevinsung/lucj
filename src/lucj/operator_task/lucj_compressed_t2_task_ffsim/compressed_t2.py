@@ -160,10 +160,7 @@ def double_factorized_t2_compress(
         t2, tol=tol
     )
     ori_diag_coulomb_mats = diag_coulomb_mats
-    _, _, norb, _ = orbital_rotations.shape
-    orbital_rotations = orbital_rotations.reshape(-1, norb, norb)
     n_reps_full, norb, _ = orbital_rotations.shape
-    diag_coulomb_mats = diag_coulomb_mats.reshape(-1, norb, norb)
     # not dealing with stack for now
     if not multi_stage_optimization:
         n_reps_full = n_reps
