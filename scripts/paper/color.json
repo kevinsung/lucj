@@ -14,5 +14,6 @@
     "lucj_compressed_1stg": "deepskyblue",
     "lucj_compressed_quimb": "mediumblue",
     "lucj_compressed_quimb2": "slateblue",
-    "chemical_precision": "#8d8d8d"
+    "chemical_precision": "#8d8d8d",
+    "annotation": "#8d8d8d"
 }

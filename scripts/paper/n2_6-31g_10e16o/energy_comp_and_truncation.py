@@ -6,6 +6,7 @@ from pathlib import Path
 import ffsim
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.patches import FancyArrowPatch
 
 from lucj.params import LUCJParams
 from lucj.sqd_energy_task.lucj_compressed_t2_task import SQDEnergyTask
@@ -395,6 +396,42 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
         fontsize=14,
         # bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8),
     )
+
+arrow1 = FancyArrowPatch(
+    (105, 2.6e-2),
+    (105, 1.3e-1),
+    arrowstyle="->",
+    mutation_scale=10,
+    color=colors["annotation"],
+)
+axes[2, 0].add_patch(arrow1)
+axes[2, 0].text(
+    84,
+    5.5e-2,
+    "truncate interactions",
+    ha="center",
+    va="center",
+    fontsize=11,
+    color=colors["annotation"],
+)
+
+arrow2 = FancyArrowPatch(
+    (95, 1.1e-2),
+    (60, 1.1e-2),
+    arrowstyle="->",
+    mutation_scale=10,
+    color=colors["annotation"],
+)
+axes[2, 0].add_patch(arrow2)
+axes[2, 0].text(
+    77.5,
+    6.5e-3,
+    "truncate repetitions",
+    ha="center",
+    va="center",
+    fontsize=11,
+    color=colors["annotation"],
+)
 
 axes[1, 0].text(
     0.97,
