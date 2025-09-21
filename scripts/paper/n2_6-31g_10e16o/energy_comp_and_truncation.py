@@ -253,7 +253,7 @@ list_tasks_truncation = [
     tasks_lucj_square_truncation,
     tasks_lucj_heavy_hex_truncation,
 ]
-color_keys_truncation = ["ucj", "lucj_full_square", "lucj_full"]
+color_keys_truncation = ["ucj", "lucj_square", "lucj_heavy_hex"]
 labels_truncation = ["UCJ", "LUCJ:square", "LUCJ:heavy-hex"]
 
 fig, axes = plt.subplots(3, 2, figsize=(12, 10))
@@ -389,7 +389,7 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
     axes[2, col_idx].text(
         0.97,
         0.05,
-        f"Bond length {bond_distance_truncation} Å",
+        f"bond length {bond_distance_truncation} Å",
         transform=axes[2, col_idx].transAxes,
         ha="right",
         va="bottom",
@@ -448,7 +448,7 @@ axes[0, 0].legend()
 axes[2, 0].legend()
 
 plt.tight_layout()
-plt.subplots_adjust(top=0.93)
+plt.subplots_adjust(top=0.91)
 
 fig.suptitle(f"N$_2$ 6-31G ({nelectron}e, {norb}o)", fontsize=18)
 

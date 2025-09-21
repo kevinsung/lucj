@@ -144,7 +144,7 @@ tasks_lucj_heavy_hex = [
 ]
 
 list_tasks = [tasks_ucj, tasks_lucj_square, tasks_lucj_heavy_hex]
-color_keys = ["ucj", "lucj_full_square", "lucj_full"]
+color_keys = ["ucj", "lucj_square", "lucj_full"]
 labels = ["UCJ", "LUCJ:square", "LUCJ:heavy-hex"]
 
 for plot_type in ["vqe", "sqd"]:

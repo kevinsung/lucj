@@ -60,8 +60,8 @@ def load_data(filepath):
 
 print("Done loading data.")
 
+linestyles = ["-.", ":", "--"]
 markers = ["o", "s", "v", "D", "p", "*", "P", "X"]
-linestyles = ["--", ":"]
 
 with open("scripts/paper/color.json", "r") as file:
     colors = json.load(file)
@@ -197,11 +197,12 @@ for i, connectivity in enumerate(connectivities):
         list_loss[1].append(results["final_loss"])
     color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_1stg"]
     labels = ["LUCJ-truncated", "LUCJ-compressed", "LUCJ-compressed-1stg"]
-    for loss, color_key, label in zip(list_loss, color_keys, labels):
+    for loss, color_key, label, marker in zip(list_loss, color_keys, labels, markers):
         axes[0, i].plot(
             n_reps_range,
             loss,
-            f"{markers[0]}{linestyles[0]}",
+            f"{marker}--",
+            markersize=5,
             label=label,
             color=colors[color_key],
         )
@@ -217,17 +218,9 @@ for i, connectivity in enumerate(connectivities):
         tasks_compressed_t2,
         tasks_compressed_t2_naive,
     ]
-    color_keys = [
-        "lucj_truncated",
-        "lucj_compressed",
-        "lucj_compressed_1stg",
-    ]
-    labels = [
-        "LUCJ-truncated",
-        "LUCJ-compressed",
-        "LUCJ-compressed-1stg",
-    ]
-    for tasks, color_key, label in zip(list_tasks, color_keys, labels):
+    color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_1stg"]
+    labels = ["LUCJ-truncated", "LUCJ-compressed", "LUCJ-compressed-1stg"]
+    for tasks, color_key, label, marker in zip(list_tasks, color_keys, labels, markers):
         results = {}
         for task in tasks:
             filepath = DATA_ROOT / task.operatorpath / "data.pickle"
@@ -236,11 +229,20 @@ for i, connectivity in enumerate(connectivities):
         axes[1, i].plot(
             n_reps_range,
             errors,
-            f"{markers[0]}{linestyles[0]}",
+            f"{marker}--",
+            markersize=5,
             label=label,
             color=colors[color_key],
         )
-    axes[1, i].set_title("VQE")
+    axes[1, i].text(
+        0.5,
+        0.95,
+        "VQE",
+        transform=axes[1, i].transAxes,
+        fontsize=12,
+        ha="center",
+        va="top",
+    )
     axes[1, i].set_yscale("log")
     axes[1, i].set_ylim(1e-2, 10)
     axes[1, i].axhline(
@@ -253,7 +255,7 @@ for i, connectivity in enumerate(connectivities):
     axes[1, i].set_xlabel("Repetitions", fontsize=12)
     axes[1, i].set_xticks(n_reps_range)
 
-    for tasks, color_key, label in zip(list_tasks, color_keys, labels):
+    for tasks, color_key, label, marker in zip(list_tasks, color_keys, labels, markers):
         results = {}
         for task in tasks:
             filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
@@ -262,11 +264,20 @@ for i, connectivity in enumerate(connectivities):
         axes[2, i].plot(
             n_reps_range,
             errors,
-            f"{markers[0]}{linestyles[0]}",
+            f"{marker}--",
+            markersize=5,
             label=label,
             color=colors[color_key],
         )
-    axes[2, i].set_title("QSCI")
+    axes[2, i].text(
+        0.5,
+        0.95,
+        "QSCI",
+        transform=axes[2, i].transAxes,
+        fontsize=12,
+        ha="center",
+        va="top",
+    )
     axes[2, i].set_yscale("log")
     axes[2, i].set_ylim(1e-3, 1)
     axes[2, i].axhline(
@@ -280,22 +291,22 @@ for i, connectivity in enumerate(connectivities):
     axes[2, i].set_xticks(n_reps_range)
 
 
-# leg = axes[0, 2].legend(
-#     bbox_to_anchor=(-0.38, -1.65),
-#     loc="upper center",
-#     ncol=6,
-#     columnspacing=1,
-#     handletextpad=0.8,
-# )
-# leg.set_in_layout(False)
-plt.tight_layout()
-plt.subplots_adjust(top=0.9)
-
 fig.suptitle(
-    f"N$_2$ 6-31G ({nelectron}e, {norb}o) bond distance {bond_distance} Å", fontsize=18
+    f"N$_2$ 6-31G ({nelectron}e, {norb}o) bond length {bond_distance} Å", fontsize=18
 )
 
-axes[0, 0].legend(loc="lower left")
+# axes[2, 0].legend()
+
+leg = axes[2, 0].legend(
+    bbox_to_anchor=(1, -0.25),
+    loc="upper center",
+    ncol=4,
+    columnspacing=1,
+    handletextpad=0.8,
+)
+leg.set_in_layout(False)
+plt.tight_layout()
+plt.subplots_adjust(top=0.91, bottom=0.1)
 
 filepath = os.path.join(
     plots_dir,

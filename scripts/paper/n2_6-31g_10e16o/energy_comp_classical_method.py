@@ -221,7 +221,7 @@ list_tasks = [
     # tasks_lucj_square,
     # tasks_lucj_heavy_hex,
 ]
-color_keys = ["uccsd", "ucj", "lucj_full_square", "lucj_full"]
+color_keys = ["uccsd", "ucj", "lucj_square", "lucj_full"]
 labels = [
     "UCCSD",
     "UCJ",
