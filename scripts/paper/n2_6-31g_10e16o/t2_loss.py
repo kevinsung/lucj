@@ -206,7 +206,7 @@ for i, connectivity in enumerate(connectivities):
             label=label,
             color=colors[color_key],
         )
-    axes[0, i].set_ylabel("Operator loss", fontsize=12)
+    axes[0, i].set_ylabel("Loss function", fontsize=12)
     axes[0, i].set_xlabel("Repetitions", fontsize=12)
     axes[0, i].set_xticks(n_reps_range)
     axes[0, i].set_yscale("log")
