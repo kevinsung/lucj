@@ -244,11 +244,6 @@ def run_sqd_energy_task(
     vqe_filename = data_dir / task.operatorpath / "data.pickle"
     sample_filename = data_dir / task.operatorpath / "sample.pickle"
     state_vector_filename = data_dir / task.operatorpath / "state_vector.npy"
-    
-    if task.molecule_basename == "n2_cc-pvdz_10e26o" and task.compressed_t2_params is None and task.lucj_params.connectivity == "all-to-all" and task.lucj_params.n_reps in [1, 2, 3, None] :
-        logging.info(f"{task} load state vector from lucj_ccsd_state_vector...\n")
-        state_vector_filename = f"/media/storage/WanHsuan.Lin/lucj/lucj_ccsd_state_vector/n2_cc-pvdz_10e26o/bond_distance-{task.bond_distance:.5f}/connectivity-all-to-all/n_reps-{task.lucj_params.n_reps}/with_final_orbital_rotation-True/state_vector.npy"
-        
 
     rng = np.random.default_rng(task.entropy)
     
