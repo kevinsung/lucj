@@ -310,7 +310,7 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
     axes[0, col_idx].set_ylim(-109.2, -108.5)
     axes[0, col_idx].set_xlabel("Bond length (Å)", fontsize=12)
     axes[0, col_idx].set_title(f"{plot_type.upper()}", fontsize=16)
-    axes[0, col_idx].margins(x=0.02)
+    # axes[0, col_idx].margins(x=0.02)
 
     axes[1, col_idx].plot(
         reference_bond_distance_range,
@@ -356,7 +356,7 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
     axes[1, col_idx].set_yscale("log")
     axes[1, col_idx].set_ylim(1e-3, 1)
     axes[1, col_idx].set_xlabel("Bond length (Å)", fontsize=12)
-    axes[1, col_idx].margins(x=0.02)
+    # axes[1, col_idx].margins(x=0.02)
 
     for tasks, color_key, label, marker in zip(
         list_tasks_truncation, color_keys_truncation, labels_truncation, markers
@@ -383,8 +383,8 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
     axes[2, col_idx].set_xlabel("Repetitions", fontsize=12)
     axes[2, col_idx].set_yscale("log")
     axes[2, col_idx].set_ylim(1e-3, 1)
-    axes[2, col_idx].margins(x=0.02)
-    axes[2, col_idx].minorticks_on()
+    # axes[2, col_idx].margins(x=0.02)
+    # axes[2, col_idx].minorticks_on()
 
     axes[2, col_idx].text(
         0.97,
@@ -406,7 +406,7 @@ arrow1 = FancyArrowPatch(
 )
 axes[2, 0].add_patch(arrow1)
 axes[2, 0].text(
-    84,
+    83,
     5.5e-2,
     "truncate interactions",
     ha="center",

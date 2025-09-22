@@ -236,7 +236,7 @@ for i, bond_distance in enumerate(bond_distances):
         )
     axes[0, i].set_ylabel("Loss function", fontsize=12)
     axes[0, i].set_xlabel("Repetitions", fontsize=12)
-    axes[0, i].set_xticks(n_reps_range)
+    # axes[0, i].set_xticks(n_reps_range)
     axes[0, i].set_yscale("log")
     # axes[0, i].set_ylim(1e-4, 1e-1 if i == 0 else 10)
     axes[0, i].set_title(f"bond distance {bond_distance} Å", fontsize=16)
@@ -281,7 +281,7 @@ for i, bond_distance in enumerate(bond_distances):
     )
     axes[1, i].set_ylabel("Energy error (Hartree)", fontsize=12)
     axes[1, i].set_xlabel("Repetitions", fontsize=12)
-    axes[1, i].set_xticks(n_reps_range)
+    # axes[1, i].set_xticks(n_reps_range)
 
     for tasks, color_key, label, marker in zip(list_tasks, color_keys, labels, markers):
         results = {}
@@ -316,7 +316,7 @@ for i, bond_distance in enumerate(bond_distances):
     )
     axes[2, i].set_ylabel("Energy error (Hartree)", fontsize=12)
     axes[2, i].set_xlabel("Repetitions", fontsize=12)
-    axes[2, i].set_xticks(n_reps_range)
+    # axes[2, i].set_xticks(n_reps_range)
 
 
 fig.suptitle(

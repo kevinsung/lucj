@@ -208,7 +208,7 @@ for i, connectivity in enumerate(connectivities):
         )
     axes[0, i].set_ylabel("Loss function", fontsize=12)
     axes[0, i].set_xlabel("Repetitions", fontsize=12)
-    axes[0, i].set_xticks(n_reps_range)
+    # axes[0, i].set_xticks(n_reps_range)
     axes[0, i].set_yscale("log")
     # axes[0, i].set_ylim(1e-4, 1e-1)
     title_map = {"all-to-all": "all-to-all (UCJ)", "heavy-hex": "heavy-hex"}
@@ -254,7 +254,7 @@ for i, connectivity in enumerate(connectivities):
     )
     axes[1, i].set_ylabel("Energy error (Hartree)", fontsize=12)
     axes[1, i].set_xlabel("Repetitions", fontsize=12)
-    axes[1, i].set_xticks(n_reps_range)
+    # axes[1, i].set_xticks(n_reps_range)
 
     for tasks, color_key, label, marker in zip(list_tasks, color_keys, labels, markers):
         results = {}
@@ -289,7 +289,7 @@ for i, connectivity in enumerate(connectivities):
     )
     axes[2, i].set_ylabel("Energy error (Hartree)", fontsize=12)
     axes[2, i].set_xlabel("Repetitions", fontsize=12)
-    axes[2, i].set_xticks(n_reps_range)
+    # axes[2, i].set_xticks(n_reps_range)
 
 
 fig.suptitle(
