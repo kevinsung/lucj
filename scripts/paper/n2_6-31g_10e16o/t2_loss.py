@@ -196,7 +196,7 @@ for i, connectivity in enumerate(connectivities):
         results = load_data(filepath)
         list_loss[1].append(results["final_loss"])
     color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_1stg"]
-    labels = ["LUCJ-truncated", "LUCJ-compressed", "LUCJ-compressed-1stg"]
+    labels = ["truncated", "compressed", "compressed, no multi-stage"]
     for loss, color_key, label, marker in zip(list_loss, color_keys, labels, markers):
         axes[0, i].plot(
             n_reps_range,
@@ -220,7 +220,14 @@ for i, connectivity in enumerate(connectivities):
         tasks_compressed_t2_naive,
     ]
     color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_1stg"]
-    labels = ["LUCJ-truncated", "LUCJ-compressed", "LUCJ-compressed-1stg"]
+    labels = ["truncated", "compressed", "compressed without multi-stage optimization"]
+
+    axes[1, i].axhline(
+        vqe_error_lucj_full,
+        linestyle="--",
+        label="full",
+        color=colors["lucj_full"],
+    )
     for tasks, color_key, label, marker in zip(list_tasks, color_keys, labels, markers):
         results = {}
         for task in tasks:
@@ -246,16 +253,16 @@ for i, connectivity in enumerate(connectivities):
     )
     axes[1, i].set_yscale("log")
     axes[1, i].set_ylim(1e-2, 10)
-    axes[1, i].axhline(
-        vqe_error_lucj_full,
-        linestyle="--",
-        label="LUCJ-full",
-        color=colors["lucj_full"],
-    )
     axes[1, i].set_ylabel("Energy error (Hartree)", fontsize=12)
     axes[1, i].set_xlabel("Repetitions", fontsize=12)
     # axes[1, i].set_xticks(n_reps_range)
 
+    axes[2, i].axhline(
+        sqd_error_lucj_full,
+        linestyle="--",
+        label="full",
+        color=colors["lucj_full"],
+    )
     for tasks, color_key, label, marker in zip(list_tasks, color_keys, labels, markers):
         results = {}
         for task in tasks:
@@ -281,12 +288,6 @@ for i, connectivity in enumerate(connectivities):
     )
     axes[2, i].set_yscale("log")
     axes[2, i].set_ylim(1e-3, 1)
-    axes[2, i].axhline(
-        sqd_error_lucj_full,
-        linestyle="--",
-        label="LUCJ-full",
-        color=colors["lucj_full"],
-    )
     axes[2, i].set_ylabel("Energy error (Hartree)", fontsize=12)
     axes[2, i].set_xlabel("Repetitions", fontsize=12)
     # axes[2, i].set_xticks(n_reps_range)
@@ -302,7 +303,7 @@ leg = axes[2, 0].legend(
     bbox_to_anchor=(1, -0.25),
     loc="upper center",
     ncol=4,
-    columnspacing=1,
+    # columnspacing=1,
     handletextpad=0.8,
 )
 leg.set_in_layout(False)
