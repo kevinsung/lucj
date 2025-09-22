@@ -26,7 +26,7 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 DATA_DIR = DATA_ROOT 
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 40
-OVERWRITE = False
+OVERWRITE = True
 
 molecule_name = "n2"
 basis = "6-31g"
@@ -54,6 +54,7 @@ entropy = 0
 
 max_dim = 4000
 samples_per_batch = max_dim
+regularization_factors = [1e-4, 1e-3, 1e-2, 1e-1]
 
 tasks_reg1 = [
     SQDEnergyTask(
@@ -71,7 +72,7 @@ tasks_reg1 = [
         ),
         regularization=True,
         regularization_option=1,
-        regularization_factor=1e-3,
+        regularization_factor=regularization_factor,
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
@@ -86,6 +87,7 @@ tasks_reg1 = [
     for n_reps in n_reps_range
     for connectivity in connectivities
     for d in bond_distance_range
+    for regularization_factor in regularization_factors
 ]
 
 tasks =  tasks_reg1 # tasks_reg2 + tasks_reg0 + tasks_reg1 

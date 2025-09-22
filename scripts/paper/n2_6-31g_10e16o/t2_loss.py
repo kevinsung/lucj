@@ -210,8 +210,9 @@ for i, connectivity in enumerate(connectivities):
     axes[0, i].set_xlabel("Repetitions", fontsize=12)
     axes[0, i].set_xticks(n_reps_range)
     axes[0, i].set_yscale("log")
-    axes[0, i].set_ylim(1e-4, 1e-1)
-    axes[0, i].set_title(connectivity, fontsize=16)
+    # axes[0, i].set_ylim(1e-4, 1e-1)
+    title_map = {"all-to-all": "all-to-all (UCJ)", "heavy-hex": "heavy-hex"}
+    axes[0, i].set_title(title_map[connectivity], fontsize=16)
 
     list_tasks = [
         tasks_truncated,
