@@ -330,7 +330,7 @@ leg = axes[2, 0].legend(
     bbox_to_anchor=(1, -0.25),
     loc="upper center",
     ncol=4,
-    columnspacing=1,
+    # columnspacing=1,
     handletextpad=0.8,
 )
 leg.set_in_layout(False)
