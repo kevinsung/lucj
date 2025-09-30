@@ -6,7 +6,7 @@ The instructions below use uv (https://docs.astral.sh/uv/getting-started/install
 
 ## Dependencies to install from source
 
-- molecules-catalog https://github.ibm.com/ibm-q-research/molecules-catalog
+- molecules-catalog
 
 ## Set proper environment variables
 set `LUCJ_DATA_ROOT`, where all data except the plots will be stored to, and `MOLECULES_CATALOG_DIR`, where you install `molecules-catalog`.
