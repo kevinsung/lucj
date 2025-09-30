@@ -419,7 +419,7 @@ def run_lucj_sqd_quimb_task(
 
         nomad_params = [
             "BB_OUTPUT_TYPE OBJ",
-            "MAX_BB_EVAL 500",
+            "MAX_BB_EVAL 100",
             # "NM_OPTIMIZATION yes",
             # "UPPER_BOUND * 2",
             # "LOWER_BOUND * -2",
@@ -429,7 +429,7 @@ def run_lucj_sqd_quimb_task(
             "PSD_MADS_OPTIMIZATION True",
             "PSD_MADS_NB_VAR_IN_SUBPROBLEM 20",
             "PSD_MADS_SUBPROBLEM_MAX_BB_EVAL 20",
-            "PSD_MADS_NB_SUBPROBLEM 6",
+            "PSD_MADS_NB_SUBPROBLEM 20",
             f"CACHE_FILE {cache_file}",
         ]
 
