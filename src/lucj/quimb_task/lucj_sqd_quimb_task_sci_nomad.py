@@ -356,7 +356,9 @@ def run_lucj_sqd_quimb_task(
         bbo_x.setBBO(str(f).encode("UTF-8"))
         return 1
 
-    if overwrite or (not os.path.exists(result_filename) and not os.path.exists(info_filename)):
+    if overwrite or (
+        not os.path.exists(result_filename) and not os.path.exists(info_filename)
+    ):
         # Generate initial parameters
         if bootstrap_task is None:
             # use CCSD to initialize parameters
@@ -406,7 +408,9 @@ def run_lucj_sqd_quimb_task(
             "history_energy": result_history_energy,
             "history_sci_vec_shape": result_history_subspace_dim,
         }
-        sqd_init_result_filename = data_dir / task.dirpath / "init_mps_sqd_result_filename.pickle"
+        sqd_init_result_filename = (
+            data_dir / task.dirpath / "init_mps_sqd_result_filename.pickle"
+        )
         logger.info(f"{task} Saving SQD data..\n")
         with open(sqd_init_result_filename, "wb") as f:
             pickle.dump(data, f)
@@ -426,15 +430,15 @@ def run_lucj_sqd_quimb_task(
             "PSD_MADS_OPTIMIZATION True",
             "PSD_MADS_NB_VAR_IN_SUBPROBLEM 20",
             "PSD_MADS_SUBPROBLEM_MAX_BB_EVAL 20",
-            "PSD_MADS_NB_SUBPROBLEM 4"
+            "PSD_MADS_NB_SUBPROBLEM 4",
         ]
 
         result = PyNomad.optimize(fun, params, lb, ub, nomad_params)
 
-        fmt = ["{} = {}".format(n, v) for (n, v) in result.items() if n != 'x_best']
+        fmt = ["{} = {}".format(n, v) for (n, v) in result.items() if n != "x_best"]
         output = "\n".join(fmt)
         print("\nNOMAD results \n" + output + " \n")
-        
+
         # result = scipy.optimize.minimize(
         #     fun,
         #     x0=params,
@@ -465,7 +469,7 @@ def run_lucj_sqd_quimb_task(
     if not os.path.exists(state_vector_filename):
         logging.info(f"{task} Computing state vector\n")
         operator = ffsim.UCJOpSpinBalanced.from_parameters(
-            np.array(result['x_best']),
+            np.array(result["x_best"]),
             norb=norb,
             n_reps=task.lucj_params.n_reps,
             interaction_pairs=(pairs_aa, pairs_ab),
@@ -508,7 +512,6 @@ def run_lucj_sqd_quimb_task(
     result_history_energy = []
     result_history_subspace_dim = []
     result_history = []
-
 
     result = diagonalize_fermionic_hamiltonian(
         mol_ham.one_body_tensor,

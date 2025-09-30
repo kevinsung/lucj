@@ -96,5 +96,3 @@ def brickwork(norb: int, n_layers: int):
     for i in range(n_layers):
         for j in range(i % 2, norb - 1, 2):
             yield (j, j + 1)
-
-

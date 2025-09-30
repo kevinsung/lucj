@@ -67,11 +67,11 @@ def run_on_hardware(
         pass_manager.pre_init = ffsim_pass
         pass_manager.post_init = PassManager([RemoveIdentityEquivalent()])
         pass_manager.post_optimization = PassManager(
-        [
-            FoldRzzAngle(),
-            RemoveIdentityEquivalent(target=backend.target),
-        ]
-    )
+            [
+                FoldRzzAngle(),
+                RemoveIdentityEquivalent(target=backend.target),
+            ]
+        )
         isa_circuit = pass_manager.run(circuit)
         print(f"Circuit: Gate counts (w/ pre-init passes): {isa_circuit.count_ops()}")
         op = isa_circuit.count_ops()
@@ -107,6 +107,7 @@ def run_on_hardware(
                 pickle.dump(pub_result.data.meas, f)
             print(f"save file to {sample_filename}")
         return meas_circuit
+
 
 # n2_6-31g_10e16o/batch.py vanilla
 # Circuit: Gate counts (w/ pre-init passes): OrderedDict([('rz', 9506), ('sx', 3696), ('cz', 798), ('measure', 32), ('x', 10), ('barrier', 1)])

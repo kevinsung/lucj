@@ -22,10 +22,15 @@ from ffsim.variational.util import interaction_pairs_spin_balanced
 from lucj.params import LUCJParams, CompressedT2Params
 
 from qiskit.primitives import BitArray
-from qiskit_addon_sqd.fermion import SCIResult, diagonalize_fermionic_hamiltonian, solve_sci_batch
+from qiskit_addon_sqd.fermion import (
+    SCIResult,
+    diagonalize_fermionic_hamiltonian,
+    solve_sci_batch,
+)
 from functools import partial
 
 logger = logging.getLogger(__name__)
+
 
 @dataclass(frozen=True, kw_only=True)
 class SQDEnergyTask:
@@ -64,11 +69,15 @@ class SQDEnergyTask:
                 compress_option = f"{compress_option}/fixparam"
             if self.regularization:
                 if self.regularization_factor is None:
-                    compress_option = f"{compress_option}/regularization_{self.regularization_option}"
+                    compress_option = (
+                        f"{compress_option}/regularization_{self.regularization_option}"
+                    )
                 else:
                     compress_option = f"{compress_option}/regularization_{self.regularization_option}_{self.regularization_factor:.6f}"
             if self.constant_factor is not None:
-                compress_option = f"{compress_option}/constant_factor-{self.constant_factor:.6f}"
+                compress_option = (
+                    f"{compress_option}/constant_factor-{self.constant_factor:.6f}"
+                )
             if self.t2_constant_factor is not None:
                 compress_option = f"{compress_option}/t2_constant_factor-{self.t2_constant_factor:.6f}"
         else:
@@ -106,7 +115,9 @@ class SQDEnergyTask:
                 compress_option = f"{compress_option}/fixparam"
             if self.regularization:
                 if self.regularization_factor is None:
-                    compress_option = f"{compress_option}/regularization_{self.regularization_option}"
+                    compress_option = (
+                        f"{compress_option}/regularization_{self.regularization_option}"
+                    )
                 else:
                     compress_option = f"{compress_option}/regularization_{self.regularization_option}_{self.regularization_factor:.6f}"
             if self.t2_constant_factor is not None:
@@ -136,7 +147,7 @@ def load_operator(task: SQDEnergyTask, data_dir: str, mol_data):
             norb,
             n_reps=task.lucj_params.n_reps,
             interaction_pairs=(pairs_aa, pairs_ab),
-            with_final_orbital_rotation=True
+            with_final_orbital_rotation=True,
         )
     elif task.connectivity_opt or task.compressed_t2_params is not None:
         operator_filename = data_dir / task.operatorpath / "operator.npz"
@@ -153,7 +164,9 @@ def load_operator(task: SQDEnergyTask, data_dir: str, mol_data):
         final_orbital_rotation = None
         if mol_data.ccsd_t1 is not None:
             final_orbital_rotation = (
-                ffsim.variational.util.orbital_rotation_from_t1_amplitudes(mol_data.ccsd_t1)
+                ffsim.variational.util.orbital_rotation_from_t1_amplitudes(
+                    mol_data.ccsd_t1
+                )
             )
         elif mol_data.ccsd_t2 is None:
             nelec = mol_data.nelec
@@ -193,15 +206,18 @@ def load_operator(task: SQDEnergyTask, data_dir: str, mol_data):
                 interaction_pairs=interaction_pairs_spin_balanced(
                     connectivity=task.lucj_params.connectivity, norb=norb
                 ),
-            ) 
+            )
         else:
             operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
                 mol_data.ccsd_t2,
                 n_reps=task.lucj_params.n_reps,
-                t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
+                t1=mol_data.ccsd_t1
+                if task.lucj_params.with_final_orbital_rotation
+                else None,
                 interaction_pairs=(pairs_aa, pairs_ab),
             )
     return operator
+
 
 def run_sqd_energy_task(
     task: SQDEnergyTask,
@@ -217,7 +233,6 @@ def run_sqd_energy_task(
     if (not overwrite) and os.path.exists(data_filename):
         logging.info(f"Data for {task} already exists. Skipping...\n")
         return task
-    
 
     # Get molecular data and molecular Hamiltonian
     if task.molecule_basename == "fe2s2_30e20o":
@@ -240,16 +255,28 @@ def run_sqd_energy_task(
 
     # use CCSD to initialize parameters
     if task.constant_factor is not None:
-        vqe_filename = data_dir / task.operatorpath / f"constant_factor-{task.constant_factor:.6f}/data.pickle"
-        sample_filename = data_dir / task.operatorpath / f"constant_factor-{task.constant_factor:.6f}/sample.pickle"
-        state_vector_filename = data_dir / task.operatorpath / f"constant_factor-{task.constant_factor:.6f}/state_vector.npy"
+        vqe_filename = (
+            data_dir
+            / task.operatorpath
+            / f"constant_factor-{task.constant_factor:.6f}/data.pickle"
+        )
+        sample_filename = (
+            data_dir
+            / task.operatorpath
+            / f"constant_factor-{task.constant_factor:.6f}/sample.pickle"
+        )
+        state_vector_filename = (
+            data_dir
+            / task.operatorpath
+            / f"constant_factor-{task.constant_factor:.6f}/state_vector.npy"
+        )
     else:
         vqe_filename = data_dir / task.operatorpath / "data.pickle"
         sample_filename = data_dir / task.operatorpath / "sample.pickle"
         state_vector_filename = data_dir / task.operatorpath / "state_vector.npy"
-    
+
     rng = np.random.default_rng(task.entropy)
-    
+
     if overwrite or not os.path.exists(sample_filename):
         if not overwrite and os.path.exists(state_vector_filename):
             logging.info(f"{task} State vector file exists, loading...\n")
@@ -259,13 +286,15 @@ def run_sqd_energy_task(
             operator = load_operator(task, data_dir, mol_data)
             if operator is None:
                 return
-            
+
             # Compute final state
             logging.info(f"{task} Computing state vector...\n")
-            final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
+            final_state = ffsim.apply_unitary(
+                reference_state, operator, norb=norb, nelec=nelec
+            )
             with open(state_vector_filename, "wb") as f:
                 np.save(f, final_state)
-        
+
         # record vqe energy
         if task.molecule_basename != "fe2s2_30e20o":
             logging.info(f"{task} Computing VQE data...\n")
@@ -291,7 +320,6 @@ def run_sqd_energy_task(
             with open(vqe_filename, "wb") as f:
                 pickle.dump(data, f)
 
-
         logging.info(f"{task} Sampling...\n")
         samples = ffsim.sample_state_vector(
             final_state,
@@ -305,20 +333,21 @@ def run_sqd_energy_task(
         bit_array_count = bit_array.get_int_counts()
         with open(sample_filename, "wb") as f:
             pickle.dump(bit_array_count, f)
-    
+
     else:
         logging.info(f"{task} load sample...\n")
         with open(sample_filename, "rb") as f:
             bit_array_count = pickle.load(f)
             bit_array = BitArray.from_counts(bit_array_count)
-    
+
     array = bit_array.to_bool_array()
 
     # Generate n unique random integers from the specified range
-    unique_integers = np.random.choice(np.arange(0, array.shape[0]), size=task.shots, replace=False)
+    unique_integers = np.random.choice(
+        np.arange(0, array.shape[0]), size=task.shots, replace=False
+    )
     array = array[unique_integers]
     bit_array = BitArray.from_bool_array(array)
-    
 
     # Run SQD
     logging.info(f"{task} Running SQD...\n")
@@ -327,7 +356,7 @@ def run_sqd_energy_task(
     result_history_energy = []
     result_history_subspace_dim = []
     result_history = []
-    
+
     def callback(results: list[SCIResult]):
         result_energy = []
         result_subspace_dim = []
@@ -361,7 +390,7 @@ def run_sqd_energy_task(
         carryover_threshold=task.carryover_threshold,
         seed=rng,
         callback=callback,
-        max_dim=task.max_dim
+        max_dim=task.max_dim,
     )
     energy = result.energy + mol_data.core_energy
     sci_state = result.sci_state
@@ -380,14 +409,9 @@ def run_sqd_energy_task(
         "spin_squared": spin_squared,
         "sci_vec_shape": sci_state.amplitudes.shape,
         "history_energy": result_history_energy,
-        "history_sci_vec_shape": result_history_subspace_dim
+        "history_sci_vec_shape": result_history_subspace_dim,
     }
-    
+
     logging.info(f"{task} Saving SQD data...\n")
     with open(data_filename, "wb") as f:
         pickle.dump(data, f)
-
-
-
-
-

@@ -100,7 +100,11 @@ for task in tasks:
     if task.constant_factor is None:
         sample_filename = DATA_ROOT / task.operatorpath / "sample.pickle"
     else:
-        sample_filename = DATA_ROOT / task.operatorpath / f"t2_constant_factor-{task.constant_factor:.6f}/sample.pickle"
+        sample_filename = (
+            DATA_ROOT
+            / task.operatorpath
+            / f"t2_constant_factor-{task.constant_factor:.6f}/sample.pickle"
+        )
 
     with open(sample_filename, "rb") as f:
         sample = pickle.load(f)
@@ -165,7 +169,6 @@ for execution in samples:
     all_pvalues.append(pvalues)
 
 
-
 fig = plt.plot(figsize=(3, 4), layout="constrained")
 # Cumulative distributions.
 x = np.arange(len(all_pvalues[0]))
@@ -174,7 +177,7 @@ for value, legend, c in zip(all_pvalues, legends, color):
     # input()
     y = value.cumsum()
     plt.plot(x, y, "-", label=legend, color=c)
-    
+
     # plt.ecdf(value, label=legend, color=c)
 
 x = []
@@ -190,7 +193,7 @@ plt.xlabel("Hamming distance to HF state")
 plt.ylabel("CDF")
 plt.legend()
 plt.tight_layout()
-plt.subplots_adjust(left=0.15,bottom=0.1, top=0.92)
+plt.subplots_adjust(left=0.15, bottom=0.1, top=0.92)
 plt.yscale("log")
 filepath = os.path.join(
     plots_dir,

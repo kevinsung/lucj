@@ -54,6 +54,7 @@ def _reshape_grad(
     core_coulomb_params = np.real(core_coulomb_params)
     return np.concatenate([leaf_params_real, leaf_params_imag, core_coulomb_params])
 
+
 def _df_tensors_to_params(
     diag_coulomb_mats_aa: np.ndarray,
     diag_coulomb_mats_ab: np.ndarray,
@@ -90,7 +91,9 @@ def _df_tensors_to_params(
             for diag_coulomb_mat in diag_coulomb_mats_ab
         ]
     )
-    return np.concatenate([leaf_params_real, leaf_params_imag, core_params_aa, core_params_ab])
+    return np.concatenate(
+        [leaf_params_real, leaf_params_imag, core_params_aa, core_params_ab]
+    )
 
 
 def _params_to_leaf_logs(params: np.ndarray, n_tensors: int, norb: int):
@@ -192,6 +195,7 @@ def _project(T):
     TP = (TP - np.einsum("prqs->rpsq", TP).conj()) / 2.0
     return TP
 
+
 def _project_jnp(T):
     TP = (T - jnp.einsum("prqs->psqr", T)) / 2.0
     TP = (TP - jnp.einsum("prqs->qrps", TP)) / 2.0
@@ -276,7 +280,7 @@ def double_factorized_t2_compress(
         param_indices_ab = np.nonzero(diag_coulomb_mask_ab)
         param_length_ab = len(param_indices_ab[0])
         list_partial_diag_coulomb_mat = []
-        core_params_ab = np.real(core_coulomb_params[(param_length_aa * n_tensors):])
+        core_params_ab = np.real(core_coulomb_params[(param_length_aa * n_tensors) :])
         for i in range(n_tensors):
             diag_coulomb_mat_aa = jnp.zeros((norb, norb), complex)
             diag_coulomb_mat_aa = diag_coulomb_mat_aa.at[param_indices_aa].set(
@@ -292,17 +296,24 @@ def double_factorized_t2_compress(
             # print(diag_coulomb_mat_aa)
             # print("diag_coulomb_mat_ab")
             # print(diag_coulomb_mat_ab)
-            diag_coulomb_mat_ab = diag_coulomb_mat_ab + diag_coulomb_mat_ab.T - jnp.diag(jnp.diag(diag_coulomb_mat_ab))
+            diag_coulomb_mat_ab = (
+                diag_coulomb_mat_ab
+                + diag_coulomb_mat_ab.T
+                - jnp.diag(jnp.diag(diag_coulomb_mat_ab))
+            )
             # print("new diag_coulomb_mat_ab")
             # print(diag_coulomb_mat_ab)
             # input()
-            diag_coulomb_mat = jnp.block([[diag_coulomb_mat_aa, diag_coulomb_mat_ab],
-                                           [jnp.zeros((norb, norb), complex), diag_coulomb_mat_aa]])
+            diag_coulomb_mat = jnp.block(
+                [
+                    [diag_coulomb_mat_aa, diag_coulomb_mat_ab],
+                    [jnp.zeros((norb, norb), complex), diag_coulomb_mat_aa],
+                ]
+            )
             list_partial_diag_coulomb_mat.append(diag_coulomb_mat)
             # print(jnp.block([[diag_coulomb_mat_aa, diag_coulomb_mat_ab],
             #         [jnp.zeros((norb, norb), complex), diag_coulomb_mat_aa]]))
             # input()
-
 
         # reconstruct orbital_rotations and diagonal coulumn mats
         orbital_rotations = jnp.zeros((n_tensors, 2 * norb, 2 * norb), dtype=complex)
@@ -312,12 +323,14 @@ def double_factorized_t2_compress(
         orbital_rotations = orbital_rotations.at[:, norb:, norb:].set(
             orbital_rotations_compact
         )
-        
+
         list_diag_coulomb_mat = []
         indices = [[p, p, r, r] for p in range(2 * norb) for r in range(2 * norb)]
-        indices = tuple(zip(*indices))    
+        indices = tuple(zip(*indices))
         for i in range(n_tensors):
-            diag_coulomb_mat = jnp.zeros((2 * norb, 2 * norb, 2 * norb, 2 * norb), dtype=complex)
+            diag_coulomb_mat = jnp.zeros(
+                (2 * norb, 2 * norb, 2 * norb, 2 * norb), dtype=complex
+            )
             tmp = list_partial_diag_coulomb_mat[i].ravel()
             diag_coulomb_mat = diag_coulomb_mat.at[indices].set(tmp)
             list_diag_coulomb_mat.append(4 * _project_jnp(diag_coulomb_mat * 1j))
@@ -376,7 +389,11 @@ def double_factorized_t2_compress(
         diag_coulomb_mask_aa,
         diag_coulomb_mask_ab,
     )
-    diag_coulomb_mats_converted_aa, diag_coulomb_mats_converted_ab, orbital_rotations_converted = _params_to_df_tensors(
+    (
+        diag_coulomb_mats_converted_aa,
+        diag_coulomb_mats_converted_ab,
+        orbital_rotations_converted,
+    ) = _params_to_df_tensors(
         x0, n_tensors, norb, diag_coulomb_mask_aa, diag_coulomb_mask_ab
     )
 

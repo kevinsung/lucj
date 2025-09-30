@@ -23,7 +23,9 @@ import numpy as np
 
 fractional_gate = True
 if fractional_gate:
-    from lucj.hardware_sqd_task.lucj_t2_seperate_sqd_task_sci_fg import HardwareSQDEnergyTask
+    from lucj.hardware_sqd_task.lucj_t2_seperate_sqd_task_sci_fg import (
+        HardwareSQDEnergyTask,
+    )
 else:
     from lucj.hardware_sqd_task.lucj_compressed_t2_task import HardwareSQDEnergyTask
 
@@ -76,8 +78,8 @@ task_compressed_t2_hardware = HardwareSQDEnergyTask(
     symmetrize_spin=symmetrize_spin,
     entropy=entropy,
     max_dim=max_dim,
-    n_hardware_run = n_hardware_run,
-    dynamic_decoupling=True
+    n_hardware_run=n_hardware_run,
+    dynamic_decoupling=True,
 )
 
 task_truncated_t2_hardware = HardwareSQDEnergyTask(
@@ -99,8 +101,8 @@ task_truncated_t2_hardware = HardwareSQDEnergyTask(
     symmetrize_spin=symmetrize_spin,
     entropy=entropy,
     max_dim=max_dim,
-    n_hardware_run = n_hardware_run,
-    dynamic_decoupling=True
+    n_hardware_run=n_hardware_run,
+    dynamic_decoupling=True,
 )
 
 nelec = (nelectron // 2, nelectron // 2)
@@ -109,19 +111,27 @@ dim = ffsim.dim(norb, nelec)
 half_hf_state = "0" * (norb - nelectron // 2) + "1" * (nelectron // 2)
 hf_state = half_hf_state + half_hf_state
 hf_address = ffsim.strings_to_addresses(
-        [hf_state],
-        norb,
-        nelec,
-    )[0]
+    [hf_state],
+    norb,
+    nelec,
+)[0]
+
 
 def compute_score(task):
     if fractional_gate:
-        sample_filename = DATA_ROOT / task.operatorpath / f"dynamic_decoupling_xy_opt_0_fractional_gate/hardware_sample_{task.n_hardware_run}.pickle"
+        sample_filename = (
+            DATA_ROOT
+            / task.operatorpath
+            / f"dynamic_decoupling_xy_opt_0_fractional_gate/hardware_sample_{task.n_hardware_run}.pickle"
+        )
     else:
-        sample_filename = DATA_ROOT / task.operatorpath / f"dynamic_decoupling_xy_opt_0/hardware_sample_{task.n_hardware_run}.pickle"
+        sample_filename = (
+            DATA_ROOT
+            / task.operatorpath
+            / f"dynamic_decoupling_xy_opt_0/hardware_sample_{task.n_hardware_run}.pickle"
+        )
 
     state_vector_filename = DATA_ROOT / task.operatorpath / "state_vector.npy"
-
 
     with open(sample_filename, "rb") as f:
         samples = pickle.load(f)
@@ -135,20 +145,23 @@ def compute_score(task):
     # If we don't have average orbital occupancy information, simply postselect
     # bitstrings with the correct numbers of spin-up and spin-down electrons
     bitstrings, probs = postselect_by_hamming_right_and_left(
-        raw_bitstrings, raw_probs, hamming_right=nelectron // 2, hamming_left=nelectron // 2
+        raw_bitstrings,
+        raw_probs,
+        hamming_right=nelectron // 2,
+        hamming_left=nelectron // 2,
     )
     score = 0
     list_score = []
-    count = 0 # count for bitstring that has 0 amplitude in the state vector
+    count = 0  # count for bitstring that has 0 amplitude in the state vector
     print(bitstrings.shape)
     converted_bitstrs = []
     for bitstr in bitstrings:
-        converted_bitstr = ''
+        converted_bitstr = ""
         for bit in bitstr:
             if bit:
-                converted_bitstr = converted_bitstr + '1'
+                converted_bitstr = converted_bitstr + "1"
             else:
-                converted_bitstr = converted_bitstr + '0'
+                converted_bitstr = converted_bitstr + "0"
         converted_bitstrs.append(converted_bitstr)
     addresses = ffsim.strings_to_addresses(
         converted_bitstrs,
@@ -158,19 +171,22 @@ def compute_score(task):
     for address in addresses:
         if address == hf_address:
             continue
-        if np.isclose(state_vector[address], 0, atol = 1e-15):
+        if np.isclose(state_vector[address], 0, atol=1e-15):
             count += 1
         else:
-            score += (abs(state_vector[address]) ** 2)
+            score += abs(state_vector[address]) ** 2
             list_score.append(abs(state_vector[address]))
     print(min(list_score))
     return score, count
+
 
 score_compressed, count_compressed = compute_score(task_compressed_t2_hardware)
 
 score_truncated, count_truncated = compute_score(task_truncated_t2_hardware)
 
-print(f"Compressed Op - score: {score_compressed}, #bitstr with 0 amp: {count_compressed}")
+print(
+    f"Compressed Op - score: {score_compressed}, #bitstr with 0 amp: {count_compressed}"
+)
 print(f"Truncated Op - score: {score_truncated}, #bitstr with 0 amp: {count_truncated}")
 
 # n2 6-31g

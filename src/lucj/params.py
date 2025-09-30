@@ -57,9 +57,11 @@ class LBFGSBParams(Params):
 class COBYQAParams(Params):
     maxiter: int
 
+
 @dataclass(frozen=True, kw_only=True)
 class LBFGSBParams(Params):
     maxiter: int
+
 
 @dataclass(frozen=True, kw_only=True)
 class LinearMethodParams(Params):
@@ -85,9 +87,9 @@ class StochasticReconfigurationParams(Params):
     optimize_regularization: bool
     optimize_variation: bool
 
+
 @dataclass(frozen=True, kw_only=True)
 class CompressedT2Params(Params):
     multi_stage_optimization: bool
     begin_reps: int
     step: int
-    

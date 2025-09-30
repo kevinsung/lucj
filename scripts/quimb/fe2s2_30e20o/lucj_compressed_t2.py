@@ -24,7 +24,9 @@ from lucj.quimb_task.lucj_sqd_quimb_task import (
     run_lucj_sqd_quimb_task,
 )
 
-filename = f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_no_early_termination.log"
+filename = (
+    f"logs/{os.path.splitext(os.path.relpath(__file__))[0]}_no_early_termination.log"
+)
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -35,7 +37,7 @@ logging.basicConfig(
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = DATA_ROOT 
+DATA_DIR = DATA_ROOT
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 1
 OVERWRITE = False
@@ -97,9 +99,7 @@ tasks = [
             with_final_orbital_rotation=True,
         ),
         compressed_t2_params=CompressedT2Params(
-            multi_stage_optimization=True,
-            begin_reps=20,
-            step=2
+            multi_stage_optimization=True, begin_reps=20, step=2
         ),
         regularization=False,
         cobyqa_params=COBYQAParams(maxiter=cobyqa_maxiter),
@@ -112,11 +112,11 @@ tasks = [
         max_iterations=max_iterations,
         symmetrize_spin=symmetrize_spin,
         entropy=entropy,
-        max_bond = max_bond,
-        perm_mps = perm_mps,
-        cutoff = cutoff,
-        seed = seed,
-        max_dim = max_dim,
+        max_bond=max_bond,
+        perm_mps=perm_mps,
+        cutoff=cutoff,
+        seed=seed,
+        max_dim=max_dim,
     )
     for (connectivity, n_reps, max_bond, cutoff) in itertools.product(
         connectivities, n_reps_range, max_bonds, cutoffs

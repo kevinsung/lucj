@@ -87,9 +87,7 @@ def init_loss(n_reps: int, bond_distance: float, connectivity):
 
     norb = mol_data.norb
     nelec = mol_data.nelec
-    pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
-        connectivity, norb
-    )
+    pairs_aa, pairs_ab = interaction_pairs_spin_balanced(connectivity, norb)
     operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
         mol_data.ccsd_t2,
         n_reps=n_reps,
@@ -102,26 +100,27 @@ def init_loss(n_reps: int, bond_distance: float, connectivity):
     nocc, _, _, _ = t2.shape
     diag_coulomb_mats = np.unstack(diag_coulomb_mats, axis=1)[0]
     reconstructed = (
-            1j
-            * contract(
-                "mpq,map,mip,mbq,mjq->ijab",
-                diag_coulomb_mats,
-                orbital_rotations,
-                orbital_rotations.conj(),
-                orbital_rotations,
-                orbital_rotations.conj(),
-                # optimize="greedy"
-            )[:nocc, :nocc, nocc:, nocc:]
-        )
+        1j
+        * contract(
+            "mpq,map,mip,mbq,mjq->ijab",
+            diag_coulomb_mats,
+            orbital_rotations,
+            orbital_rotations.conj(),
+            orbital_rotations,
+            orbital_rotations.conj(),
+            # optimize="greedy"
+        )[:nocc, :nocc, nocc:, nocc:]
+    )
     diff = reconstructed - t2
     return 0.5 * np.sum(np.abs(diff) ** 2)
+
 
 print("Done loading data.")
 
 markers = ["o", "s", "v", "D", "p", "*", "P", "X"]
 linestyles = ["--", ":"]
 
-with open('scripts/paper/color.json', 'r') as file:
+with open("scripts/paper/color.json", "r") as file:
     colors = json.load(file)
 
 results_random = {}
@@ -155,20 +154,35 @@ fig, axes = plt.subplots(
     figsize=(10, 5),  # , layout="constrained"
 )
 
-for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distance_range, connectivities)):
+for i, (bond_distance, connectivity) in enumerate(
+    itertools.product(bond_distance_range, connectivities)
+):
     mol_data = load_molecular_data(
         f"{molecule_basename}_d-{bond_distance:.5f}",
         molecules_catalog_dir=MOLECULES_CATALOG_DIR,
     )
     energy_ground_truth = mol_data.sci_energy
-    
-    error_avg = np.average(results_random[bond_distance]['history_energy']) - energy_ground_truth
-    error_min = np.min(results_random[bond_distance]['history_energy']) - energy_ground_truth
-    error_max = np.max(results_random[bond_distance]['history_energy']) - energy_ground_truth
 
-    sci_vec_shape_avg = np.average(results_random[bond_distance]['history_sci_vec_shape'][0]) 
-    sci_vec_shape_min = np.min(results_random[bond_distance]['history_sci_vec_shape'][0]) 
-    sci_vec_shape_max = np.max(results_random[bond_distance]['history_sci_vec_shape'][0]) 
+    error_avg = (
+        np.average(results_random[bond_distance]["history_energy"])
+        - energy_ground_truth
+    )
+    error_min = (
+        np.min(results_random[bond_distance]["history_energy"]) - energy_ground_truth
+    )
+    error_max = (
+        np.max(results_random[bond_distance]["history_energy"]) - energy_ground_truth
+    )
+
+    sci_vec_shape_avg = np.average(
+        results_random[bond_distance]["history_sci_vec_shape"][0]
+    )
+    sci_vec_shape_min = np.min(
+        results_random[bond_distance]["history_sci_vec_shape"][0]
+    )
+    sci_vec_shape_max = np.max(
+        results_random[bond_distance]["history_sci_vec_shape"][0]
+    )
 
     axes[0, i].axhline(
         error_avg,
@@ -182,7 +196,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         linestyle="--",
         # label="Rand bitstr",
         color=colors["random_bit_string"],
-        alpha=0.7
+        alpha=0.7,
     )
 
     axes[0, i].axhline(
@@ -190,7 +204,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         linestyle="--",
         # label="Rand bitstr",
         color=colors["random_bit_string"],
-        alpha=0.7
+        alpha=0.7,
     )
 
     axes[0, i].axhspan(
@@ -212,7 +226,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         linestyle="--",
         # label="Rand bitstr",
         color=colors["random_bit_string"],
-        alpha=0.7
+        alpha=0.7,
     )
 
     axes[1, i].axhline(
@@ -220,9 +234,9 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         linestyle="--",
         # label="Rand bitstr",
         color=colors["random_bit_string"],
-        alpha=0.7
+        alpha=0.7,
     )
-    
+
     axes[1, i].axhspan(
         sci_vec_shape_min,
         sci_vec_shape_max,
@@ -256,13 +270,13 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     filepath = DATA_ROOT / task_lucj_full.dirpath / "sqd_data.pickle"
     results = load_data(filepath)
 
-    error_avg = np.average(results['history_energy']) - energy_ground_truth
-    error_min = np.min(results['history_energy']) - energy_ground_truth
-    error_max = np.max(results['history_energy']) - energy_ground_truth
+    error_avg = np.average(results["history_energy"]) - energy_ground_truth
+    error_min = np.min(results["history_energy"]) - energy_ground_truth
+    error_max = np.max(results["history_energy"]) - energy_ground_truth
 
-    sci_vec_shape_avg = np.average(results['history_sci_vec_shape'][0]) 
-    sci_vec_shape_min = np.min(results['history_sci_vec_shape'][0]) 
-    sci_vec_shape_max = np.max(results['history_sci_vec_shape'][0]) 
+    sci_vec_shape_avg = np.average(results["history_sci_vec_shape"][0])
+    sci_vec_shape_min = np.min(results["history_sci_vec_shape"][0])
+    sci_vec_shape_max = np.max(results["history_sci_vec_shape"][0])
 
     # print("lucj full")
     # print(bond_distance)
@@ -285,7 +299,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
             linestyle="--",
             # label="LUCJ-full",
             color=colors["lucj_full"],
-            alpha=0.7
+            alpha=0.7,
         )
 
         axes[0, i].axhline(
@@ -293,7 +307,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
             linestyle="--",
             # label="LUCJ-full",
             color=colors["lucj_full"],
-            alpha=0.7
+            alpha=0.7,
         )
 
         axes[0, i].axhspan(
@@ -315,7 +329,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
             linestyle="--",
             # label="LUCJ-full",
             color=colors["lucj_full"],
-            alpha=0.7
+            alpha=0.7,
         )
 
         axes[1, i].axhline(
@@ -323,16 +337,15 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
             linestyle="--",
             # label="LUCJ-full",
             color=colors["lucj_full"],
-            alpha=0.7
+            alpha=0.7,
         )
-        
+
         axes[1, i].axhspan(
             sci_vec_shape_min,
             sci_vec_shape_max,
             color=colors["lucj_full"],
             alpha=0.5,
         )
-    
 
     tasks_compressed_t2 = [
         SQDEnergyTask(
@@ -344,9 +357,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
                 with_final_orbital_rotation=True,
             ),
             compressed_t2_params=CompressedT2Params(
-                multi_stage_optimization=True,
-                begin_reps=50,
-                step=2
+                multi_stage_optimization=True, begin_reps=50, step=2
             ),
             regularization=False,
             regularization_option=None,
@@ -404,33 +415,36 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         sci_vec_shape_avg = []
         sci_vec_shape_min = []
         sci_vec_shape_max = []
-        
+
         for task in tasks:
             filepath = DATA_ROOT / task.dirpath / "sqd_data.pickle"
             results = load_data(filepath)
-            
+
             # energy_avg = np.average(results['history_energy'])
             # error_avg.append(energy_avg - energy_ground_truth)
             # error_min.append(energy_avg - np.min(results['history_energy']))
             # error_max.append(np.max(results['history_energy']) - energy_avg)
 
-            svs_avg = np.average(results['history_sci_vec_shape'][0])
+            svs_avg = np.average(results["history_sci_vec_shape"][0])
             sci_vec_shape_avg.append(svs_avg)
-            sci_vec_shape_min.append(svs_avg - np.min(results['history_sci_vec_shape'][0]))
-            sci_vec_shape_max.append(np.max(results['history_sci_vec_shape'][0]) - svs_avg)
+            sci_vec_shape_min.append(
+                svs_avg - np.min(results["history_sci_vec_shape"][0])
+            )
+            sci_vec_shape_max.append(
+                np.max(results["history_sci_vec_shape"][0]) - svs_avg
+            )
 
             if svs_avg > 0:
-                energy_avg = np.average(results['history_energy'])
+                energy_avg = np.average(results["history_energy"])
                 error_avg.append(energy_avg - mol_data.sci_energy)
-                error_min.append(energy_avg - np.min(results['history_energy']))
-                error_max.append(np.max(results['history_energy']) - energy_avg)
+                error_min.append(energy_avg - np.min(results["history_energy"]))
+                error_max.append(np.max(results["history_energy"]) - energy_avg)
                 # print(energy_avg)
             else:
                 error_avg.append(0)
                 error_min.append(0)
                 error_max.append(0)
-            
-        
+
         axes[0, i].plot(
             n_reps_range,
             error_avg,
@@ -463,7 +477,6 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
 
         list_loss = [[], []]
 
-
         for n_reps in n_reps_range:
             list_loss[0].append(init_loss(n_reps, bond_distance, connectivity))
 
@@ -471,7 +484,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
             filepath = DATA_ROOT / task.operatorpath / "opt_data.pickle"
             results = load_data(filepath)
             list_loss[1].append(results["final_loss"])
-        
+
         color_keys = ["lucj_truncated", "lucj_compressed"]
         labels = ["LUCJ-truncated", "LUCJ-compressed"]
         for loss, color_key, label in zip(list_loss, color_keys, labels):
@@ -482,7 +495,6 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
                 label=label,
                 color=colors[color_key],
             )
-
 
     axes[0, i].set_title(f"R={bond_distance} Å / {connectivity}")
     axes[0, i].set_yscale("log")
@@ -506,9 +518,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     plt.tight_layout()
     plt.subplots_adjust(bottom=0.16)
 
-    fig.suptitle(
-        f"N$_2$/cc-PVDZ ({nelectron}e, {norb}o)"
-    )
+    fig.suptitle(f"N$_2$/cc-PVDZ ({nelectron}e, {norb}o)")
 
 filepath = os.path.join(
     plots_dir,

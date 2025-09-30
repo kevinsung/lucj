@@ -36,7 +36,7 @@ logging.basicConfig(
 
 DATA_ROOT = "/media/storage/WanHsuan.Lin/"
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = DATA_ROOT 
+DATA_DIR = DATA_ROOT
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 4
 OVERWRITE = False
@@ -62,12 +62,10 @@ tasks = [
             with_final_orbital_rotation=True,
         ),
         compressed_t2_params=CompressedT2Params(
-            multi_stage_optimization=True,
-            begin_reps=100,
-            step=2
+            multi_stage_optimization=True, begin_reps=100, step=2
         ),
         regularization=False,
-        regularization_option=None
+        regularization_option=None,
     )
     for connectivity, n_reps in itertools.product(connectivities, n_reps_range)
 ]

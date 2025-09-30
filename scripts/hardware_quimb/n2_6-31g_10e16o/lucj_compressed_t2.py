@@ -36,7 +36,7 @@ logging.basicConfig(
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = DATA_ROOT 
+DATA_DIR = DATA_ROOT
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 10
 OVERWRITE = False
@@ -68,7 +68,7 @@ samples_per_batch = max_dim
 
 tasks = [
     HardwareSQDQuimbEnergyTask(
-        lucj_sqd_quimb_task = LUCJSQDQuimbTask(
+        lucj_sqd_quimb_task=LUCJSQDQuimbTask(
             molecule_basename=molecule_basename,
             bond_distance=d,
             lucj_params=LUCJParams(
@@ -77,9 +77,7 @@ tasks = [
                 with_final_orbital_rotation=True,
             ),
             compressed_t2_params=CompressedT2Params(
-                multi_stage_optimization=True,
-                begin_reps=20,
-                step=2
+                multi_stage_optimization=True, begin_reps=20, step=2
             ),
             regularization=False,
             cobyqa_params=COBYQAParams(maxiter=0),
@@ -89,14 +87,14 @@ tasks = [
             energy_tol=1e-5,
             occupancies_tol=1e-3,
             carryover_threshold=1e-3,
-            max_iterations = 1,
+            max_iterations=1,
             symmetrize_spin=symmetrize_spin,
-            entropy= 0,
-            max_bond = 50,
-            perm_mps = False,
-            cutoff = 1e-10,
-            seed = 0,
-            max_dim = 4000,
+            entropy=0,
+            max_bond=50,
+            perm_mps=False,
+            cutoff=1e-10,
+            seed=0,
+            max_dim=4000,
         ),
         shots=shots,
         samples_per_batch=samples_per_batch,
@@ -109,7 +107,7 @@ tasks = [
         entropy=entropy,
         max_dim=max_dim,
         n_hardware_run=n_hardware_run,
-        dynamic_decoupling=True
+        dynamic_decoupling=True,
     )
     for n_reps in n_reps_range
     for d in bond_distance_range

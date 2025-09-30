@@ -34,7 +34,7 @@ connectivities = [
     "all-to-all",
     "heavy-hex",
 ]
-n_reps_range = list(range(2, 12, 2)) 
+n_reps_range = list(range(2, 12, 2))
 
 shots = 100_000
 samples_per_batch = 1000
@@ -49,7 +49,7 @@ entropy = 0
 max_dim_range = [500, 1000]
 max_dim_range = [1000]
 
-dmrg_energy = -116.6056091 #ref: https://github.com/jrm874/sqd_data_repository/blob/main/classical_reference_energies/2Fe-2S/classical_methods_energies.txt
+dmrg_energy = -116.6056091  # ref: https://github.com/jrm874/sqd_data_repository/blob/main/classical_reference_energies/2Fe-2S/classical_methods_energies.txt
 
 tasks_lucj = [
     SQDEnergyTask(
@@ -62,7 +62,7 @@ tasks_lucj = [
         ),
         compressed_t2_params=None,
         connectivity_opt=False,
-        random_op =False,
+        random_op=False,
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
@@ -89,7 +89,7 @@ tasks_lucj_full = [
         ),
         compressed_t2_params=None,
         connectivity_opt=False,
-        random_op =False,
+        random_op=False,
         shots=shots,
         samples_per_batch=samples_per_batch,
         n_batches=n_batches,
@@ -115,9 +115,7 @@ tasks_compressed_t2 = [
             with_final_orbital_rotation=True,
         ),
         compressed_t2_params=CompressedT2Params(
-            multi_stage_optimization=True,
-            begin_reps=20,
-            step=2
+            multi_stage_optimization=True, begin_reps=20, step=2
         ),
         regularization=False,
         shots=shots,
@@ -224,6 +222,7 @@ def load_data(filepath):
             result = pickle.load(f)
     return result
 
+
 print("Loading data...")
 results_compressed_t2 = {}
 for task in tasks_compressed_t2:
@@ -274,25 +273,29 @@ alphas = [0.5, 1.0]
 linestyles = ["--", ":"]
 
 fig, axes = plt.subplots(
-    3, len(connectivities) * len(max_dim_range), figsize=(12, 6) #, layout="constrained"
+    3,
+    len(connectivities) * len(max_dim_range),
+    figsize=(12, 6),  # , layout="constrained"
 )
-for i, (connectivity, max_dim) in enumerate(itertools.product(connectivities, max_dim_range)):
+for i, (connectivity, max_dim) in enumerate(
+    itertools.product(connectivities, max_dim_range)
+):
     task_random_bit_string = RandomSQDEnergyTask(
-                                molecule_basename=molecule_basename,
-                                bond_distance=None,
-                                shots=shots,
-                                samples_per_batch=samples_per_batch,
-                                n_batches=n_batches,
-                                valid_string_only=False,
-                                energy_tol=energy_tol,
-                                occupancies_tol=occupancies_tol,
-                                carryover_threshold=carryover_threshold,
-                                max_iterations=max_iterations,
-                                symmetrize_spin=symmetrize_spin,
-                                entropy=entropy,
-                                max_dim=max_dim,
-                            )
-    
+        molecule_basename=molecule_basename,
+        bond_distance=None,
+        shots=shots,
+        samples_per_batch=samples_per_batch,
+        n_batches=n_batches,
+        valid_string_only=False,
+        energy_tol=energy_tol,
+        occupancies_tol=occupancies_tol,
+        carryover_threshold=carryover_threshold,
+        max_iterations=max_iterations,
+        symmetrize_spin=symmetrize_spin,
+        entropy=entropy,
+        max_dim=max_dim,
+    )
+
     print(f"{connectivity}/max dim-{max_dim}")
     print("results_random")
     print(results_random[task_random_bit_string]["energy"] - dmrg_energy)
@@ -318,72 +321,77 @@ for i, (connectivity, max_dim) in enumerate(itertools.product(connectivities, ma
         label="Rand bitstr",
         color="red",
     )
-    
+
     tasks_random_valid_bit_string = RandomSQDEnergyTask(
-                                molecule_basename=molecule_basename,
-                                bond_distance=None,
-                                shots=shots,
-                                samples_per_batch=samples_per_batch,
-                                n_batches=n_batches,
-                                valid_string_only=True,
-                                energy_tol=energy_tol,
-                                occupancies_tol=occupancies_tol,
-                                carryover_threshold=carryover_threshold,
-                                max_iterations=max_iterations,
-                                symmetrize_spin=symmetrize_spin,
-                                entropy=entropy,
-                                max_dim=max_dim,
-                            )
-    
+        molecule_basename=molecule_basename,
+        bond_distance=None,
+        shots=shots,
+        samples_per_batch=samples_per_batch,
+        n_batches=n_batches,
+        valid_string_only=True,
+        energy_tol=energy_tol,
+        occupancies_tol=occupancies_tol,
+        carryover_threshold=carryover_threshold,
+        max_iterations=max_iterations,
+        symmetrize_spin=symmetrize_spin,
+        entropy=entropy,
+        max_dim=max_dim,
+    )
+
     print("results_random_valid_bitstring")
-    print(results_random_valid_bitstrings[tasks_random_valid_bit_string]["energy"] - dmrg_energy)
+    print(
+        results_random_valid_bitstrings[tasks_random_valid_bit_string]["energy"]
+        - dmrg_energy
+    )
     # print(results_random[task_random_bit_string]["error"])
     axes[0, i].axhline(
-        results_random_valid_bitstrings[tasks_random_valid_bit_string]["energy"] - dmrg_energy,
+        results_random_valid_bitstrings[tasks_random_valid_bit_string]["energy"]
+        - dmrg_energy,
         # results_random[task_random_bit_string]["error"],
         linestyle="--",
         label="Rand valid bitstr",
-        color="palevioletred"
+        color="palevioletred",
     )
 
     axes[1, i].axhline(
         results_random_valid_bitstrings[tasks_random_valid_bit_string]["spin_squared"],
         linestyle="--",
         label="Rand valid bitstr",
-        color="palevioletred"
+        color="palevioletred",
     )
 
     axes[2, i].axhline(
-        results_random_valid_bitstrings[tasks_random_valid_bit_string]["sci_vec_shape"][0],
+        results_random_valid_bitstrings[tasks_random_valid_bit_string]["sci_vec_shape"][
+            0
+        ],
         linestyle="--",
         label="Rand valid bitstr",
         color="palevioletred",
     )
 
     task_lucj_full = SQDEnergyTask(
-                        molecule_basename=molecule_basename,
-                        bond_distance=None,
-                        lucj_params=LUCJParams(
-                            connectivity=connectivity,
-                            n_reps=None,
-                            with_final_orbital_rotation=True,
-                        ),
-                        compressed_t2_params=None,
-                        connectivity_opt=False,
-                        random_op =False,
-                        shots=shots,
-                        samples_per_batch=samples_per_batch,
-                        n_batches=n_batches,
-                        energy_tol=energy_tol,
-                        occupancies_tol=occupancies_tol,
-                        carryover_threshold=carryover_threshold,
-                        max_iterations=max_iterations,
-                        symmetrize_spin=symmetrize_spin,
-                        entropy=entropy,
-                        max_dim=max_dim,
-                    )
-    
-    
+        molecule_basename=molecule_basename,
+        bond_distance=None,
+        lucj_params=LUCJParams(
+            connectivity=connectivity,
+            n_reps=None,
+            with_final_orbital_rotation=True,
+        ),
+        compressed_t2_params=None,
+        connectivity_opt=False,
+        random_op=False,
+        shots=shots,
+        samples_per_batch=samples_per_batch,
+        n_batches=n_batches,
+        energy_tol=energy_tol,
+        occupancies_tol=occupancies_tol,
+        carryover_threshold=carryover_threshold,
+        max_iterations=max_iterations,
+        symmetrize_spin=symmetrize_spin,
+        entropy=entropy,
+        max_dim=max_dim,
+    )
+
     axes[0, i].axhline(
         data_lucj_full[task_lucj_full]["energy"] - dmrg_energy,
         # results_random[task_random_bit_string]["error"],
@@ -406,7 +414,6 @@ for i, (connectivity, max_dim) in enumerate(itertools.product(connectivities, ma
         color=colors[1],
     )
 
-
     these_n_reps = [n_reps for n_reps in n_reps_range if n_reps is not None]
     tasks_lucj = [
         SQDEnergyTask(
@@ -419,7 +426,7 @@ for i, (connectivity, max_dim) in enumerate(itertools.product(connectivities, ma
             ),
             compressed_t2_params=None,
             connectivity_opt=False,
-            random_op =False,
+            random_op=False,
             shots=shots,
             samples_per_batch=samples_per_batch,
             n_batches=n_batches,
@@ -465,36 +472,40 @@ for i, (connectivity, max_dim) in enumerate(itertools.product(connectivities, ma
 
     tasks_compressed_t2 = [
         SQDEnergyTask(
-        molecule_basename=molecule_basename,
-        bond_distance=None,
-        lucj_params=LUCJParams(
-            connectivity=connectivity,
-            n_reps=n_reps,
-            with_final_orbital_rotation=True,
-        ),
-        compressed_t2_params=CompressedT2Params(
-            multi_stage_optimization=True,
-            begin_reps=20,
-            step=2
-        ),
-        regularization=False,
-        shots=shots,
-        samples_per_batch=samples_per_batch,
-        n_batches=n_batches,
-        energy_tol=energy_tol,
-        occupancies_tol=occupancies_tol,
-        carryover_threshold=carryover_threshold,
-        max_iterations=max_iterations,
-        symmetrize_spin=symmetrize_spin,
-        entropy=entropy,
-        max_dim=max_dim,
-    )
-    for n_reps in these_n_reps]
+            molecule_basename=molecule_basename,
+            bond_distance=None,
+            lucj_params=LUCJParams(
+                connectivity=connectivity,
+                n_reps=n_reps,
+                with_final_orbital_rotation=True,
+            ),
+            compressed_t2_params=CompressedT2Params(
+                multi_stage_optimization=True, begin_reps=20, step=2
+            ),
+            regularization=False,
+            shots=shots,
+            samples_per_batch=samples_per_batch,
+            n_batches=n_batches,
+            energy_tol=energy_tol,
+            occupancies_tol=occupancies_tol,
+            carryover_threshold=carryover_threshold,
+            max_iterations=max_iterations,
+            symmetrize_spin=symmetrize_spin,
+            entropy=entropy,
+            max_dim=max_dim,
+        )
+        for n_reps in these_n_reps
+    ]
 
-    energies = [results_compressed_t2[task]['energy'] for task in tasks_compressed_t2]
+    energies = [results_compressed_t2[task]["energy"] for task in tasks_compressed_t2]
     # errors = [results_compressed_t2[task]["error"] for task in tasks_compressed_t2]
-    errors = [results_compressed_t2[task]["energy"] - dmrg_energy  for task in tasks_compressed_t2]
-    sci_vec_shape = [results_compressed_t2[task]["sci_vec_shape"][0] for task in tasks_compressed_t2]
+    errors = [
+        results_compressed_t2[task]["energy"] - dmrg_energy
+        for task in tasks_compressed_t2
+    ]
+    sci_vec_shape = [
+        results_compressed_t2[task]["sci_vec_shape"][0] for task in tasks_compressed_t2
+    ]
 
     axes[0, i].plot(
         these_n_reps,
@@ -541,10 +552,23 @@ for i, (connectivity, max_dim) in enumerate(itertools.product(connectivities, ma
             for n_reps in these_n_reps
         ]
 
-        energies = [results_compressed_t2_connectivity[task]['energy'] for task in tasks_compressed_t2_connectivity]
-        errors = [results_compressed_t2_connectivity[task]["error"] for task in tasks_compressed_t2_connectivity]
-        spin_squares = [results_compressed_t2_connectivity[task]["spin_squared"] for task in tasks_compressed_t2_connectivity]
-        sci_vec_shape = [results_compressed_t2_connectivity[task]["sci_vec_shape"][0] * results_compressed_t2_connectivity[task]["sci_vec_shape"][0] for task in tasks_compressed_t2_connectivity]
+        energies = [
+            results_compressed_t2_connectivity[task]["energy"]
+            for task in tasks_compressed_t2_connectivity
+        ]
+        errors = [
+            results_compressed_t2_connectivity[task]["error"]
+            for task in tasks_compressed_t2_connectivity
+        ]
+        spin_squares = [
+            results_compressed_t2_connectivity[task]["spin_squared"]
+            for task in tasks_compressed_t2_connectivity
+        ]
+        sci_vec_shape = [
+            results_compressed_t2_connectivity[task]["sci_vec_shape"][0]
+            * results_compressed_t2_connectivity[task]["sci_vec_shape"][0]
+            for task in tasks_compressed_t2_connectivity
+        ]
         axes[0, i].plot(
             these_n_reps,
             errors,
@@ -586,15 +610,12 @@ for i, (connectivity, max_dim) in enumerate(itertools.product(connectivities, ma
     axes[2, i].set_xticks(these_n_reps)
 
     # axes[2, 0].legend(ncol=2, )
-    leg = axes[2, 1].legend(bbox_to_anchor=(0.5, -0.4), loc="upper center", ncol = 4)
+    leg = axes[2, 1].legend(bbox_to_anchor=(0.5, -0.4), loc="upper center", ncol=4)
     leg.set_in_layout(False)
     plt.tight_layout()
-    plt.subplots_adjust(bottom = 0.16)
-    
+    plt.subplots_adjust(bottom=0.16)
 
-    fig.suptitle(
-        f"CCSD initial parameters {molecule_name} ({nelectron}e, {norb}o)"
-    )
+    fig.suptitle(f"CCSD initial parameters {molecule_name} ({nelectron}e, {norb}o)")
 
 
 filepath = os.path.join(
@@ -605,38 +626,43 @@ plt.close()
 
 
 fig, axes = plt.subplots(
-    1, len(connectivities), figsize=(12, 6) #, layout="constrained"
+    1,
+    len(connectivities),
+    figsize=(12, 6),  # , layout="constrained"
 )
 for i, connectivity in enumerate(connectivities):
     tasks_compressed_t2 = [
         SQDEnergyTask(
-        molecule_basename=molecule_basename,
-        bond_distance=None,
-        lucj_params=LUCJParams(
-            connectivity=connectivity,
-            n_reps=n_reps,
-            with_final_orbital_rotation=True,
-        ),
-        compressed_t2_params=CompressedT2Params(
-            multi_stage_optimization=True,
-            begin_reps=20,
-            step=2
-        ),
-        regularization=False,
-        shots=shots,
-        samples_per_batch=samples_per_batch,
-        n_batches=n_batches,
-        energy_tol=energy_tol,
-        occupancies_tol=occupancies_tol,
-        carryover_threshold=carryover_threshold,
-        max_iterations=max_iterations,
-        symmetrize_spin=symmetrize_spin,
-        entropy=entropy,
-        max_dim=max_dim,
-    )
-    for n_reps in these_n_reps]
-    init_loss = [opt_results_compressed_t2[task]["init_loss"] for task in tasks_compressed_t2]
-    final_loss = [opt_results_compressed_t2[task]["final_loss"] for task in tasks_compressed_t2]
+            molecule_basename=molecule_basename,
+            bond_distance=None,
+            lucj_params=LUCJParams(
+                connectivity=connectivity,
+                n_reps=n_reps,
+                with_final_orbital_rotation=True,
+            ),
+            compressed_t2_params=CompressedT2Params(
+                multi_stage_optimization=True, begin_reps=20, step=2
+            ),
+            regularization=False,
+            shots=shots,
+            samples_per_batch=samples_per_batch,
+            n_batches=n_batches,
+            energy_tol=energy_tol,
+            occupancies_tol=occupancies_tol,
+            carryover_threshold=carryover_threshold,
+            max_iterations=max_iterations,
+            symmetrize_spin=symmetrize_spin,
+            entropy=entropy,
+            max_dim=max_dim,
+        )
+        for n_reps in these_n_reps
+    ]
+    init_loss = [
+        opt_results_compressed_t2[task]["init_loss"] for task in tasks_compressed_t2
+    ]
+    final_loss = [
+        opt_results_compressed_t2[task]["final_loss"] for task in tasks_compressed_t2
+    ]
     axes[i].plot(
         these_n_reps,
         init_loss,
@@ -657,13 +683,10 @@ for i, connectivity in enumerate(connectivities):
     axes[i].set_xticks(these_n_reps)
     axes[i].legend()
 
-    fig.suptitle(
-        f"Opterator loss: {molecule_name} ({nelectron}e, {norb}o)"
-    )
+    fig.suptitle(f"Opterator loss: {molecule_name} ({nelectron}e, {norb}o)")
 
 filepath = os.path.join(
     plots_dir, f"{os.path.splitext(os.path.basename(__file__))[0]}_loss.pdf"
 )
 plt.savefig(filepath)
 plt.close()
-    

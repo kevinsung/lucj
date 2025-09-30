@@ -24,7 +24,7 @@ from collections import OrderedDict
 import numpy as np
 import matplotlib.pyplot as plt
 
-import json 
+import json
 
 DATA_ROOT = "/media/storage/WanHsuan.Lin/"
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
@@ -131,11 +131,7 @@ task_compressed_t2 = SQDEnergyTask(
     max_dim=max_dim,
 )
 
-tasks = [
-    task_lucj_full,
-    task_lucj_truncated,
-    task_compressed_t2
-]
+tasks = [task_lucj_full, task_lucj_truncated, task_compressed_t2]
 
 
 prop_cycle = plt.rcParams["axes.prop_cycle"]
@@ -157,7 +153,7 @@ for task in tasks:
 color_keys = ["lucj_full", "lucj_truncated", "lucj_compressed"]
 legends = ["LUCJ-full", "LUCJ-truncated", "LUCJ-compressed"]
 
-with open('scripts/paper/color.json', 'r') as file:
+with open("scripts/paper/color.json", "r") as file:
     colors = json.load(file)
 
 
@@ -181,7 +177,7 @@ prev_d = -1
 for item in labels:
     d = hamming_distance(item, hf_state) if item != "rest" else 0
     dist.append(d)
-        
+
 labels = [list(x) for x in zip(*sorted(zip(dist, labels), key=lambda pair: pair[0]))][1]
 dist = [list(x) for x in zip(*sorted(zip(dist, labels), key=lambda pair: pair[0]))][0]
 
@@ -202,7 +198,6 @@ for execution in samples:
     all_pvalues.append(pvalues)
 
 
-
 fig = plt.plot(figsize=(3, 4), layout="constrained")
 # Cumulative distributions.
 x = np.arange(len(all_pvalues[0]))
@@ -211,7 +206,7 @@ for value, legend, c in zip(all_pvalues, legends, color_keys):
     # input()
     y = value.cumsum()
     plt.plot(x, y, "-", label=legend, color=colors[c])
-    
+
     # plt.ecdf(value, label=legend, color=c)
 
 x = []
@@ -227,7 +222,7 @@ plt.xlabel("Hamming distance to HF state")
 plt.ylabel("CDF")
 plt.legend()
 plt.tight_layout()
-plt.subplots_adjust(left=0.15,bottom=0.1, top=0.92)
+plt.subplots_adjust(left=0.15, bottom=0.1, top=0.92)
 plt.yscale("log")
 filepath = os.path.join(
     plots_dir,

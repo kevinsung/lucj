@@ -36,7 +36,7 @@ logging.basicConfig(
 
 DATA_ROOT = "/media/storage/WanHsuan.Lin/"
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = DATA_ROOT 
+DATA_DIR = DATA_ROOT
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 16
 OVERWRITE = False
@@ -66,7 +66,7 @@ tasks = [
         ),
         compressed_t2_params=None,
         connectivity_opt=False,
-        random_op=True
+        random_op=True,
     )
     for connectivity, n_reps in itertools.product(connectivities, n_reps_range)
     for d in bond_distance_range

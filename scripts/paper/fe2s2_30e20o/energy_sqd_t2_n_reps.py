@@ -26,7 +26,7 @@ from opt_einsum import contract
 import pyscf
 import matplotlib
 
-matplotlib.rcParams.update({'errorbar.capsize': 2})
+matplotlib.rcParams.update({"errorbar.capsize": 2})
 
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
@@ -95,38 +95,32 @@ mol_data = load_molecular_data(
 norb = mol_data.norb
 nelec = mol_data.nelec
 
+
 def init_loss(n_reps: int, connectivity):
-    pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
-        connectivity, norb
-    )
-    c0, c1, c2 = pyscf.ci.cisd.cisdvec_to_amplitudes(
-        mol_data.cisd_vec, norb, nelec[0]
-    )
+    pairs_aa, pairs_ab = interaction_pairs_spin_balanced(connectivity, norb)
+    c0, c1, c2 = pyscf.ci.cisd.cisdvec_to_amplitudes(mol_data.cisd_vec, norb, nelec[0])
     assert abs(c0) > 1e-8
     t1 = c1 / c0
     t2 = c2 / c0 - np.einsum("ia,jb->ijab", t1, t1)
     operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
-        t2,
-        t1=t1,
-        n_reps=n_reps,
-        interaction_pairs=(pairs_aa, pairs_ab)
-    ) 
+        t2, t1=t1, n_reps=n_reps, interaction_pairs=(pairs_aa, pairs_ab)
+    )
     diag_coulomb_mats = operator.diag_coulomb_mats
     orbital_rotations = operator.orbital_rotations
     diag_coulomb_mats = np.unstack(diag_coulomb_mats, axis=1)[0]
     nocc, _, _, _ = t2.shape
     reconstructed = (
-            1j
-            * contract(
-                "mpq,map,mip,mbq,mjq->ijab",
-                diag_coulomb_mats,
-                orbital_rotations,
-                orbital_rotations.conj(),
-                orbital_rotations,
-                orbital_rotations.conj(),
-                # optimize="greedy"
-            )[:nocc, :nocc, nocc:, nocc:]
-        )
+        1j
+        * contract(
+            "mpq,map,mip,mbq,mjq->ijab",
+            diag_coulomb_mats,
+            orbital_rotations,
+            orbital_rotations.conj(),
+            orbital_rotations,
+            orbital_rotations.conj(),
+            # optimize="greedy"
+        )[:nocc, :nocc, nocc:, nocc:]
+    )
     diff = reconstructed - t2
     return 0.5 * np.sum(np.abs(diff) ** 2)
 
@@ -293,7 +287,6 @@ for i, connectivity in enumerate(connectivities):
         alpha=0.5,
     )
 
-
     axes[1, i].axhline(
         sci_vec_shape_avg,
         linestyle="--",
@@ -323,7 +316,6 @@ for i, connectivity in enumerate(connectivities):
         color=colors["lucj_full"],
         alpha=0.5,
     )
-
 
     tasks_compressed_t2 = [
         SQDEnergyTask(
@@ -461,7 +453,7 @@ for i, connectivity in enumerate(connectivities):
             filepath = DATA_ROOT / task.operatorpath / "opt_data.pickle"
             results = load_data(filepath)
             list_loss[1].append(results["final_loss"])
-        
+
         color_keys = ["lucj_truncated", "lucj_compressed"]
         labels = ["LUCJ-truncated", "LUCJ-compressed"]
         for loss, color_key, label in zip(list_loss, color_keys, labels):

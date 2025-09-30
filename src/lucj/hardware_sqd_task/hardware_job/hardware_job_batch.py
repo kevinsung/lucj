@@ -70,7 +70,9 @@ def run_on_hardware(
         op = isa_circuit.count_ops()
         num_1q_gates = op["rz"] + op["sx"] + op["x"]
         num_2q_gates = op["cz"]
-        print(f"Circuit: gate depth: {isa_circuit.depth()}, qubit num: {isa_circuit.num_qubits}")
+        print(
+            f"Circuit: gate depth: {isa_circuit.depth()}, qubit num: {isa_circuit.num_qubits}"
+        )
         print(f"Circuit: 1q gates: {num_1q_gates}, 2q gates: {num_2q_gates}")
         list_isa_circuit.append(isa_circuit)
 
@@ -96,6 +98,7 @@ def run_on_hardware(
             pickle.dump(pub_result.data.meas, f)
         print(f"save file to {sample_filename}")
     return meas_circuit
+
 
 # n2_6-31g_10e16o/batch.py vanilla
 # Circuit: Gate counts (w/ pre-init passes): OrderedDict([('rz', 9506), ('sx', 3696), ('cz', 798), ('measure', 32), ('x', 10), ('barrier', 1)])

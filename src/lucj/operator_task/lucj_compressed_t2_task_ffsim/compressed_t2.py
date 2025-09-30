@@ -19,6 +19,7 @@ import jax.numpy as jnp
 # import optax
 # jax.config.update("jax_enable_x64", True)
 
+
 def _reshape_grad(
     core_coulomb_params: jnp.ndarray,
     orbital_rotations_log_jax_tri: jnp.ndarray,
@@ -29,7 +30,7 @@ def _reshape_grad(
     leaf_param_real_indices = np.triu_indices(norb, k=1)
     # differ by minus for the imaginary part
     # according to webiste https://docs.jax.dev/en/latest/notebooks/autodiff_cookbook.html#complex-numbers-and-differentiation
-    # We can use grad to optimize functions, like real-valued loss functions of complex parameters x, 
+    # We can use grad to optimize functions, like real-valued loss functions of complex parameters x,
     # by taking steps in the direction of the conjugate of grad(f)(x).
 
     leaf_params_real = np.real(
@@ -227,16 +228,14 @@ def double_factorized_t2_compress(
             )
             eigs, vecs = jnp.linalg.eigh(-1j * orbital_rotations_log)
 
-
             param_indices = np.nonzero(diag_coulomb_mask)
             param_length = len(param_indices[0])
             list_diag_coulomb_mats = []
             for i in range(n_tensors):
                 diag_coulomb_mat = jnp.zeros((norb, norb), complex)
                 diag_coulomb_mat = diag_coulomb_mat.at[param_indices].set(
-                    core_coulomb_params[
-                        i * param_length : (i + 1) * param_length
-                    ])
+                    core_coulomb_params[i * param_length : (i + 1) * param_length]
+                )
                 list_diag_coulomb_mats.append(diag_coulomb_mat)
             diagonal_element = jnp.stack(
                 [
@@ -273,16 +272,25 @@ def double_factorized_t2_compress(
             regularization_cost = 0
             if regularization:
                 for diag_coulomb_mat in diag_coulomb_mats:
-                    regularization_cost += jnp.sum(jnp.abs(diag_coulomb_mat) ** 2) 
+                    regularization_cost += jnp.sum(jnp.abs(diag_coulomb_mat) ** 2)
                 if regularization_option == 1:
                     for ori_diag_coulomb_mat in ori_diag_coulomb_mats:
-                        regularization_cost -= jnp.sum(jnp.abs(ori_diag_coulomb_mat) ** 2) 
+                        regularization_cost -= jnp.sum(
+                            jnp.abs(ori_diag_coulomb_mat) ** 2
+                        )
                 if regularization_option == 2:
                     regularization_cost = 0
                     for reps in range(n_reps):
-                        regularization_cost += (jnp.sum(jnp.abs(ori_diag_coulomb_mats[reps] - diag_coulomb_mats[reps]) ** 2) )
+                        regularization_cost += jnp.sum(
+                            jnp.abs(
+                                ori_diag_coulomb_mats[reps] - diag_coulomb_mats[reps]
+                            )
+                            ** 2
+                        )
 
-            return 0.5 * jnp.sum(jnp.abs(diff) ** 2) + regularization_factor * jnp.abs(regularization_cost)
+            return 0.5 * jnp.sum(jnp.abs(diff) ** 2) + regularization_factor * jnp.abs(
+                regularization_cost
+            )
 
         # value_and_grad_func = jax.value_and_grad(fun_jax, argnums=(0, 1), holomorphic=True)
         value_and_grad_func = jax.value_and_grad(fun_jax, argnums=(0, 1))
@@ -293,13 +301,13 @@ def double_factorized_t2_compress(
             mask = jnp.ones((norb, norb), dtype=bool)
             mask = jnp.triu(mask)
             orbital_rotations_log_jax_tri = orbital_rotations_log_jax * mask
-            n_leaf_params = n_tensors * (norb * (norb - 1) // 2 + norb * (norb + 1) // 2)
+            n_leaf_params = n_tensors * (
+                norb * (norb - 1) // 2 + norb * (norb + 1) // 2
+            )
             core_coulomb_params = jnp.array(x[n_leaf_params:] + 0j)
 
             val, (grad_diag_coulomb_params, grad_orbital_rotations_log_jax_tri) = (
-                value_and_grad_func(
-                    core_coulomb_params, orbital_rotations_log_jax_tri
-                )
+                value_and_grad_func(core_coulomb_params, orbital_rotations_log_jax_tri)
             )
             reshaped_grad = _reshape_grad(
                 grad_diag_coulomb_params, grad_orbital_rotations_log_jax_tri
@@ -315,8 +323,9 @@ def double_factorized_t2_compress(
         # method = "COBYLA"
         options = {"maxiter": 100}
 
-
-        x0 = _df_tensors_to_params(diag_coulomb_mats, orbital_rotations, diag_coulomb_mask)
+        x0 = _df_tensors_to_params(
+            diag_coulomb_mats, orbital_rotations, diag_coulomb_mask
+        )
 
         init_loss, _ = fun_jac(x0)
         list_init_loss.append(init_loss)
@@ -336,7 +345,7 @@ def double_factorized_t2_compress(
         )
         final_loss, _ = fun_jac(result.x)
         list_final_loss.append(final_loss)
-    
+
     # stack here without dealing with interaction constraint for Jaa, Jab
     diag_coulomb_mats = np.stack([diag_coulomb_mats, diag_coulomb_mats], axis=1)
     return diag_coulomb_mats, orbital_rotations, list_init_loss[0], list_final_loss[-1]
@@ -376,10 +385,10 @@ def from_t_amplitudes_compressed(
                 multi_stage_optimization=multi_stage_optimization,
                 begin_reps=begin_reps,
                 step=step,
-                regularization = regularization,
-                regularization_option = regularization_option,
-                regularization_factor = regularization_factor,
-                use_adam=use_adam
+                regularization=regularization,
+                regularization_option=regularization_option,
+                regularization_factor=regularization_factor,
+                use_adam=use_adam,
             )
         )
     else:

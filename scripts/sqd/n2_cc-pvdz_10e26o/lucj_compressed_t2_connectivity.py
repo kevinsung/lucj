@@ -35,7 +35,7 @@ logging.basicConfig(
 
 DATA_ROOT = "/media/storage/WanHsuan.Lin/"
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = DATA_ROOT 
+DATA_DIR = DATA_ROOT
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 1
 OVERWRITE = False
@@ -61,7 +61,7 @@ max_iterations = 10
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
-max_dim_range = [500, 1000] # for large one
+max_dim_range = [500, 1000]  # for large one
 bond_distance_range = [1.2, 2.4]
 
 tasks = [
@@ -92,11 +92,11 @@ tasks = [
 ]
 
 run_sqd_energy_task(
-            tasks[0],
-            data_dir=DATA_DIR,
-            molecules_catalog_dir=MOLECULES_CATALOG_DIR,
-            overwrite=OVERWRITE,
-        )
+    tasks[0],
+    data_dir=DATA_DIR,
+    molecules_catalog_dir=MOLECULES_CATALOG_DIR,
+    overwrite=OVERWRITE,
+)
 
 # if MAX_PROCESSES == 1:
 #     for task in tqdm(tasks):

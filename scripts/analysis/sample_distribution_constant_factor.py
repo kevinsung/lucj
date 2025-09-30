@@ -25,7 +25,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import json
 import matplotlib
-matplotlib.rcParams.update({'font.size': 13})
+
+matplotlib.rcParams.update({"font.size": 13})
 DATA_ROOT = "/media/storage/WanHsuan.Lin/"
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 
@@ -61,11 +62,17 @@ connectivity = "all-to-all"
 
 n_reps = 1
 
-with open('scripts/paper/color.json', 'r') as file:
+with open("scripts/paper/color.json", "r") as file:
     colors = json.load(file)
 
 constant_factors = [None, 0.5, 1.5, 2, 2.5]
-color_list = [colors["lucj_compressed"], colors["lucj_truncated"], colors["uccsd"], colors["ucj"], colors["lucj_compressed_quimb2"]]
+color_list = [
+    colors["lucj_compressed"],
+    colors["lucj_truncated"],
+    colors["uccsd"],
+    colors["ucj"],
+    colors["lucj_compressed_quimb2"],
+]
 
 tasks = [
     SQDEnergyTask(
@@ -105,7 +112,11 @@ for task in tasks:
     if task.constant_factor is None:
         sample_filename = DATA_ROOT / task.operatorpath / "sample.pickle"
     else:
-        sample_filename = DATA_ROOT / task.operatorpath / f"constant_factor-{task.constant_factor:.6f}/sample.pickle"
+        sample_filename = (
+            DATA_ROOT
+            / task.operatorpath
+            / f"constant_factor-{task.constant_factor:.6f}/sample.pickle"
+        )
 
     with open(sample_filename, "rb") as f:
         sample = pickle.load(f)
@@ -171,7 +182,6 @@ for execution in samples:
     all_pvalues.append(pvalues)
 
 
-
 fig = plt.plot(figsize=(2, 2), layout="constrained")
 # Cumulative distributions.
 x = np.arange(len(all_pvalues[0]))
@@ -180,7 +190,7 @@ for value, legend, c in zip(all_pvalues, legends, color_list):
     # input()
     y = value.cumsum()
     plt.plot(x, y, "-", label=legend, color=c)
-    
+
     # plt.ecdf(value, label=legend, color=c)
 
 x = []
@@ -196,7 +206,7 @@ plt.xlabel("Hamming distance to HF state")
 plt.ylabel("CDF")
 plt.legend()
 plt.tight_layout()
-plt.subplots_adjust(left=0.18,bottom=0.13, top=0.92)
+plt.subplots_adjust(left=0.18, bottom=0.13, top=0.92)
 plt.yscale("log")
 filepath = os.path.join(
     plots_dir,

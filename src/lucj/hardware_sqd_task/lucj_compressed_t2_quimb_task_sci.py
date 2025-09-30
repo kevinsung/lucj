@@ -18,7 +18,11 @@ import numpy as np
 from molecules_catalog.util import load_molecular_data
 from ffsim.variational.util import interaction_pairs_spin_balanced
 
-from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, SCIResult, solve_sci_batch
+from qiskit_addon_sqd.fermion import (
+    diagonalize_fermionic_hamiltonian,
+    SCIResult,
+    solve_sci_batch,
+)
 from lucj.hardware_sqd_task.hardware_job.hardware_job import (
     constrcut_lucj_circuit,
     run_on_hardware,
@@ -29,6 +33,7 @@ from lucj.quimb_task.lucj_sqd_quimb_task import LUCJSQDQuimbTask
 logger = logging.getLogger(__name__)
 
 hardware_path = "dynamic_decoupling_xy_opt_0"
+
 
 @dataclass(frozen=True, kw_only=True)
 class HardwareSQDQuimbEnergyTask:
@@ -82,7 +87,7 @@ def load_operator(task: HardwareSQDQuimbEnergyTask, data_dir: str, mol_data):
     )
 
     operator = ffsim.UCJOpSpinBalanced.from_parameters(
-        np.array(result['x_best']),
+        np.array(result["x_best"]),
         norb=norb,
         n_reps=task.lucj_sqd_quimb_task.lucj_params.n_reps,
         interaction_pairs=(pairs_aa, pairs_ab),
@@ -122,7 +127,11 @@ def run_hardware_sqd_energy_task(
     mol_hamiltonian = mol_data.hamiltonian
 
     # use CCSD to initialize parameters
-    sample_filename = data_dir / task.lucj_sqd_quimb_task.dirpath / f"hardware_sample_{task.n_hardware_run}.pickle"
+    sample_filename = (
+        data_dir
+        / task.lucj_sqd_quimb_task.dirpath
+        / f"hardware_sample_{task.n_hardware_run}.pickle"
+    )
 
     rng = np.random.default_rng(task.entropy)
 
@@ -136,7 +145,9 @@ def run_hardware_sqd_energy_task(
 
         # run on hardware and get the sample
         logging.info(f"{task} Sampling from real device...\n")
-        samples = run_on_hardware(circuit, norb, 1_000_000, sample_filename, task.dynamic_decoupling)
+        samples = run_on_hardware(
+            circuit, norb, 1_000_000, sample_filename, task.dynamic_decoupling
+        )
     else:
         logging.info(f"{task} load sample...\n")
         with open(sample_filename, "rb") as f:

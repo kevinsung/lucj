@@ -55,6 +55,7 @@ max_dim = 4000
 samples_per_batch = max_dim
 constant_factors = [None, 0.5, 1.5, 2, 2.5]
 
+
 def load_data(filepath):
     if not os.path.exists(filepath):
         result = {
@@ -75,7 +76,7 @@ print("Done loading data.")
 markers = ["o", "s", "v", "D", "p", "*", "P", "X"]
 linestyles = ["--", ":"]
 
-with open('scripts/paper/color.json', 'r') as file:
+with open("scripts/paper/color.json", "r") as file:
     colors = json.load(file)
 
 fig, axes = plt.subplots(
@@ -84,8 +85,9 @@ fig, axes = plt.subplots(
     figsize=(6, 5),  # , layout="constrained"
 )
 
-for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distance_range, connectivities)):
-
+for i, (bond_distance, connectivity) in enumerate(
+    itertools.product(bond_distance_range, connectivities)
+):
     task_lucj_full = SQDEnergyTask(
         molecule_basename=molecule_basename,
         bond_distance=bond_distance,
@@ -113,19 +115,25 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     results = load_data(filepath)
 
     axes[0, i].axhline(
-        results['error'],
+        results["error"],
         linestyle="--",
         label="LUCJ-full",
         color=colors["lucj_full"],
     )
 
     axes[1, i].axhline(
-        results['sci_vec_shape'][0],
+        results["sci_vec_shape"][0],
         linestyle="--",
         label="LUCJ-full",
         color=colors["lucj_full"],
     )
-    color_list = [colors["lucj_compressed"], colors["lucj_truncated"], colors["uccsd"], colors["ucj"], colors["lucj_compressed_quimb2"]]
+    color_list = [
+        colors["lucj_compressed"],
+        colors["lucj_truncated"],
+        colors["uccsd"],
+        colors["ucj"],
+        colors["lucj_compressed_quimb2"],
+    ]
 
     for j, (c, color) in enumerate(zip(constant_factors, color_list)):
         tasks_compressed_t2 = [
@@ -138,9 +146,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
                     with_final_orbital_rotation=True,
                 ),
                 compressed_t2_params=CompressedT2Params(
-                    multi_stage_optimization=True,
-                    begin_reps=20,
-                    step=2
+                    multi_stage_optimization=True, begin_reps=20, step=2
                 ),
                 regularization=False,
                 regularization_option=None,
@@ -154,11 +160,10 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
                 symmetrize_spin=symmetrize_spin,
                 entropy=entropy,
                 max_dim=max_dim,
-                constant_factor=c
+                constant_factor=c,
             )
             for n_reps in n_reps_range
         ]
-
 
         results = {}
         for task in tasks_compressed_t2:
@@ -166,7 +171,9 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
             results[task] = load_data(filepath)
 
         errors = [results[task]["error"] for task in tasks_compressed_t2]
-        sci_vec_shape = [results[task]["sci_vec_shape"][0] for task in tasks_compressed_t2]
+        sci_vec_shape = [
+            results[task]["sci_vec_shape"][0] for task in tasks_compressed_t2
+        ]
         if c is not None:
             label = f"factor_{c}"
         else:
@@ -189,7 +196,6 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
             # alpha=c / 3 + 0.1 if c is not None else 1
         )
 
-
     axes[0, i].set_title(f"R={bond_distance} Å / {connectivity}")
     axes[0, i].set_yscale("log")
     axes[0, i].axhline(1.6e-3, linestyle="--", color="gray")
@@ -202,16 +208,12 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     axes[1, i].set_xlabel("Repetitions")
     axes[1, i].set_xticks(n_reps_range)
 
-    leg = axes[1, 1].legend(
-        bbox_to_anchor=(-0.4, -0.28), loc="upper center", ncol=3
-    )
+    leg = axes[1, 1].legend(bbox_to_anchor=(-0.4, -0.28), loc="upper center", ncol=3)
     leg.set_in_layout(False)
     plt.tight_layout()
     plt.subplots_adjust(bottom=0.2, top=0.88)
 
-    fig.suptitle(
-        f"N$_2$/6-31G$ ({nelectron}e, {norb}o)"
-    )
+    fig.suptitle(f"N$_2$/6-31G$ ({nelectron}e, {norb}o)")
 
 filepath = os.path.join(
     plots_dir,

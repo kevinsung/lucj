@@ -34,7 +34,7 @@ logging.basicConfig(
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = DATA_ROOT 
+DATA_DIR = DATA_ROOT
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 8
 OVERWRITE = False
@@ -60,23 +60,25 @@ colors = prop_cycle.by_key()["color"]
 alphas = [0.6, 0.7, 0.8, 1.0]
 linestyles = ["--", ":", "-"]
 
+
 def loss(diag_coulomb_mats, orbital_rotations, t2):
     nocc, _, _, _ = t2.shape
     diag_coulomb_mats = np.unstack(diag_coulomb_mats, axis=1)[0]
     reconstructed = (
-            1j
-            * contract(
-                "mpq,map,mip,mbq,mjq->ijab",
-                diag_coulomb_mats,
-                orbital_rotations,
-                orbital_rotations.conj(),
-                orbital_rotations,
-                orbital_rotations.conj(),
-                # optimize="greedy"
-            )[:nocc, :nocc, nocc:, nocc:]
-        )
+        1j
+        * contract(
+            "mpq,map,mip,mbq,mjq->ijab",
+            diag_coulomb_mats,
+            orbital_rotations,
+            orbital_rotations.conj(),
+            orbital_rotations,
+            orbital_rotations.conj(),
+            # optimize="greedy"
+        )[:nocc, :nocc, nocc:, nocc:]
+    )
     diff = reconstructed - t2
     return 0.5 * np.sum(np.abs(diff) ** 2)
+
 
 for connectivity in connectivities:
     fig, axes = plt.subplots(
@@ -124,9 +126,7 @@ for connectivity in connectivities:
         # Initialize Hamiltonian, initial state, and LUCJ parameters
         hamiltonian = ffsim.linear_operator(mol_hamiltonian, norb=norb, nelec=nelec)
         reference_state = ffsim.hartree_fock_state(norb, nelec)
-        pairs_aa, pairs_ab = interaction_pairs_spin_balanced(
-            connectivity, norb
-        )
+        pairs_aa, pairs_ab = interaction_pairs_spin_balanced(connectivity, norb)
 
         operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
             mol_data.ccsd_t2,
@@ -136,13 +136,17 @@ for connectivity in connectivities:
         )
         diag_coulomb_mats_reference_full = operator.diag_coulomb_mats
         orbital_rotations_reference_full = operator.orbital_rotations
-        
-        list_norm_diag_coulomb_mats_reference_full = [np.sum(np.abs(diag_coulomb_mats) ** 2) for diag_coulomb_mats in diag_coulomb_mats_reference_full]
-        list_norm_orbital_rotations_reference_full = [np.sum(np.abs(orbital_rotations) ** 2) for orbital_rotations in orbital_rotations_reference_full]
-        
+
+        list_norm_diag_coulomb_mats_reference_full = [
+            np.sum(np.abs(diag_coulomb_mats) ** 2)
+            for diag_coulomb_mats in diag_coulomb_mats_reference_full
+        ]
+        list_norm_orbital_rotations_reference_full = [
+            np.sum(np.abs(orbital_rotations) ** 2)
+            for orbital_rotations in orbital_rotations_reference_full
+        ]
 
         for n_reps in n_reps_range:
-
             # use CCSD to initialize parameters
             operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
                 mol_data.ccsd_t2,
@@ -154,27 +158,28 @@ for connectivity in connectivities:
             orbital_rotations_reference = operator.orbital_rotations
 
             task_compressed_t2 = LUCJCompressedT2Task(
-                                    molecule_basename=molecule_basename,
-                                    bond_distance=d,
-                                    lucj_params=LUCJParams(
-                                        connectivity=connectivity,
-                                        n_reps=n_reps,
-                                        with_final_orbital_rotation=True,
-                                    ),
-                                    compressed_t2_params=CompressedT2Params(
-                                        multi_stage_optimization=True,
-                                        begin_reps=20,
-                                        step=2
-                                    ),
-                                    regularization=False
-                                )
-
+                molecule_basename=molecule_basename,
+                bond_distance=d,
+                lucj_params=LUCJParams(
+                    connectivity=connectivity,
+                    n_reps=n_reps,
+                    with_final_orbital_rotation=True,
+                ),
+                compressed_t2_params=CompressedT2Params(
+                    multi_stage_optimization=True, begin_reps=20, step=2
+                ),
+                regularization=False,
+            )
 
             operator_filename = DATA_DIR / task_compressed_t2.dirpath / "operator.npz"
             operator = np.load(operator_filename)
             diag_coulomb_mats_compressed_t2 = operator["diag_coulomb_mats"]
             orbital_rotations_compressed_t2 = operator["orbital_rotations"]
-            t2_loss = loss(diag_coulomb_mats_compressed_t2, orbital_rotations_compressed_t2, mol_data.ccsd_t2)
+            t2_loss = loss(
+                diag_coulomb_mats_compressed_t2,
+                orbital_rotations_compressed_t2,
+                mol_data.ccsd_t2,
+            )
             list_loss_compression.append(t2_loss)
 
             task_compressed_t2_reg0 = LUCJCompressedT2Task(
@@ -186,19 +191,23 @@ for connectivity in connectivities:
                     with_final_orbital_rotation=True,
                 ),
                 compressed_t2_params=CompressedT2Params(
-                    multi_stage_optimization=True,
-                    begin_reps=20,
-                    step=2
+                    multi_stage_optimization=True, begin_reps=20, step=2
                 ),
                 regularization=True,
-                regularization_option=0
+                regularization_option=0,
             )
-            
-            operator_filename = DATA_DIR / task_compressed_t2_reg0.dirpath / "operator.npz"
+
+            operator_filename = (
+                DATA_DIR / task_compressed_t2_reg0.dirpath / "operator.npz"
+            )
             operator = np.load(operator_filename)
             diag_coulomb_mats_compressed_t2_reg0 = operator["diag_coulomb_mats"]
             orbital_rotations_compressed_t2_reg0 = operator["orbital_rotations"]
-            t2_loss = loss(diag_coulomb_mats_compressed_t2_reg0, orbital_rotations_compressed_t2_reg0, mol_data.ccsd_t2)
+            t2_loss = loss(
+                diag_coulomb_mats_compressed_t2_reg0,
+                orbital_rotations_compressed_t2_reg0,
+                mol_data.ccsd_t2,
+            )
             list_loss_compression_reg0.append(t2_loss)
 
             task_compressed_t2_reg1 = LUCJCompressedT2Task(
@@ -210,19 +219,25 @@ for connectivity in connectivities:
                     with_final_orbital_rotation=True,
                 ),
                 compressed_t2_params=CompressedT2Params(
-                    multi_stage_optimization=True,
-                    begin_reps=20,
-                    step=2
+                    multi_stage_optimization=True, begin_reps=20, step=2
                 ),
                 regularization=True,
-                regularization_option=1
+                regularization_option=1,
             )
-            operator_filename = DATA_DIR / task_compressed_t2_reg1.dirpath / "operator.npz"
+            operator_filename = (
+                DATA_DIR / task_compressed_t2_reg1.dirpath / "operator.npz"
+            )
             operator = np.load(operator_filename)
             diag_coulomb_mats_compressed_t2_reg1 = operator["diag_coulomb_mats"]
             orbital_rotations_compressed_t2_reg1 = operator["orbital_rotations"]
-            opt_data_filename = DATA_DIR / task_compressed_t2_reg1.dirpath / "opt_data.pickle"
-            t2_loss = loss(diag_coulomb_mats_compressed_t2_reg1, orbital_rotations_compressed_t2_reg1, mol_data.ccsd_t2)
+            opt_data_filename = (
+                DATA_DIR / task_compressed_t2_reg1.dirpath / "opt_data.pickle"
+            )
+            t2_loss = loss(
+                diag_coulomb_mats_compressed_t2_reg1,
+                orbital_rotations_compressed_t2_reg1,
+                mol_data.ccsd_t2,
+            )
             list_loss_compression_reg1.append(t2_loss)
 
             task_compressed_t2_reg2 = LUCJCompressedT2Task(
@@ -234,36 +249,46 @@ for connectivity in connectivities:
                     with_final_orbital_rotation=True,
                 ),
                 compressed_t2_params=CompressedT2Params(
-                    multi_stage_optimization=True,
-                    begin_reps=20,
-                    step=2
+                    multi_stage_optimization=True, begin_reps=20, step=2
                 ),
                 regularization=True,
-                regularization_option=2
+                regularization_option=2,
             )
-            operator_filename = DATA_DIR / task_compressed_t2_reg2.dirpath / "operator.npz"
+            operator_filename = (
+                DATA_DIR / task_compressed_t2_reg2.dirpath / "operator.npz"
+            )
             operator = np.load(operator_filename)
             diag_coulomb_mats_compressed_t2_reg2 = operator["diag_coulomb_mats"]
             orbital_rotations_compressed_t2_reg2 = operator["orbital_rotations"]
-            t2_loss = loss(diag_coulomb_mats_compressed_t2_reg2, orbital_rotations_compressed_t2_reg2, mol_data.ccsd_t2)
+            t2_loss = loss(
+                diag_coulomb_mats_compressed_t2_reg2,
+                orbital_rotations_compressed_t2_reg2,
+                mol_data.ccsd_t2,
+            )
             list_loss_compression_reg2.append(t2_loss)
 
-            if connectivity != 'all-to-all':
+            if connectivity != "all-to-all":
                 task_compressed_t2_connectivity = LUCJCompressedT2Task(
-                                        molecule_basename=molecule_basename,
-                                        bond_distance=d,
-                                        lucj_params=LUCJParams(
-                                            connectivity=connectivity,
-                                            n_reps=n_reps,
-                                            with_final_orbital_rotation=True,
-                                        ),
-                                        compressed_t2_params=None,
-                                        connectivity_opt=True,
-                                    )
-                operator_filename = DATA_DIR / task_compressed_t2_connectivity.dirpath / "operator.npz"
+                    molecule_basename=molecule_basename,
+                    bond_distance=d,
+                    lucj_params=LUCJParams(
+                        connectivity=connectivity,
+                        n_reps=n_reps,
+                        with_final_orbital_rotation=True,
+                    ),
+                    compressed_t2_params=None,
+                    connectivity_opt=True,
+                )
+                operator_filename = (
+                    DATA_DIR / task_compressed_t2_connectivity.dirpath / "operator.npz"
+                )
                 operator = np.load(operator_filename)
-                diag_coulomb_mats_compressed_t2_connectivity = operator["diag_coulomb_mats"]
-                orbital_rotations_compressed_t2_connectivity = operator["orbital_rotations"]
+                diag_coulomb_mats_compressed_t2_connectivity = operator[
+                    "diag_coulomb_mats"
+                ]
+                orbital_rotations_compressed_t2_connectivity = operator[
+                    "orbital_rotations"
+                ]
 
             # print(f"\nconnectivity: {connectivity}, d: {d}, n_reps: {n_reps}")
             norm_reference_diagonal_coulumb = []
@@ -291,54 +316,132 @@ for connectivity in connectivities:
             diff_norm_compressed_connectivity_orbital_rotation = []
 
             for layer in range(n_reps):
-                diff_diag_coulomb_mats = diag_coulomb_mats_compressed_t2[layer] - diag_coulomb_mats_reference[layer]
-                diff_orbital_rotations = orbital_rotations_compressed_t2[layer] - orbital_rotations_reference[layer]
+                diff_diag_coulomb_mats = (
+                    diag_coulomb_mats_compressed_t2[layer]
+                    - diag_coulomb_mats_reference[layer]
+                )
+                diff_orbital_rotations = (
+                    orbital_rotations_compressed_t2[layer]
+                    - orbital_rotations_reference[layer]
+                )
 
-                norm_reference_diagonal_coulumb.append(np.sum(np.abs(diag_coulomb_mats_reference[layer]) ** 2))
-                norm_compressed_diagonal_coulumb.append(np.sum(np.abs(diag_coulomb_mats_compressed_t2[layer]) ** 2))
-                diff_norm_compressed_diagonal_coulumb.append(np.sum(np.abs(diff_diag_coulomb_mats) ** 2))
+                norm_reference_diagonal_coulumb.append(
+                    np.sum(np.abs(diag_coulomb_mats_reference[layer]) ** 2)
+                )
+                norm_compressed_diagonal_coulumb.append(
+                    np.sum(np.abs(diag_coulomb_mats_compressed_t2[layer]) ** 2)
+                )
+                diff_norm_compressed_diagonal_coulumb.append(
+                    np.sum(np.abs(diff_diag_coulomb_mats) ** 2)
+                )
 
-                norm_reference_orbital_rotation.append(np.sum(np.abs(orbital_rotations_reference[layer]) ** 2))
-                norm_compressed_orbital_rotation.append(np.sum(np.abs(orbital_rotations_compressed_t2[layer]) ** 2))
-                diff_norm_compressed_orbital_rotation.append(np.sum(np.abs(diff_orbital_rotations) ** 2))
+                norm_reference_orbital_rotation.append(
+                    np.sum(np.abs(orbital_rotations_reference[layer]) ** 2)
+                )
+                norm_compressed_orbital_rotation.append(
+                    np.sum(np.abs(orbital_rotations_compressed_t2[layer]) ** 2)
+                )
+                diff_norm_compressed_orbital_rotation.append(
+                    np.sum(np.abs(diff_orbital_rotations) ** 2)
+                )
 
-                diff_diag_coulomb_mats_reg0 = diag_coulomb_mats_compressed_t2_reg0[layer] - diag_coulomb_mats_reference[layer]
-                diff_orbital_rotations_reg0 = orbital_rotations_compressed_t2_reg0[layer] - orbital_rotations_reference[layer]
+                diff_diag_coulomb_mats_reg0 = (
+                    diag_coulomb_mats_compressed_t2_reg0[layer]
+                    - diag_coulomb_mats_reference[layer]
+                )
+                diff_orbital_rotations_reg0 = (
+                    orbital_rotations_compressed_t2_reg0[layer]
+                    - orbital_rotations_reference[layer]
+                )
 
-                norm_compressed_diagonal_coulumb_reg0.append(np.sum(np.abs(diag_coulomb_mats_compressed_t2_reg0[layer]) ** 2))
-                diff_norm_compressed_diagonal_coulumb_reg0.append(np.sum(np.abs(diff_diag_coulomb_mats_reg0) ** 2))
+                norm_compressed_diagonal_coulumb_reg0.append(
+                    np.sum(np.abs(diag_coulomb_mats_compressed_t2_reg0[layer]) ** 2)
+                )
+                diff_norm_compressed_diagonal_coulumb_reg0.append(
+                    np.sum(np.abs(diff_diag_coulomb_mats_reg0) ** 2)
+                )
 
-                norm_compressed_orbital_rotation_reg0.append(np.sum(np.abs(orbital_rotations_compressed_t2_reg0[layer]) ** 2))
-                diff_norm_compressed_orbital_rotation_reg0.append(np.sum(np.abs(diff_orbital_rotations_reg0) ** 2))
+                norm_compressed_orbital_rotation_reg0.append(
+                    np.sum(np.abs(orbital_rotations_compressed_t2_reg0[layer]) ** 2)
+                )
+                diff_norm_compressed_orbital_rotation_reg0.append(
+                    np.sum(np.abs(diff_orbital_rotations_reg0) ** 2)
+                )
 
+                diff_diag_coulomb_mats_reg1 = (
+                    diag_coulomb_mats_compressed_t2_reg1[layer]
+                    - diag_coulomb_mats_reference[layer]
+                )
+                diff_orbital_rotations_reg1 = (
+                    orbital_rotations_compressed_t2_reg1[layer]
+                    - orbital_rotations_reference[layer]
+                )
 
-                diff_diag_coulomb_mats_reg1 = diag_coulomb_mats_compressed_t2_reg1[layer] - diag_coulomb_mats_reference[layer]
-                diff_orbital_rotations_reg1 = orbital_rotations_compressed_t2_reg1[layer] - orbital_rotations_reference[layer]
+                norm_compressed_diagonal_coulumb_reg1.append(
+                    np.sum(np.abs(diag_coulomb_mats_compressed_t2_reg1[layer]) ** 2)
+                )
+                diff_norm_compressed_diagonal_coulumb_reg1.append(
+                    np.sum(np.abs(diff_diag_coulomb_mats_reg1) ** 2)
+                )
 
-                norm_compressed_diagonal_coulumb_reg1.append(np.sum(np.abs(diag_coulomb_mats_compressed_t2_reg1[layer]) ** 2))
-                diff_norm_compressed_diagonal_coulumb_reg1.append(np.sum(np.abs(diff_diag_coulomb_mats_reg1) ** 2))
+                norm_compressed_orbital_rotation_reg1.append(
+                    np.sum(np.abs(orbital_rotations_compressed_t2_reg1[layer]) ** 2)
+                )
+                diff_norm_compressed_orbital_rotation_reg1.append(
+                    np.sum(np.abs(diff_orbital_rotations_reg1) ** 2)
+                )
 
-                norm_compressed_orbital_rotation_reg1.append(np.sum(np.abs(orbital_rotations_compressed_t2_reg1[layer]) ** 2))
-                diff_norm_compressed_orbital_rotation_reg1.append(np.sum(np.abs(diff_orbital_rotations_reg1) ** 2))
+                diff_diag_coulomb_mats_reg2 = (
+                    diag_coulomb_mats_compressed_t2_reg2[layer]
+                    - diag_coulomb_mats_reference[layer]
+                )
+                diff_orbital_rotations_reg2 = (
+                    orbital_rotations_compressed_t2_reg2[layer]
+                    - orbital_rotations_reference[layer]
+                )
 
+                norm_compressed_diagonal_coulumb_reg2.append(
+                    np.sum(np.abs(diag_coulomb_mats_compressed_t2_reg2[layer]) ** 2)
+                )
+                diff_norm_compressed_diagonal_coulumb_reg2.append(
+                    np.sum(np.abs(diff_diag_coulomb_mats_reg2) ** 2)
+                )
 
-                diff_diag_coulomb_mats_reg2 = diag_coulomb_mats_compressed_t2_reg2[layer] - diag_coulomb_mats_reference[layer]
-                diff_orbital_rotations_reg2 = orbital_rotations_compressed_t2_reg2[layer] - orbital_rotations_reference[layer]
+                norm_compressed_orbital_rotation_reg2.append(
+                    np.sum(np.abs(orbital_rotations_compressed_t2_reg2[layer]) ** 2)
+                )
+                diff_norm_compressed_orbital_rotation_reg2.append(
+                    np.sum(np.abs(diff_orbital_rotations_reg2) ** 2)
+                )
 
-                norm_compressed_diagonal_coulumb_reg2.append(np.sum(np.abs(diag_coulomb_mats_compressed_t2_reg2[layer]) ** 2))
-                diff_norm_compressed_diagonal_coulumb_reg2.append(np.sum(np.abs(diff_diag_coulomb_mats_reg2) ** 2))
-
-                norm_compressed_orbital_rotation_reg2.append(np.sum(np.abs(orbital_rotations_compressed_t2_reg2[layer]) ** 2))
-                diff_norm_compressed_orbital_rotation_reg2.append(np.sum(np.abs(diff_orbital_rotations_reg2) ** 2))
-                
                 if connectivity != "all-to-all":
-                    diff_diag_coulomb_mats_c = diag_coulomb_mats_compressed_t2_connectivity[layer] - diag_coulomb_mats_reference[layer]
-                    diff_orbital_rotations_c = orbital_rotations_compressed_t2_connectivity[layer] - orbital_rotations_reference[layer]
-                    norm_compressed_connectivity_diagonal_coulumb.append(np.sum(np.abs(diag_coulomb_mats_compressed_t2_connectivity[layer]) ** 2))
-                    diff_norm_compressed_connectivity_diagonal_coulumb.append(np.sum(np.abs(diff_diag_coulomb_mats_c) ** 2))
-                    
-                    norm_compressed_connectivity_orbital_rotation.append(np.sum(np.abs(orbital_rotations_compressed_t2_connectivity[layer]) ** 2))
-                    diff_norm_compressed_connectivity_orbital_rotation.append(np.sum(np.abs(diff_orbital_rotations_c) ** 2))
+                    diff_diag_coulomb_mats_c = (
+                        diag_coulomb_mats_compressed_t2_connectivity[layer]
+                        - diag_coulomb_mats_reference[layer]
+                    )
+                    diff_orbital_rotations_c = (
+                        orbital_rotations_compressed_t2_connectivity[layer]
+                        - orbital_rotations_reference[layer]
+                    )
+                    norm_compressed_connectivity_diagonal_coulumb.append(
+                        np.sum(
+                            np.abs(diag_coulomb_mats_compressed_t2_connectivity[layer])
+                            ** 2
+                        )
+                    )
+                    diff_norm_compressed_connectivity_diagonal_coulumb.append(
+                        np.sum(np.abs(diff_diag_coulomb_mats_c) ** 2)
+                    )
+
+                    norm_compressed_connectivity_orbital_rotation.append(
+                        np.sum(
+                            np.abs(orbital_rotations_compressed_t2_connectivity[layer])
+                            ** 2
+                        )
+                    )
+                    diff_norm_compressed_connectivity_orbital_rotation.append(
+                        np.sum(np.abs(diff_orbital_rotations_c) ** 2)
+                    )
                 # print("coulumb matrices")
                 # print(f"norm of reference   : {np.sum(np.abs(diag_coulomb_mats_reference[layer]) ** 2):.4f}")
                 # print(f"norm of compressed  : {np.sum(np.abs(diag_coulomb_mats_compressed_t2[layer]) ** 2):.4f}")
@@ -351,35 +454,79 @@ for connectivity in connectivities:
                 # print(f"norm of compressed-c: {np.sum(np.abs(orbital_rotations_compressed_t2_connectivity[layer]) ** 2):.4f}")
                 # print(f"norm of difference  : {np.sum(np.abs(diff_orbital_rotations) ** 2):.4f}")
                 # print(f"norm of difference-c: {np.sum(np.abs(diff_orbital_rotations_c) ** 2):.4f}")
-                
-            list_average_norm_reference_diagonal_coulumb.append(np.average(norm_reference_diagonal_coulumb))
-            list_average_norm_compressed_diagonal_coulumb.append(np.average(norm_compressed_diagonal_coulumb))
-            list_average_diff_norm_compressed_diagonal_coulumb.append(np.average(diff_norm_compressed_diagonal_coulumb))
-            list_average_norm_reference_orbital_rotation.append(np.average(norm_reference_orbital_rotation))
-            list_average_norm_compressed_orbital_rotation.append(np.average(norm_compressed_orbital_rotation))
-            list_average_diff_norm_compressed_orbital_rotation.append(np.average(diff_norm_compressed_orbital_rotation))
 
-            list_average_norm_compressed_diagonal_coulumb_reg0.append(np.average(norm_compressed_diagonal_coulumb_reg0))
-            list_average_diff_norm_compressed_diagonal_coulumb_reg0.append(np.average(diff_norm_compressed_diagonal_coulumb_reg0))
-            list_average_norm_compressed_orbital_rotation_reg0.append(np.average(norm_compressed_orbital_rotation_reg0))
-            list_average_diff_norm_compressed_orbital_rotation_reg0.append(np.average(diff_norm_compressed_orbital_rotation_reg0))
+            list_average_norm_reference_diagonal_coulumb.append(
+                np.average(norm_reference_diagonal_coulumb)
+            )
+            list_average_norm_compressed_diagonal_coulumb.append(
+                np.average(norm_compressed_diagonal_coulumb)
+            )
+            list_average_diff_norm_compressed_diagonal_coulumb.append(
+                np.average(diff_norm_compressed_diagonal_coulumb)
+            )
+            list_average_norm_reference_orbital_rotation.append(
+                np.average(norm_reference_orbital_rotation)
+            )
+            list_average_norm_compressed_orbital_rotation.append(
+                np.average(norm_compressed_orbital_rotation)
+            )
+            list_average_diff_norm_compressed_orbital_rotation.append(
+                np.average(diff_norm_compressed_orbital_rotation)
+            )
 
-            list_average_norm_compressed_diagonal_coulumb_reg1.append(np.average(norm_compressed_diagonal_coulumb_reg1))
-            list_average_diff_norm_compressed_diagonal_coulumb_reg1.append(np.average(diff_norm_compressed_diagonal_coulumb_reg1))
-            list_average_norm_compressed_orbital_rotation_reg1.append(np.average(norm_compressed_orbital_rotation_reg1))
-            list_average_diff_norm_compressed_orbital_rotation_reg1.append(np.average(diff_norm_compressed_orbital_rotation_reg1))
+            list_average_norm_compressed_diagonal_coulumb_reg0.append(
+                np.average(norm_compressed_diagonal_coulumb_reg0)
+            )
+            list_average_diff_norm_compressed_diagonal_coulumb_reg0.append(
+                np.average(diff_norm_compressed_diagonal_coulumb_reg0)
+            )
+            list_average_norm_compressed_orbital_rotation_reg0.append(
+                np.average(norm_compressed_orbital_rotation_reg0)
+            )
+            list_average_diff_norm_compressed_orbital_rotation_reg0.append(
+                np.average(diff_norm_compressed_orbital_rotation_reg0)
+            )
 
-            list_average_norm_compressed_diagonal_coulumb_reg2.append(np.average(norm_compressed_diagonal_coulumb_reg2))
-            list_average_diff_norm_compressed_diagonal_coulumb_reg2.append(np.average(diff_norm_compressed_diagonal_coulumb_reg2))
-            list_average_norm_compressed_orbital_rotation_reg2.append(np.average(norm_compressed_orbital_rotation_reg2))
-            list_average_diff_norm_compressed_orbital_rotation_reg2.append(np.average(diff_norm_compressed_orbital_rotation_reg2))
-            
+            list_average_norm_compressed_diagonal_coulumb_reg1.append(
+                np.average(norm_compressed_diagonal_coulumb_reg1)
+            )
+            list_average_diff_norm_compressed_diagonal_coulumb_reg1.append(
+                np.average(diff_norm_compressed_diagonal_coulumb_reg1)
+            )
+            list_average_norm_compressed_orbital_rotation_reg1.append(
+                np.average(norm_compressed_orbital_rotation_reg1)
+            )
+            list_average_diff_norm_compressed_orbital_rotation_reg1.append(
+                np.average(diff_norm_compressed_orbital_rotation_reg1)
+            )
+
+            list_average_norm_compressed_diagonal_coulumb_reg2.append(
+                np.average(norm_compressed_diagonal_coulumb_reg2)
+            )
+            list_average_diff_norm_compressed_diagonal_coulumb_reg2.append(
+                np.average(diff_norm_compressed_diagonal_coulumb_reg2)
+            )
+            list_average_norm_compressed_orbital_rotation_reg2.append(
+                np.average(norm_compressed_orbital_rotation_reg2)
+            )
+            list_average_diff_norm_compressed_orbital_rotation_reg2.append(
+                np.average(diff_norm_compressed_orbital_rotation_reg2)
+            )
+
             if connectivity != "all-to-all":
-                list_average_norm_compressed_connectivity_diagonal_coulumb.append(np.average(norm_compressed_connectivity_diagonal_coulumb))
-                list_average_diff_norm_compressed_connectivity_diagonal_coulumb.append(np.average(diff_norm_compressed_connectivity_diagonal_coulumb))
-                list_average_norm_compressed_connectivity_orbital_rotation.append(np.average(norm_compressed_connectivity_orbital_rotation))
-                list_average_diff_norm_compressed_connectivity_orbital_rotation.append(np.average(diff_norm_compressed_connectivity_orbital_rotation))
-        
+                list_average_norm_compressed_connectivity_diagonal_coulumb.append(
+                    np.average(norm_compressed_connectivity_diagonal_coulumb)
+                )
+                list_average_diff_norm_compressed_connectivity_diagonal_coulumb.append(
+                    np.average(diff_norm_compressed_connectivity_diagonal_coulumb)
+                )
+                list_average_norm_compressed_connectivity_orbital_rotation.append(
+                    np.average(norm_compressed_connectivity_orbital_rotation)
+                )
+                list_average_diff_norm_compressed_connectivity_orbital_rotation.append(
+                    np.average(diff_norm_compressed_connectivity_orbital_rotation)
+                )
+
         # diag coulumn norm
         axes[0, i].axhline(
             np.average(list_norm_diag_coulomb_mats_reference_full),
@@ -388,7 +535,7 @@ for connectivity in connectivities:
             label="LUCJ-full",
             color="red",
         )
-            
+
         axes[0, i].plot(
             n_reps_range,
             list_average_norm_reference_diagonal_coulumb,
@@ -518,7 +665,7 @@ for connectivity in connectivities:
                 label="LUCJ compressed-c",
                 color=colors[6],
             )
-        
+
         axes[2, i].plot(
             n_reps_range,
             list_average_norm_compressed_orbital_rotation_reg0,
@@ -590,7 +737,7 @@ for connectivity in connectivities:
             alpha=alphas[2],
         )
 
-        # loss 
+        # loss
         axes[4, i].plot(
             n_reps_range,
             list_loss_compression,
@@ -605,7 +752,7 @@ for connectivity in connectivities:
                 f"{markers[0]}{linestyles[0]}",
                 label="LUCJ compressed-c",
                 color=colors[6],
-            )  
+            )
 
         print("list_loss_compression_reg0")
         print(list_loss_compression_reg0)
@@ -652,43 +799,35 @@ for connectivity in connectivities:
         )
 
         axes[0, i].set_title(f"R={d} Å")
-        axes[0, i].set_title("diag coulomb, norm", fontsize='small', loc='left')
+        axes[0, i].set_title("diag coulomb, norm", fontsize="small", loc="left")
         axes[0, i].set_xlabel("Repetitions")
         axes[0, i].set_xticks(n_reps_range)
 
-        axes[1, i].set_title("diag coulomb, diff norm", fontsize='small', loc='left')
+        axes[1, i].set_title("diag coulomb, diff norm", fontsize="small", loc="left")
         axes[1, i].set_xlabel("Repetitions")
         axes[1, i].set_xticks(n_reps_range)
 
-        axes[2, i].set_title("orb rot, norm", fontsize='small', loc='left')
+        axes[2, i].set_title("orb rot, norm", fontsize="small", loc="left")
         axes[2, i].set_xlabel("Repetitions")
         axes[2, i].set_xticks(n_reps_range)
 
-        axes[3, i].set_title("orb rot, diff norm", fontsize='small', loc='left')
+        axes[3, i].set_title("orb rot, diff norm", fontsize="small", loc="left")
         axes[3, i].set_xlabel("Repetitions")
         axes[3, i].set_xticks(n_reps_range)
 
-        axes[4, i].set_title("loss", fontsize='small', loc='left')
+        axes[4, i].set_title("loss", fontsize="small", loc="left")
         axes[4, i].set_xlabel("Repetitions")
         axes[4, i].set_xticks(n_reps_range)
 
     # axes[row_sci_vec_dim, 0].legend(ncol=2, )
-    leg = axes[4, 0].legend(
-        bbox_to_anchor=(0.24, -0.8), loc="upper left", ncol=3
-    )
+    leg = axes[4, 0].legend(bbox_to_anchor=(0.24, -0.8), loc="upper left", ncol=3)
     leg.set_in_layout(False)
     plt.tight_layout()
-    plt.subplots_adjust(top=0.9,left=0.06,bottom=0.15)
-    
+    plt.subplots_adjust(top=0.9, left=0.06, bottom=0.15)
+
     # fig.supylabel('norm')
     fig.suptitle(
         f"Operator norm comparison: {molecule_name} {basis} ({nelectron}e, {norb}o) / {connectivity}"
     )
     plt.savefig(f"plots/{molecule_basename}/norm_analysis_{connectivity}.pdf")
     plt.close()
-            
-
-        
-
-            
-            

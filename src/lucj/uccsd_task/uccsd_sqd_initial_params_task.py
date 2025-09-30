@@ -18,9 +18,14 @@ import ffsim
 import numpy as np
 from molecules_catalog.util import load_molecular_data
 from qiskit.primitives import BitArray
-from qiskit_addon_sqd.fermion import SCIResult, diagonalize_fermionic_hamiltonian, solve_sci_batch
+from qiskit_addon_sqd.fermion import (
+    SCIResult,
+    diagonalize_fermionic_hamiltonian,
+    solve_sci_batch,
+)
 from functools import partial
 import scipy
+
 logger = logging.getLogger(__name__)
 
 
@@ -74,7 +79,6 @@ class UCCSDSQDInitialParamsTask:
         )
 
 
-
 def run_uccsd_sqd_initial_params_task(
     task: UCCSDSQDInitialParamsTask,
     *,
@@ -122,7 +126,7 @@ def run_uccsd_sqd_initial_params_task(
     )
     probs = np.abs(final_state) ** 2
     entropy = scipy.stats.entropy(probs)
-    
+
     data = {
         "energy": energy,
         "error": error,
@@ -149,7 +153,7 @@ def run_uccsd_sqd_initial_params_task(
     result_history_energy = []
     result_history_subspace_dim = []
     result_history = []
-    
+
     def callback(results: list[SCIResult]):
         result_energy = []
         result_subspace_dim = []
@@ -185,7 +189,7 @@ def run_uccsd_sqd_initial_params_task(
         carryover_threshold=task.carryover_threshold,
         seed=rng,
         callback=callback,
-        max_dim=task.max_dim
+        max_dim=task.max_dim,
     )
     energy = result.energy + mol_data.core_energy
     sci_state = result.sci_state

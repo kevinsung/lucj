@@ -360,11 +360,11 @@ axes[row_error].set_yscale("log")
 axes[row_error].axhline(1.6e-3, linestyle="--", color="black")
 axes[row_error].set_ylabel("Energy error (Hartree)")
 axes[row_error].set_xticks([])
-axes[row_error].set_xlim(- 2 * width, 2*width)
+axes[row_error].set_xlim(-2 * width, 2 * width)
 
 axes[row_sci_vec_dim].set_ylabel("SCI subspace")
 axes[row_sci_vec_dim].set_xticks([])
-axes[row_sci_vec_dim].set_xlim(- 2 * width, 2*width)
+axes[row_sci_vec_dim].set_xlim(-2 * width, 2 * width)
 
 # axes[row_sci_vec_dim, 0].legend(ncol=2, )
 leg = axes[row_sci_vec_dim].legend(

@@ -77,7 +77,7 @@ print("Done loading data.")
 markers = ["o", "s", "v", "D", "p", "*", "P", "X"]
 linestyles = ["--", ":"]
 
-with open('scripts/paper/color.json', 'r') as file:
+with open("scripts/paper/color.json", "r") as file:
     colors = json.load(file)
 
 results_random = {}
@@ -107,22 +107,22 @@ fig, axes = plt.subplots(
     figsize=(10, 5),  # , layout="constrained"
 )
 
-for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distance_range, connectivities)):
-
+for i, (bond_distance, connectivity) in enumerate(
+    itertools.product(bond_distance_range, connectivities)
+):
     axes[0, i].axhline(
-        results_random[bond_distance]['error'],
+        results_random[bond_distance]["error"],
         linestyle="--",
         label="Rand bitstr",
         color=colors["random_bit_string"],
     )
 
     axes[2, i].axhline(
-        results_random[bond_distance]['sci_vec_shape'][0],
+        results_random[bond_distance]["sci_vec_shape"][0],
         linestyle="--",
         label="Rand bitstr",
         color=colors["random_bit_string"],
     )
-
 
     task_lucj_full = SQDEnergyTask(
         molecule_basename=molecule_basename,
@@ -151,19 +151,18 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     results = load_data(filepath)
 
     axes[0, i].axhline(
-        results['error'],
+        results["error"],
         linestyle="--",
         label="LUCJ-full",
         color=colors["lucj_full"],
     )
 
     axes[2, i].axhline(
-        results['sci_vec_shape'][0],
+        results["sci_vec_shape"][0],
         linestyle="--",
         label="LUCJ-full",
         color=colors["lucj_full"],
     )
-    
 
     tasks_compressed_t2 = [
         SQDEnergyTask(
@@ -175,9 +174,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
                 with_final_orbital_rotation=True,
             ),
             compressed_t2_params=CompressedT2Params(
-                multi_stage_optimization=True,
-                begin_reps=20,
-                step=2
+                multi_stage_optimization=True, begin_reps=20, step=2
             ),
             regularization=False,
             regularization_option=None,
@@ -233,9 +230,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
                 with_final_orbital_rotation=True,
             ),
             compressed_t2_params=CompressedT2Params(
-                multi_stage_optimization=False,
-                begin_reps=n_reps,
-                step=2
+                multi_stage_optimization=False, begin_reps=n_reps, step=2
             ),
             regularization=False,
             regularization_option=None,
@@ -264,9 +259,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
                     with_final_orbital_rotation=True,
                 ),
                 compressed_t2_params=CompressedT2Params(
-                    multi_stage_optimization=True,
-                    begin_reps=20,
-                    step=2
+                    multi_stage_optimization=True, begin_reps=20, step=2
                 ),
                 regularization=False,
                 cobyqa_params=COBYQAParams(maxiter=25),
@@ -279,14 +272,15 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
                 max_iterations=max_iterations,
                 symmetrize_spin=symmetrize_spin,
                 entropy=entropy,
-                max_bond = 100,
-                perm_mps = False,
-                cutoff = 1e-10,
-                seed = 0,
-                max_dim = max_dim,
+                max_bond=100,
+                perm_mps=False,
+                cutoff=1e-10,
+                seed=0,
+                max_dim=max_dim,
             )
-            for n_reps in n_reps_range]
-        
+            for n_reps in n_reps_range
+        ]
+
         tasks_compressed_t2_quimb_do = [
             LUCJSQDQuimbTask(
                 molecule_basename=molecule_basename,
@@ -297,9 +291,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
                     with_final_orbital_rotation=True,
                 ),
                 compressed_t2_params=CompressedT2Params(
-                    multi_stage_optimization=True,
-                    begin_reps=20,
-                    step=2
+                    multi_stage_optimization=True, begin_reps=20, step=2
                 ),
                 regularization=False,
                 cobyqa_params=COBYQAParams(maxiter=100),
@@ -312,24 +304,42 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
                 max_iterations=max_iterations,
                 symmetrize_spin=symmetrize_spin,
                 entropy=entropy,
-                max_bond = 100,
-                perm_mps = False,
-                cutoff = 1e-10,
-                seed = 0,
-                max_dim = max_dim,
+                max_bond=100,
+                perm_mps=False,
+                cutoff=1e-10,
+                seed=0,
+                max_dim=max_dim,
             )
-            for n_reps in n_reps_range]
-    
+            for n_reps in n_reps_range
+        ]
 
-        list_tasks = [tasks_truncated, tasks_compressed_t2, tasks_compressed_t2_naive, tasks_compressed_t2_quimb, tasks_compressed_t2_quimb_do]
-        color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_1stg", "lucj_compressed_quimb", "lucj_compressed_quimb2"]
-        labels = ["LUCJ-truncated", "LUCJ-compressed", "LUCJ-compressed-1stg", "lucj-compressed-tn", "lucj-compressed-tn-do"]
+        list_tasks = [
+            tasks_truncated,
+            tasks_compressed_t2,
+            tasks_compressed_t2_naive,
+            tasks_compressed_t2_quimb,
+            tasks_compressed_t2_quimb_do,
+        ]
+        color_keys = [
+            "lucj_truncated",
+            "lucj_compressed",
+            "lucj_compressed_1stg",
+            "lucj_compressed_quimb",
+            "lucj_compressed_quimb2",
+        ]
+        labels = [
+            "LUCJ-truncated",
+            "LUCJ-compressed",
+            "LUCJ-compressed-1stg",
+            "lucj-compressed-tn",
+            "lucj-compressed-tn-do",
+        ]
         nit = []
         for task in tasks_compressed_t2_quimb:
             filepath = DATA_ROOT / task.dirpath / "info.pickle"
             results = load_data(filepath)
-            nit.append(results['nit'])
-        
+            nit.append(results["nit"])
+
         axes[1, i].plot(
             n_reps_range,
             nit,
@@ -342,8 +352,8 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
         for task in tasks_compressed_t2_quimb_do:
             filepath = DATA_ROOT / task.dirpath / "info.pickle"
             results = load_data(filepath)
-            nit.append(results['nit'])
-        
+            nit.append(results["nit"])
+
         axes[1, i].plot(
             n_reps_range,
             nit,
@@ -351,7 +361,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
             label="lucj-compressed-tn-do",
             color=colors["lucj_compressed_quimb2"],
         )
-        
+
     else:
         list_tasks = [tasks_truncated, tasks_compressed_t2, tasks_compressed_t2_naive]
         color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_1stg"]
@@ -365,7 +375,7 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
 
         errors = [results[task]["error"] for task in tasks]
         sci_vec_shape = [results[task]["sci_vec_shape"][0] for task in tasks]
-        
+
         axes[0, i].plot(
             n_reps_range,
             errors,
@@ -382,7 +392,6 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
             color=colors[color_key],
         )
 
-
     axes[0, i].set_title(f"R={bond_distance} Å / {connectivity}")
     axes[0, i].set_yscale("log")
     axes[0, i].axhline(1.6e-3, linestyle="--", color="black")
@@ -393,23 +402,24 @@ for i, (bond_distance, connectivity) in enumerate(itertools.product(bond_distanc
     axes[1, i].set_ylabel("COBYQA Iter")
     axes[1, i].set_xlabel("Repetitions")
     axes[1, i].set_xticks(n_reps_range)
-    axes[1, i].set_yticks(range(1,12,2))
-    
+    axes[1, i].set_yticks(range(1, 12, 2))
+
     axes[2, i].set_ylabel("SCI subspace")
     axes[2, i].set_xlabel("Repetitions")
     axes[2, i].set_xticks(n_reps_range)
 
     leg = axes[2, 1].legend(
-        bbox_to_anchor=(1.05, -0.48), loc="upper center", ncol=6,
-        columnspacing=1, handletextpad=0.8
+        bbox_to_anchor=(1.05, -0.48),
+        loc="upper center",
+        ncol=6,
+        columnspacing=1,
+        handletextpad=0.8,
     )
     leg.set_in_layout(False)
     plt.tight_layout()
     plt.subplots_adjust(bottom=0.16, top=0.88)
 
-    fig.suptitle(
-        f"N$_2$/6-31G ({nelectron}e, {norb}o)"
-    )
+    fig.suptitle(f"N$_2$/6-31G ({nelectron}e, {norb}o)")
 
 filepath = os.path.join(
     plots_dir,

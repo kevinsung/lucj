@@ -330,9 +330,7 @@ for i, bond_distance in enumerate(bond_distances):
     # axes[2, i].set_xticks(n_reps_range)
 
 
-fig.suptitle(
-    f"N$_2$ 6-31G ({nelectron}e, {norb}o) all-to-all (UCJ)", fontsize=18
-)
+fig.suptitle(f"N$_2$ 6-31G ({nelectron}e, {norb}o) all-to-all (UCJ)", fontsize=18)
 
 # axes[2, 0].legend()
 

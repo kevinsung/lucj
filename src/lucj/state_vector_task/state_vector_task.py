@@ -24,6 +24,7 @@ from qiskit.primitives import BitArray
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass(frozen=True, kw_only=True)
 class StateVecTask:
     molecule_basename: str
@@ -54,7 +55,9 @@ class StateVecTask:
         elif self.compressed_t2_params is not None:
             compress_option = self.compressed_t2_params.dirpath
             if self.regularization:
-                compress_option = f"{compress_option}/regularization_{self.regularization_option}"
+                compress_option = (
+                    f"{compress_option}/regularization_{self.regularization_option}"
+                )
         else:
             compress_option = "truncated"
         return (
@@ -87,7 +90,9 @@ class StateVecTask:
         elif self.compressed_t2_params is not None:
             compress_option = self.compressed_t2_params.dirpath
             if self.regularization:
-                compress_option = f"{compress_option}/regularization_{self.regularization_option}"
+                compress_option = (
+                    f"{compress_option}/regularization_{self.regularization_option}"
+                )
         else:
             compress_option = "truncated"
         return (
@@ -113,7 +118,7 @@ def load_operator(task: StateVecTask, data_dir: str, mol_data):
             norb,
             n_reps=task.lucj_params.n_reps,
             interaction_pairs=(pairs_aa, pairs_ab),
-            with_final_orbital_rotation=True
+            with_final_orbital_rotation=True,
         )
     elif task.connectivity_opt or task.compressed_t2_params is not None:
         operator_filename = data_dir / task.operatorpath / "operator.npz"
@@ -128,7 +133,9 @@ def load_operator(task: StateVecTask, data_dir: str, mol_data):
         final_orbital_rotation = None
         if mol_data.ccsd_t1 is not None:
             final_orbital_rotation = (
-                ffsim.variational.util.orbital_rotation_from_t1_amplitudes(mol_data.ccsd_t1)
+                ffsim.variational.util.orbital_rotation_from_t1_amplitudes(
+                    mol_data.ccsd_t1
+                )
             )
         elif mol_data.ccsd_t2 is None:
             nelec = mol_data.nelec
@@ -168,15 +175,18 @@ def load_operator(task: StateVecTask, data_dir: str, mol_data):
                 interaction_pairs=interaction_pairs_spin_balanced(
                     connectivity=task.lucj_params.connectivity, norb=norb
                 ),
-            ) 
+            )
         else:
             operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
                 mol_data.ccsd_t2,
                 n_reps=task.lucj_params.n_reps,
-                t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
+                t1=mol_data.ccsd_t1
+                if task.lucj_params.with_final_orbital_rotation
+                else None,
                 interaction_pairs=(pairs_aa, pairs_ab),
             )
     return operator
+
 
 def run_state_vec_task(
     task: StateVecTask,
@@ -213,9 +223,9 @@ def run_state_vec_task(
     reference_state = ffsim.hartree_fock_state(norb, nelec)
 
     # use CCSD to initialize parameters
-    
+
     rng = np.random.default_rng(task.entropy)
-    
+
     if not os.path.exists(sample_filename):
         if os.path.exists(state_vector_filename):
             with open(state_vector_filename, "rb") as f:
@@ -224,11 +234,13 @@ def run_state_vec_task(
             operator = load_operator(task, data_dir, mol_data)
             if operator is None:
                 return
-            
+
             # Compute final state
             if not os.path.exists(state_vector_filename):
                 logging.info(f"{task} compute state vector...\n")
-                final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
+                final_state = ffsim.apply_unitary(
+                    reference_state, operator, norb=norb, nelec=nelec
+                )
                 with open(state_vector_filename, "wb") as f:
                     np.save(f, final_state)
 
@@ -245,7 +257,7 @@ def run_state_vec_task(
         bit_array_count = bit_array.get_int_counts()
         with open(sample_filename, "wb") as f:
             pickle.dump(bit_array_count, f)
-    
+
     else:
         logging.info(f"{task} load sample...\n")
         with open(sample_filename, "rb") as f:

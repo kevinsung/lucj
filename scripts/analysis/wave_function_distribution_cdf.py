@@ -20,8 +20,9 @@ from lucj.sqd_energy_task.lucj_compressed_t2_task_sci import SQDEnergyTask
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-import json 
-matplotlib.rcParams.update({'font.size': 13})
+import json
+
+matplotlib.rcParams.update({"font.size": 13})
 DATA_ROOT = "/media/storage/WanHsuan.Lin/"
 
 DATA_ROOT = "/media/storage/WanHsuan.Lin/"
@@ -129,11 +130,7 @@ task_compressed_t2 = SQDEnergyTask(
     max_dim=max_dim,
 )
 
-tasks = [
-    task_lucj_full,
-    task_lucj_truncated,
-    task_compressed_t2
-]
+tasks = [task_lucj_full, task_lucj_truncated, task_compressed_t2]
 
 
 prop_cycle = plt.rcParams["axes.prop_cycle"]
@@ -148,12 +145,12 @@ for task in tasks:
     wave_functions.append(wave_function)
 
 for wave_function in wave_functions:
-    np.testing.assert_allclose(np.sum(np.abs(wave_function)**2), 1, atol=1e-8)
+    np.testing.assert_allclose(np.sum(np.abs(wave_function) ** 2), 1, atol=1e-8)
 
 color_keys = ["lucj_full", "lucj_truncated", "lucj_compressed"]
 legends = ["LUCJ-full", "LUCJ-truncated", "LUCJ-compressed"]
 
-with open('scripts/paper/color.json', 'r') as file:
+with open("scripts/paper/color.json", "r") as file:
     colors = json.load(file)
 
 
@@ -170,13 +167,14 @@ def hamming_distance(str1, str2):
     """
     return sum(s1 != s2 for s1, s2 in zip(str1, str2))
 
+
 nelec = (nelectron // 2, nelectron // 2)
 
 # Get the dimension of the vector space.
 dim = ffsim.dim(norb, nelec)
 # tol = 1e-15
 
-# effective_address = [] 
+# effective_address = []
 # for wave_function in wave_functions:
 #     effective_address += np.nonzero(wave_function)[0].tolist()
 # effective_address = list(set(effective_address))
@@ -196,18 +194,31 @@ for item in effective_strings:
     d = hamming_distance(item, hf_state)
     dist.append(d)
 # print(dist)
-dist = [list(x) for x in zip(*sorted(zip(dist, effective_strings, effective_address), key=lambda pair: pair[0]))][0]
+dist = [
+    list(x)
+    for x in zip(
+        *sorted(
+            zip(dist, effective_strings, effective_address), key=lambda pair: pair[0]
+        )
+    )
+][0]
 # effective_strings = [list(x) for x in zip(*sorted(zip(dist, effective_strings, effective_address), key=lambda pair: pair[0]))][1]
-effective_address = [list(x) for x in zip(*sorted(zip(dist, effective_strings, effective_address), key=lambda pair: pair[0]))][2]
+effective_address = [
+    list(x)
+    for x in zip(
+        *sorted(
+            zip(dist, effective_strings, effective_address), key=lambda pair: pair[0]
+        )
+    )
+][2]
 all_pvalues = []
 
 
 for wave_function in wave_functions:
-    values = np.abs(wave_function[effective_address])**2
+    values = np.abs(wave_function[effective_address]) ** 2
     # pvalues = np.array(values, dtype=float)
     # pvalues /= np.sum(pvalues)
     all_pvalues.append(values)
-
 
 
 fig = plt.plot(figsize=(2, 2), layout="constrained")
@@ -218,7 +229,7 @@ for value, legend, c in zip(all_pvalues, legends, color_keys):
     # input()
     y = value.cumsum()
     plt.plot(x, y, "-", label=legend, color=colors[c])
-    
+
     # plt.ecdf(value, label=legend, color=c)
 
 x = []
@@ -234,7 +245,7 @@ plt.xlabel("Hamming distance to HF state")
 plt.ylabel("CDF")
 plt.legend()
 plt.tight_layout()
-plt.subplots_adjust(left=0.18,bottom=0.13, top=0.92)
+plt.subplots_adjust(left=0.18, bottom=0.13, top=0.92)
 plt.yscale("log")
 filepath = os.path.join(
     plots_dir,

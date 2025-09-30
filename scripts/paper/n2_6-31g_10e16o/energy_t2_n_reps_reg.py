@@ -77,7 +77,8 @@ with open("scripts/paper/color.json", "r") as file:
     colors = json.load(file)
 
 
-fig, axes = plt.subplots(1,
+fig, axes = plt.subplots(
+    1,
     len(bond_distance_range) * len(connectivities),
     figsize=(10, 2.8),  # , layout="constrained"
 )
@@ -86,7 +87,6 @@ fig, axes = plt.subplots(1,
 for i, (bond_distance, connectivity) in enumerate(
     itertools.product(bond_distance_range, connectivities)
 ):
-
     task_lucj_full = SQDEnergyTask(
         molecule_basename=molecule_basename,
         bond_distance=bond_distance,
@@ -206,11 +206,7 @@ for i, (bond_distance, connectivity) in enumerate(
     ]
 
     if connectivity == "all-to-all":
-        list_tasks = [
-            tasks_truncated,
-            tasks_compressed_t2,
-            tasks_compressed_t2_reg
-        ]
+        list_tasks = [tasks_truncated, tasks_compressed_t2, tasks_compressed_t2_reg]
         color_keys = [
             "lucj_truncated",
             "lucj_compressed",

@@ -116,7 +116,9 @@ def run_hardware_sqd_energy_task(
     mol_hamiltonian = mol_data.hamiltonian
 
     # use CCSD to initialize parameters
-    sample_filename = data_dir / task.lucj_sqd_quimb_task.dirpath / "hardware_sample.pickle"
+    sample_filename = (
+        data_dir / task.lucj_sqd_quimb_task.dirpath / "hardware_sample.pickle"
+    )
 
     rng = np.random.default_rng(task.entropy)
 

@@ -17,7 +17,9 @@ from ffsim.variational.util import (
 from molecules_catalog.util import load_molecular_data
 from qiskit.primitives import BitArray
 from qiskit_addon_sqd.fermion import SCIResult, diagonalize_fermionic_hamiltonian
-from lucj.tasks.lucj_compressed_t2_task_ffsim.compressed_t2 import from_t_amplitudes_compressed
+from lucj.tasks.lucj_compressed_t2_task_ffsim.compressed_t2 import (
+    from_t_amplitudes_compressed,
+)
 from lucj.params import LBFGSBParams, LUCJParams, CompressedT2Params
 from qiskit_addon_dice_solver import solve_sci_batch, solve_hci
 from qiskit.circuit import QuantumCircuit, QuantumRegister
@@ -49,6 +51,7 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass(frozen=True, kw_only=True)
 class LUCJQuimbTask:
     molecule_basename: str
@@ -58,8 +61,8 @@ class LUCJQuimbTask:
     compressed_t2_params: CompressedT2Params | None
     connectivity_opt: bool = False
     random_op: bool = False
-    regularization: bool = False,
-    regularization_option: int = 0,
+    regularization: bool = (False,)
+    regularization_option: int = (0,)
     # max_bond: int
     # perm_mps: bool
     # cutoff: int
@@ -74,7 +77,9 @@ class LUCJQuimbTask:
         elif self.compressed_t2_params is not None:
             compress_option = self.compressed_t2_params.dirpath
             if self.regularization:
-                compress_option = f"{compress_option}/regularization_{self.regularization_option}"
+                compress_option = (
+                    f"{compress_option}/regularization_{self.regularization_option}"
+                )
         else:
             compress_option = "truncated"
         return (
@@ -100,7 +105,9 @@ class LUCJQuimbTask:
         elif self.compressed_t2_params is not None:
             compress_option = self.compressed_t2_params.dirpath
             if self.regularization:
-                compress_option = f"{compress_option}/regularization_{self.regularization_option}"
+                compress_option = (
+                    f"{compress_option}/regularization_{self.regularization_option}"
+                )
         else:
             compress_option = "truncated"
         return (
@@ -147,6 +154,7 @@ def load_operator(task: LUCJQuimbTask, data_dir: str, mol_data):
         final_orbital_rotation=final_orbital_rotation,
     )
     return operator
+
 
 def get_sci_vec(filepath: str, mol_data, dice_solver):
     if not os.path.exists(filepath):
@@ -201,7 +209,8 @@ def get_sci_vec(filepath: str, mol_data, dice_solver):
             sci_vec = pickle.load(f)
         return sci_vec
 
-def get_important_bit_string(sci_vec, tol = 1e-5):
+
+def get_important_bit_string(sci_vec, tol=1e-5):
     half_hf_state = "0" * (norb - nelectron // 2) + "1" * (nelectron // 2)
     hf_state = half_hf_state + half_hf_state
     amplitude = sci_vec[0]
@@ -230,6 +239,7 @@ def get_important_bit_string(sci_vec, tol = 1e-5):
                     important_amp_bitstr.append((abs(amplitude[i][j]), bitstr))
     return important_amp_bitstr
 
+
 def construct_quimb_circuit(circuit: QuantumCircuit):
     # quimb_circ = quimb_circuit(
     #     circuit,
@@ -238,18 +248,20 @@ def construct_quimb_circuit(circuit: QuantumCircuit):
     # )
 
     quimb_circ = quimb_circuit(
-            circuit,
-            quimb_circuit_class=quimb.tensor.CircuitMPS,
-            max_bond=100,
-            cutoff=1e-10,
-            progbar=True,
-            # to_backend=to_backend,
-        )
+        circuit,
+        quimb_circuit_class=quimb.tensor.CircuitMPS,
+        max_bond=100,
+        cutoff=1e-10,
+        progbar=True,
+        # to_backend=to_backend,
+    )
     return quimb_circ
+
 
 def constrcut_target_tn(important_amplitude, important_bitstr):
     pass
-    
+
+
 def to_backend(x):
     # return jnp(x, dtype=torch.complex64, device="cuda")
     return jax.device_put(x)
@@ -264,7 +276,7 @@ def run_lucj_sqd_quimb_task(
     bootstrap_data_dir: Path | None = None,
     overwrite: bool = True,
     use_dice: bool = False,
-    run_sqd: bool = False
+    run_sqd: bool = False,
 ) -> LUCJQuimbTask:
     logging.info(f"{task} Starting...\n")
     os.makedirs(data_dir / task.dirpath, exist_ok=True)
@@ -281,9 +293,7 @@ def run_lucj_sqd_quimb_task(
     ):
         logger.info(f"Data for {task} already exists. Skipping...\n")
         return task
-    intermediate_result_filename = (
-        data_dir / task.dirpath / "intermediate_data.pickle"
-    )
+    intermediate_result_filename = data_dir / task.dirpath / "intermediate_data.pickle"
 
     # Get molecular data and molecular Hamiltonian
     molecule_basename = task.molecule_basename
@@ -293,7 +303,7 @@ def run_lucj_sqd_quimb_task(
         molecule_basename,
         molecules_catalog_dir=molecules_catalog_dir,
     )
-    
+
     norb = mol_data.norb
     nelec = mol_data.nelec
     mol_ham = mol_data.hamiltonian
@@ -310,7 +320,9 @@ def run_lucj_sqd_quimb_task(
 
     rng = np.random.default_rng(task.seed)
 
-    if overwrite or (not os.path.exists(result_filename) and not os.path.exists(info_filename)):
+    if overwrite or (
+        not os.path.exists(result_filename) and not os.path.exists(info_filename)
+    ):
         # Generate initial parameters
         if bootstrap_task is None:
             # use CCSD to initialize parameters
@@ -319,7 +331,9 @@ def run_lucj_sqd_quimb_task(
                 operator, _, _ = from_t_amplitudes_compressed(
                     mol_data.ccsd_t2,
                     n_reps=task.lucj_params.n_reps,
-                    t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
+                    t1=mol_data.ccsd_t1
+                    if task.lucj_params.with_final_orbital_rotation
+                    else None,
                     interaction_pairs=(pairs_aa, pairs_ab),
                     optimize=True,
                 )
@@ -351,7 +365,7 @@ def run_lucj_sqd_quimb_task(
                 )
 
         # Optimize ansatz
-        
+
         # half_hf_state = "0" * (norb - nelectron // 2) + "1" * (nelectron // 2)
         # hf_state = half_hf_state + half_hf_state
         important_amp_bitstr.sort(reverse=True)
@@ -391,12 +405,10 @@ def run_lucj_sqd_quimb_task(
                 tree = psi_b.contraction_tree(output_inds=(), optimize="auto-hq")
 
                 # perform the full contraction with the tree found
-                amp_cir = psi_b.contract(
-                    all, output_inds=(), optimize=tree
-                )
+                amp_cir = psi_b.contract(all, output_inds=(), optimize=tree)
                 # print(amp_cir)
                 # print(amp)
-                loss += (np.abs(np.abs(amp_cir) - amp))
+                loss += np.abs(np.abs(amp_cir) - amp)
             print(loss)
             return autoray.do("real", loss)
             # info["x"].append(intermediate_result.x)
@@ -407,6 +419,7 @@ def run_lucj_sqd_quimb_task(
             # if info["nit"] > 3:
             #     if (abs(info["fun"][-1] - info["fun"][-2]) < 1e-5) and (abs(info["fun"][-2] - info["fun"][-3]) < 1e-5):
             #         raise StopIteration("Objective function value does not decrease for two iterations.")
+
         logger.info(f"{task} Optimizing ansatz...\n")
         t0 = timeit.default_timer()
         info = defaultdict(list)
@@ -427,7 +440,7 @@ def run_lucj_sqd_quimb_task(
         #     maxiter=task.lbfgsb_params.maxiter
         #     # workers=2,
         # )
-        # print(f"init loss: {loss_mps_bitstr(quimb_circuit)}") # 107.377410381147 
+        # print(f"init loss: {loss_mps_bitstr(quimb_circuit)}") # 107.377410381147
         # tnopt = quimb.tensor.TNOptimizer(
         #     quimb_circuit,
         #     loss_mps_bitstr,
@@ -448,24 +461,21 @@ def run_lucj_sqd_quimb_task(
         #         autodiff_backend='jax',                     # use 'autograd' for non-compiled optimization
         #         optimizer='L-BFGS-B',                       # the optimization algorithm
         #     )
-        
 
         # run aqc tensor
         aqc_ansatz, aqc_initial_parameters = generate_ansatz_from_circuit(
-                decomposed, qubits_initially_zero=True
+            decomposed, qubits_initially_zero=True
         )
 
         simulator_settings = QuimbSimulator(
-           partial(
-               quimb.tensor.CircuitMPS,
-               cutoff=1e-8,
-           ),
-           autodiff_backend="auto",
-       )
-                
-        objective = MaximizeStateFidelity(
-            quimb_circuit, aqc_ansatz, simulator_settings
+            partial(
+                quimb.tensor.CircuitMPS,
+                cutoff=1e-8,
+            ),
+            autodiff_backend="auto",
         )
+
+        objective = MaximizeStateFidelity(quimb_circuit, aqc_ansatz, simulator_settings)
 
         def callback(intermediate_result: scipy.optimize.OptimizeResult):
             logger.info(f"Task {task} is on iteration {info['nit']}.\n")
@@ -476,9 +486,13 @@ def run_lucj_sqd_quimb_task(
             with open(intermediate_result_filename, "wb") as f:
                 pickle.dump(intermediate_result, f)
             if info["nit"] > 3:
-                if (abs(info["fun"][-1] - info["fun"][-2]) < 1e-5) and (abs(info["fun"][-2] - info["fun"][-3]) < 1e-5):
-                    raise StopIteration("Objective function value does not decrease for two iterations.")
-      
+                if (abs(info["fun"][-1] - info["fun"][-2]) < 1e-5) and (
+                    abs(info["fun"][-2] - info["fun"][-3]) < 1e-5
+                ):
+                    raise StopIteration(
+                        "Objective function value does not decrease for two iterations."
+                    )
+
         result = scipy.optimize.minimize(
             objective,
             aqc_initial_parameters,
@@ -487,7 +501,7 @@ def run_lucj_sqd_quimb_task(
             options={"maxiter": 100},
             callback=callback,
         )
-        
+
         logger.info(f"{task} Saving data...\n")
         with open(result_filename, "wb") as f:
             pickle.dump(result, f)
@@ -508,7 +522,9 @@ def run_lucj_sqd_quimb_task(
             with_final_orbital_rotation=task.lucj_params.with_final_orbital_rotation,
         )
         reference_state = ffsim.hartree_fock_state(norb, nelec)
-        final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
+        final_state = ffsim.apply_unitary(
+            reference_state, operator, norb=norb, nelec=nelec
+        )
         with open(state_vector_filename, "wb") as f:
             np.save(f, final_state)
     else:
@@ -528,7 +544,6 @@ def run_lucj_sqd_quimb_task(
     bit_array_count = bit_array.get_int_counts()
     with open(sample_filename, "wb") as f:
         pickle.dump(bit_array_count, f)
-
 
     # Run SQD
     if run_sqd:
@@ -644,20 +659,19 @@ lucj_quimb_task = LUCJQuimbTask(
     molecule_basename=molecule_basename,
     bond_distance=bond_distance,
     lucj_params=LUCJParams(
-            connectivity="heavy-hex",
-            n_reps=1,
-            with_final_orbital_rotation=True,
-        ),
+        connectivity="heavy-hex",
+        n_reps=1,
+        with_final_orbital_rotation=True,
+    ),
     compressed_t2_params=CompressedT2Params(
-        multi_stage_optimization=True,
-        begin_reps=20,
-        step=2
+        multi_stage_optimization=True, begin_reps=20, step=2
     ),
     regularization=False,
-    connectivity_opt = False,
+    connectivity_opt=False,
     lbfgsb_params=LBFGSBParams(maxiter=100),
-    regularization_option = 0,
-    seed=0)
+    regularization_option=0,
+    seed=0,
+)
 
 run_lucj_sqd_quimb_task(
     lucj_quimb_task,

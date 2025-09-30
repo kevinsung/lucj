@@ -35,7 +35,7 @@ logging.basicConfig(
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = DATA_ROOT 
+DATA_DIR = DATA_ROOT
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 1
 OVERWRITE = False
@@ -69,9 +69,7 @@ compressed_tasks = [
             with_final_orbital_rotation=True,
         ),
         compressed_t2_params=CompressedT2Params(
-            multi_stage_optimization=True,
-            begin_reps=20,
-            step=2
+            multi_stage_optimization=True, begin_reps=20, step=2
         ),
         n_hardware_run=n_hardware_run,
         shots=shots,
@@ -101,7 +99,7 @@ random_tasks = [
             with_final_orbital_rotation=True,
         ),
         compressed_t2_params=None,
-        random_op =True,
+        random_op=True,
         n_hardware_run=n_hardware_run,
         shots=shots,
         samples_per_batch=samples_per_batch,
@@ -130,7 +128,7 @@ truncated_tasks = [
             with_final_orbital_rotation=True,
         ),
         compressed_t2_params=None,
-        random_op =False,
+        random_op=False,
         n_hardware_run=n_hardware_run,
         shots=shots,
         samples_per_batch=samples_per_batch,
@@ -150,7 +148,9 @@ truncated_tasks = [
 ]
 
 if MAX_PROCESSES == 1:
-    for random_task, truncated_task, compressed_task in tqdm(zip(random_tasks, truncated_tasks, compressed_tasks)):
+    for random_task, truncated_task, compressed_task in tqdm(
+        zip(random_tasks, truncated_tasks, compressed_tasks)
+    ):
         run_hardware_sqd_energy_batch_task(
             random_task,
             truncated_task,
@@ -163,7 +163,9 @@ if MAX_PROCESSES == 1:
 else:
     with tqdm(total=len(random_tasks)) as progress:
         with ProcessPoolExecutor(MAX_PROCESSES) as executor:
-            for random_task, truncated_task, compressed_task in zip(random_tasks, truncated_tasks, compressed_tasks):
+            for random_task, truncated_task, compressed_task in zip(
+                random_tasks, truncated_tasks, compressed_tasks
+            ):
                 future = executor.submit(
                     run_hardware_sqd_energy_batch_task(
                         random_task,

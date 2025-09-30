@@ -35,7 +35,7 @@ logging.basicConfig(
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = DATA_ROOT 
+DATA_DIR = DATA_ROOT
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 8
 OVERWRITE = True
@@ -77,9 +77,7 @@ tasks = [
             with_final_orbital_rotation=True,
         ),
         compressed_t2_params=CompressedT2Params(
-            multi_stage_optimization=True,
-            begin_reps=20,
-            step=2
+            multi_stage_optimization=True, begin_reps=20, step=2
         ),
         shots=shots,
         samples_per_batch=samples_per_batch,
@@ -99,11 +97,11 @@ tasks = [
 ]
 
 run_hardware_sqd_energy_task(
-            tasks[0],
-            data_dir=DATA_DIR,
-            molecules_catalog_dir=MOLECULES_CATALOG_DIR,
-            overwrite=OVERWRITE,
-        )
+    tasks[0],
+    data_dir=DATA_DIR,
+    molecules_catalog_dir=MOLECULES_CATALOG_DIR,
+    overwrite=OVERWRITE,
+)
 
 # if MAX_PROCESSES == 1:
 #     for task in tqdm(tasks):

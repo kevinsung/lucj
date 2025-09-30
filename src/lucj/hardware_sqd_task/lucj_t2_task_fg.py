@@ -249,7 +249,7 @@ def run_hardware_sqd_energy_batch_task(
     rng = np.random.default_rng(list_tasks[0].entropy)
 
     if not os.path.exists(list_sample_filenames[0]):
-    # if True:
+        # if True:
         # assert 0
         list_operator = load_operator(compressed_task, data_dir, mol_data)
         # print(list_operator)
@@ -293,7 +293,7 @@ def run_hardware_sqd_energy_batch_task(
                 ],
                 dynamic_decoupling=list_tasks[0].dynamic_decoupling,
             )
-            assert(len(list_samples_per_run) == 3)
+            assert len(list_samples_per_run) == 3
             begin_file_idx = end_file_idx
             end_file_idx += step
             for j in range(len(list_samples_per_run)):
@@ -316,8 +316,8 @@ def run_hardware_sqd_energy_batch_task(
 
     for samples, task, data_filename in zip(
         list_samples, list_tasks, list_data_filenames
-    ):  
-        if os.path.exists(data_filename): 
+    ):
+        if os.path.exists(data_filename):
             continue
         for i, sample in enumerate(samples):
             # Convert BitArray into bitstring and probability arrays
@@ -428,7 +428,7 @@ def run_hardware_sqd_energy_batch_task(
             "spin_squared": spin_squared,
             "sci_vec_shape": sci_state.amplitudes.shape,
             "valid_bit_string": bitstrings.shape[0],
-            "unique_valid_bitstr": len(unique_valid_bitstr)
+            "unique_valid_bitstr": len(unique_valid_bitstr),
         }
 
         logging.info(f"{task} Saving SQD data...\n")

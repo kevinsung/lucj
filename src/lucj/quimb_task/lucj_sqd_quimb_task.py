@@ -244,7 +244,7 @@ def run_lucj_sqd_quimb_task(
         and os.path.exists(result_filename)
         and os.path.exists(info_filename)
         and os.path.exists(sqd_result_filename)
-    ):  
+    ):
         logger.info(f"Data for {task} already exists. Skipping...\n")
         return task
     intermediate_result_filename = data_dir / task.dirpath / "intermediate_data.pickle"
@@ -271,11 +271,13 @@ def run_lucj_sqd_quimb_task(
         solve = False
         while not solve:
             try:
-                solve_sci_batch(ci_strings, one_body_tensor, two_body_tensor, norb, nelec)
+                solve_sci_batch(
+                    ci_strings, one_body_tensor, two_body_tensor, norb, nelec
+                )
                 solve = True
             except DiceExecutionError:
                 logging.info(f"{task} Dice execution error\n")
-                
+
     def fun(x: np.ndarray) -> float:
         operator = ffsim.UCJOpSpinBalanced.from_parameters(
             x,
@@ -302,8 +304,10 @@ def run_lucj_sqd_quimb_task(
             progbar=True,
             # to_backend=to_backend,
         )
-        logger.info(f"{task}\n\tConstruct MPS with error {quimb_circ.error_estimate():.5f}...")
-        
+        logger.info(
+            f"{task}\n\tConstruct MPS with error {quimb_circ.error_estimate():.5f}..."
+        )
+
         # assert(0)
         logger.info(f"{task}\n\tSampling circuit...")
         t0 = timeit.default_timer()
@@ -343,10 +347,9 @@ def run_lucj_sqd_quimb_task(
             carryover_threshold=task.carryover_threshold,
             seed=rng,
             max_dim=task.max_dim,
-            callback=sqd_callback
+            callback=sqd_callback,
         )
         return result.energy + mol_data.core_energy
-                
 
     if not os.path.exists(result_filename) and not os.path.exists(info_filename):
         # Generate initial parameters

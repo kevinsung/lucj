@@ -157,8 +157,8 @@ for i, (d, connectivity) in enumerate(
             diag_coulomb_mats_reference[:n_reps],
             orbital_rotations_reference[:n_reps],
             mol_data.ccsd_t2,
-            pairs_aa, 
-            pairs_ab
+            pairs_aa,
+            pairs_ab,
         )
         list_loss_truncation.append(t2_loss)
 
@@ -178,14 +178,14 @@ for i, (d, connectivity) in enumerate(
 
         operator_filename = DATA_DIR / task_compressed_t2.dirpath / "operator.npz"
         operator = np.load(operator_filename)
-        diag_coulomb_mats_compressed_t2 = operator["diag_coulomb_mats"] 
+        diag_coulomb_mats_compressed_t2 = operator["diag_coulomb_mats"]
         orbital_rotations_compressed_t2 = operator["orbital_rotations"]
         t2_loss = loss(
             diag_coulomb_mats_compressed_t2,
             orbital_rotations_compressed_t2,
             mol_data.ccsd_t2,
-            pairs_aa, 
-            pairs_ab
+            pairs_aa,
+            pairs_ab,
         )
         list_loss_compression.append(t2_loss)
 
@@ -220,8 +220,8 @@ for i, (d, connectivity) in enumerate(
             diag_coulomb_mats_compressed_t2_reg,
             orbital_rotations_compressed_t2_reg,
             mol_data.ccsd_t2,
-            pairs_aa, 
-            pairs_ab
+            pairs_aa,
+            pairs_ab,
         )
         list_loss_compression_reg.append(t2_loss)
 
@@ -395,7 +395,7 @@ for i, (d, connectivity) in enumerate(
         label="LUCJ truncated",
         color=colors["lucj_truncated"],
     )
-    
+
     axes[3, i].plot(
         n_reps_range,
         list_loss_compression,
@@ -412,9 +412,10 @@ for i, (d, connectivity) in enumerate(
         color=colors["lucj_compressed_quimb2"],
     )
 
-
     # axes[0, i].set_title(f"R={d} Å")
-    axes[0, i].set_title(f"R={d} Å, {connectivity} \n diag coulomb, norm", fontsize="small", loc="left")
+    axes[0, i].set_title(
+        f"R={d} Å, {connectivity} \n diag coulomb, norm", fontsize="small", loc="left"
+    )
     axes[0, i].set_xlabel("Repetitions")
     axes[0, i].set_xticks(n_reps_range)
     axes[0, i].set_ylim(0, 15)
@@ -434,14 +435,12 @@ for i, (d, connectivity) in enumerate(
     axes[3, i].set_xticks(n_reps_range)
     # axes[3, i].set_ylim(0, 2)
 
-
     # axes[row_sci_vec_dim, 0].legend(ncol=2, )
     leg = axes[3, 0].legend(bbox_to_anchor=(0.44, -0.4), loc="upper left", ncol=3)
     leg.set_in_layout(False)
     plt.tight_layout()
     # plt.subplots_adjust(top=0.9,left=0.06,bottom=0.15)
     plt.subplots_adjust(bottom=0.1, top=0.9)
-
 
     fig.suptitle(f"Operator norm: N$_2$/6-31G ({nelectron}e, {norb}o)")
 filepath = os.path.join(

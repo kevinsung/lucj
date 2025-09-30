@@ -35,7 +35,7 @@ logging.basicConfig(
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = DATA_ROOT 
+DATA_DIR = DATA_ROOT
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 80
 OVERWRITE = False
@@ -64,7 +64,7 @@ entropy = 0
 max_dim = 4000
 samples_per_batch = max_dim
 
-n_reps_range = list(range(1, 10, 1)) + list(range(10, 110, 10)) 
+n_reps_range = list(range(1, 10, 1)) + list(range(10, 110, 10))
 # n_reps_range = list(range(1, 11, 1)) + [None]
 
 

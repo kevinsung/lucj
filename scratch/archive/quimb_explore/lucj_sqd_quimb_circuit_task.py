@@ -271,7 +271,7 @@ def run_lucj_sqd_quimb_task(
         # Sample using quimb
         logger.info(f"{task}\n\tSampling circuit...")
         t0 = timeit.default_timer()
-        samples = list(quimb_circ.sample(task.shots, seed=task.seed, backend='jax'))
+        samples = list(quimb_circ.sample(task.shots, seed=task.seed, backend="jax"))
         t1 = timeit.default_timer()
         time = t1 - t0
         logger.info(f"{task}\n\tDone sampling circuit in {time} seconds.")

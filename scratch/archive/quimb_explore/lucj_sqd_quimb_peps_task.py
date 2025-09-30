@@ -303,7 +303,9 @@ def run_lucj_sqd_quimb_task(
         samples = []
         for _ in range(task.shots):
             # config, tn_config, omega = quimb.tensor.belief_propagation.sample_d2bp(peps, seed=task.seed, progbar=False)
-            config, tn_config, omega = quimb.tensor.belief_propagation.sample_hd1bp(peps, seed=task.seed, progbar=False)
+            config, tn_config, omega = quimb.tensor.belief_propagation.sample_hd1bp(
+                peps, seed=task.seed, progbar=False
+            )
             # config, omega = peps.sample_configuration_cluster(
             #     gauges=gauges,
             #     seed=task.seed,

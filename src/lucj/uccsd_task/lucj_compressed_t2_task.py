@@ -19,7 +19,9 @@ import scipy.stats
 from molecules_catalog.util import load_molecular_data
 from lucj.params import LUCJParams, CompressedT2Params
 from opt_einsum import contract
+
 logger = logging.getLogger(__name__)
+
 
 @dataclass(frozen=True, kw_only=True)
 class UCCSDCompressedTask:
@@ -29,14 +31,16 @@ class UCCSDCompressedTask:
     compressed_t2_params: CompressedT2Params
     connectivity_opt: bool = False
     random_op: bool = False
-    regularization: bool = False,
-    regularization_option: int = 0,
+    regularization: bool = (False,)
+    regularization_option: int = (0,)
 
     @property
     def dirpath(self) -> Path:
         compress_option = self.compressed_t2_params.dirpath
         if self.regularization:
-            compress_option = f"{compress_option}/regularization_{self.regularization_option}"
+            compress_option = (
+                f"{compress_option}/regularization_{self.regularization_option}"
+            )
         return (
             Path(self.molecule_basename)
             / (
@@ -62,20 +66,20 @@ def load_operator(task: UCCSDCompressedTask, data_dir: str, mol_data):
     diag_coulomb_mats = np.unstack(diag_coulomb_mats, axis=1)[0]
     nocc, _, nvrt, _ = mol_data.ccsd_t2.shape
     t2_reconstructed = (
-                1j
-                * contract(
-                    "mpq,map,mip,mbq,mjq->ijab",
-                    diag_coulomb_mats,
-                    orbital_rotations,
-                    orbital_rotations.conj(),
-                    orbital_rotations,
-                    orbital_rotations.conj(),
-                    # optimize="greedy"
-                )[:nocc, :nocc, nocc:, nocc:]
-            )
+        1j
+        * contract(
+            "mpq,map,mip,mbq,mjq->ijab",
+            diag_coulomb_mats,
+            orbital_rotations,
+            orbital_rotations.conj(),
+            orbital_rotations,
+            orbital_rotations.conj(),
+            # optimize="greedy"
+        )[:nocc, :nocc, nocc:, nocc:]
+    )
     operator = ffsim.UCCSDOpRestricted(t1=mol_data.ccsd_t1, t2=t2_reconstructed)
     return operator
-    
+
 
 def run_vqe_energy_task(
     task: UCCSDCompressedTask,
@@ -91,7 +95,6 @@ def run_vqe_energy_task(
     if (not overwrite) and os.path.exists(data_filename):
         logging.info(f"Data for {task} already exists. Skipping...\n")
         return task
-    
 
     # Get molecular data and molecular Hamiltonian
     if task.molecule_basename == "fe2s2_30e20o":
@@ -114,7 +117,7 @@ def run_vqe_energy_task(
 
     # use CCSD to initialize parameters
     state_vector_filename = data_dir / task.dirpath / "state_vector_uccsd.npy"
-    
+
     if os.path.exists(state_vector_filename):
         with open(state_vector_filename, "rb") as f:
             final_state = np.load(f)
@@ -122,13 +125,15 @@ def run_vqe_energy_task(
         operator = load_operator(task, data_dir, mol_data)
         if operator is None:
             return
-        
+
         # Compute final state
         if not os.path.exists(state_vector_filename):
-            final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
+            final_state = ffsim.apply_unitary(
+                reference_state, operator, norb=norb, nelec=nelec
+            )
             with open(state_vector_filename, "wb") as f:
                 np.save(f, final_state)
-    
+
     # record vqe energy
     logging.info(f"{task} Computing VQE data...\n")
     energy = np.vdot(final_state, hamiltonian @ final_state).real
@@ -152,8 +157,3 @@ def run_vqe_energy_task(
     logging.info(f"{task} Saving VQE data...\n")
     with open(data_filename, "wb") as f:
         pickle.dump(data, f)
-
-
-
-
-

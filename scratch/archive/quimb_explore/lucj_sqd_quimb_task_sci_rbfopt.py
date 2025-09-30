@@ -320,7 +320,9 @@ def run_lucj_sqd_quimb_task(
         f = result.energy + mol_data.core_energy
         return f
 
-    if overwrite or (not os.path.exists(result_filename) and not os.path.exists(info_filename)):
+    if overwrite or (
+        not os.path.exists(result_filename) and not os.path.exists(info_filename)
+    ):
         # Generate initial parameters
         if bootstrap_task is None:
             # use CCSD to initialize parameters
@@ -379,10 +381,17 @@ def run_lucj_sqd_quimb_task(
 
         t0 = timeit.default_timer()
         print(params.shape)
-        bb = rbfopt.RbfoptUserBlackBox(len(params), np.array([-2] * len(params)), np.array([2] * len(params)),
-                               np.array(['R'] * len(params)), fun)
+        bb = rbfopt.RbfoptUserBlackBox(
+            len(params),
+            np.array([-2] * len(params)),
+            np.array([2] * len(params)),
+            np.array(["R"] * len(params)),
+            fun,
+        )
         settings = rbfopt.RbfoptSettings(max_evaluations=500)
-        alg = rbfopt.RbfoptAlgorithm(settings, bb, init_node_pos = np.reshape(params, (1, -1)))
+        alg = rbfopt.RbfoptAlgorithm(
+            settings, bb, init_node_pos=np.reshape(params, (1, -1))
+        )
         val, x, itercount, evalcount, fast_evalcount = alg.optimize()
 
         result = {

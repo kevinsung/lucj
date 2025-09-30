@@ -20,7 +20,11 @@ from molecules_catalog.util import load_molecular_data
 from ffsim.variational.util import interaction_pairs_spin_balanced
 from lucj.params import LUCJParams, CompressedT2Params
 
-from qiskit_addon_sqd.fermion import diagonalize_fermionic_hamiltonian, SCIResult, solve_sci_batch
+from qiskit_addon_sqd.fermion import (
+    diagonalize_fermionic_hamiltonian,
+    SCIResult,
+    solve_sci_batch,
+)
 from qiskit_addon_sqd.counts import bit_array_to_arrays, bitstring_matrix_to_integers
 from qiskit_addon_sqd.subsampling import postselect_by_hamming_right_and_left
 from qiskit.primitives import BitArray
@@ -221,7 +225,7 @@ def run_hardware_sqd_energy_batch_task(
     list_data_filenames = []
     for task in list_tasks:
         list_data_filenames.append(data_dir / task.dirpath / "hardware_sqd_data.pickle")
-    
+
     if (
         (not overwrite)
         and os.path.exists(list_data_filenames[0])
@@ -229,14 +233,14 @@ def run_hardware_sqd_energy_batch_task(
         and os.path.exists(list_data_filenames[2])
     ):
         logging.info("Data for tasks already exists. Skipping...\n")
-        return 
-    
+        return
+
     rng = np.random.default_rng(list_tasks[0].entropy)
 
     if not os.path.exists(list_sample_filenames[0]):
-    # if True:
+        # if True:
         list_operator = load_operator(compressed_task, data_dir, mol_data)
-        # assert 0 
+        # assert 0
         if list_operator is None:
             return
         # construct lucj circuit
@@ -256,7 +260,7 @@ def run_hardware_sqd_energy_batch_task(
             list_sample_filenames=list_sample_filenames,
             dynamic_decoupling=list_tasks[0].dynamic_decoupling,
         )
-        assert(len(list_samples) == 3)
+        assert len(list_samples) == 3
         logging.info(f"{list_tasks[0]} Finish sample\n")
         logging.info(f"{list_tasks[1]} Finish sample\n")
         logging.info(f"{list_tasks[2]} Finish sample\n")
@@ -349,7 +353,7 @@ def run_hardware_sqd_energy_batch_task(
             "spin_squared": spin_squared,
             "sci_vec_shape": sci_state.amplitudes.shape,
             "valid_bit_string": bitstrings.shape[0],
-            "unique_valid_bitstr": len(unique_valid_bitstr)
+            "unique_valid_bitstr": len(unique_valid_bitstr),
         }
 
         logging.info(f"{task} Saving SQD data...\n")

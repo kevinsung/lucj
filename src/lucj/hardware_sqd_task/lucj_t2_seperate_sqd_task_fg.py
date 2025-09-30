@@ -228,7 +228,7 @@ def run_hardware_sqd_energy_batch_task(
     list_data_filenames = []
     for task in list_tasks:
         list_data_filenames.append(data_dir / task.dirpath / "hardware_sqd_data.pickle")
-    
+
     if (
         (not overwrite)
         and os.path.exists(list_data_filenames[0])
@@ -263,7 +263,7 @@ def run_hardware_sqd_energy_batch_task(
             list_sample_filenames=list_sample_filenames,
             dynamic_decoupling=list_tasks[0].dynamic_decoupling,
         )
-        assert(len(list_samples) == 3)
+        assert len(list_samples) == 3
         logging.info(f"{list_tasks[0]} Finish sample\n")
         logging.info(f"{list_tasks[1]} Finish sample\n")
         logging.info(f"{list_tasks[2]} Finish sample\n")
@@ -357,7 +357,7 @@ def run_hardware_sqd_energy_batch_task(
             "spin_squared": spin_squared,
             "sci_vec_shape": sci_state.amplitudes.shape,
             "valid_bit_string": bitstrings.shape[0],
-            "unique_valid_bitstr": len(unique_valid_bitstr)
+            "unique_valid_bitstr": len(unique_valid_bitstr),
         }
 
         logging.info(f"{task} Saving SQD data...\n")

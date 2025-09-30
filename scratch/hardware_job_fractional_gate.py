@@ -19,6 +19,7 @@ import os
 
 from molecules_catalog.util import load_molecular_data
 
+
 def constrcut_lucj_circuit(norb, nelec, operator):
     qubits = QuantumRegister(2 * norb)
     circuit = QuantumCircuit(qubits)
@@ -79,7 +80,7 @@ def run_on_hardware(
     # job = sampler.run(list_isa_circuit, shots=shots)
 
     # job = service.job('d2o7g4b7d31s73acuph0') # ibm pit fe2s2 fg
-    job = service.job('d2o7fek94j0s73a2hljg') # ibm pit fe2s2 
+    job = service.job("d2o7fek94j0s73a2hljg")  # ibm pit fe2s2
     # job = service.job('d2nk4dm97thc73au3e50')
     # job = service.job('d2nh1ssg59ks73c7eva0')
     # job = service.job('d2ngvlfa6cjs73fcpom0')
@@ -89,16 +90,18 @@ def run_on_hardware(
     primitive_result = job.result()
 
     os.makedirs(sample_folder, exist_ok=True)
-    list_sample_filenames = [f"{sample_folder}/sample_{i}.pickle " for i in range(n_runs)]
+    list_sample_filenames = [
+        f"{sample_folder}/sample_{i}.pickle " for i in range(n_runs)
+    ]
 
     for pub_result, sample_filename in zip(primitive_result, list_sample_filenames):
         meas_circuit.append(pub_result.data.meas)
         # with open(sample_filename, "wb") as f:
         #     pickle.dump(pub_result.data.meas, f)
         # print(f"save file to {sample_filename}")
-            
 
     return meas_circuit
+
 
 nelectron, norb = 10, 26
 nelec = (nelectron, nelectron)
@@ -126,9 +129,9 @@ basis = "cc-pvdz"
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 bond_distance = 1.2
 mol_data = load_molecular_data(
-        f"{molecule_basename}_d-{bond_distance:.5f}",
-        molecules_catalog_dir="/home/WanHsuan.Lin/molecules-catalog",
-    )
+    f"{molecule_basename}_d-{bond_distance:.5f}",
+    molecules_catalog_dir="/home/WanHsuan.Lin/molecules-catalog",
+)
 
 for i, samples in enumerate(list_samples):
     # if i == 0:
@@ -149,10 +152,12 @@ for i, samples in enumerate(list_samples):
     unique_valid_bitstr, _ = np.unique(
         bitstring_matrix_to_integers(bitstrings), return_counts=True
     )
-    print(f"Job {i} - #Total valid bitstr: {bitstrings.shape}, #total unique bitstr: {len(unique_valid_bitstr)}\n")
+    print(
+        f"Job {i} - #Total valid bitstr: {bitstrings.shape}, #total unique bitstr: {len(unique_valid_bitstr)}\n"
+    )
 
     rng = np.random.default_rng(0)
-    
+
     # def callback(results: list[SCIResult]):
     #     for i, result in enumerate(results):
     #         print(f"\tSubsample {i}")
@@ -160,7 +165,7 @@ for i, samples in enumerate(list_samples):
     #         print(
     #             f"\t\tSubspace dimension: {np.prod(result.sci_state.amplitudes.shape)}"
     #         )
-            
+
     # result = diagonalize_fermionic_hamiltonian(
     #         mol_data.hamiltonian.one_body_tensor,
     #         mol_data.hamiltonian.two_body_tensor,
@@ -176,5 +181,3 @@ for i, samples in enumerate(list_samples):
     #         callback=callback,
     #         max_dim=4000,
     #     )
-
-

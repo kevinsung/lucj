@@ -51,7 +51,9 @@ class LUCJCompressedT2Task:
                 compress_option = f"{compress_option}/fixparam"
             if self.regularization:
                 if self.regularization_factor is None:
-                    compress_option = f"{compress_option}/regularization_{self.regularization_option}"
+                    compress_option = (
+                        f"{compress_option}/regularization_{self.regularization_option}"
+                    )
                 else:
                     compress_option = f"{compress_option}/regularization_{self.regularization_option}_{self.regularization_factor:.6f}"
             if self.use_adam:
@@ -80,18 +82,18 @@ def run_lucj_compressed_t2_task(
     overwrite: bool = True,
 ) -> LUCJCompressedT2Task:
     logging.info(f"{task} Starting...\n")
-    os.makedirs(data_dir / task.dirpath , exist_ok=True)
+    os.makedirs(data_dir / task.dirpath, exist_ok=True)
 
     operator_filename = data_dir / task.dirpath / "operator.npz"
-    if (
-        (not overwrite)
-        and os.path.exists(operator_filename)
-    ):
+    if (not overwrite) and os.path.exists(operator_filename):
         logging.info(f"Data for {task} already exists. Skipping...\n")
         return task
 
     # Get molecular data and molecular Hamiltonian
-    if task.molecule_basename == "fe2s2_30e20o" or task.molecule_basename == "fe4s4_54e36o":
+    if (
+        task.molecule_basename == "fe2s2_30e20o"
+        or task.molecule_basename == "fe4s4_54e36o"
+    ):
         mol_data = load_molecular_data(
             task.molecule_basename,
             molecules_catalog_dir=molecules_catalog_dir,
@@ -127,16 +129,17 @@ def run_lucj_compressed_t2_task(
     logging.info(f"{task} Run optimization...\n")
     if task.random_op:
         operator = ffsim.random.random_ucj_op_spin_balanced(
-        norb,
-        n_reps=task.lucj_params.n_reps,
-        interaction_pairs=(pairs_aa, pairs_ab),
-        with_final_orbital_rotation=True
-    )
+            norb,
+            n_reps=task.lucj_params.n_reps,
+            interaction_pairs=(pairs_aa, pairs_ab),
+            with_final_orbital_rotation=True,
+        )
     else:
         if task.connectivity_opt:
             from lucj.operator_task.lucj_compressed_t2_task_ffsim.compressed_t2_connectivity import (
                 from_t_amplitudes_compressed,
             )
+
             operator, init_loss, final_loss = from_t_amplitudes_compressed(
                 t2,
                 n_reps=task.lucj_params.n_reps,
@@ -148,6 +151,7 @@ def run_lucj_compressed_t2_task(
             from lucj.operator_task.lucj_compressed_t2_task_ffsim.compressed_t2_fixparam import (
                 from_t_amplitudes_compressed,
             )
+
             operator, init_loss, final_loss = from_t_amplitudes_compressed(
                 t2,
                 n_reps=task.lucj_params.n_reps,
@@ -165,6 +169,7 @@ def run_lucj_compressed_t2_task(
             from lucj.operator_task.lucj_compressed_t2_task_ffsim.compressed_t2 import (
                 from_t_amplitudes_compressed,
             )
+
             if task.compressed_t2_params is not None:
                 operator, init_loss, final_loss = from_t_amplitudes_compressed(
                     t2,
@@ -178,7 +183,7 @@ def run_lucj_compressed_t2_task(
                     regularization_factor=task.regularization_factor,
                     step=task.compressed_t2_params.step,
                     begin_reps=task.compressed_t2_params.begin_reps,
-                    use_adam=task.use_adam
+                    use_adam=task.use_adam,
                 )
             else:
                 operator, init_loss, final_loss = from_t_amplitudes_compressed(
@@ -187,7 +192,7 @@ def run_lucj_compressed_t2_task(
                     t1=t1 if task.lucj_params.with_final_orbital_rotation else None,
                     interaction_pairs=(pairs_aa, pairs_ab),
                     optimize=False,
-                    use_adam=task.use_adam
+                    use_adam=task.use_adam,
                 )
         data_filename = data_dir / task.dirpath / "opt_data.pickle"
         data = {"init_loss": init_loss, "final_loss": final_loss}
@@ -202,5 +207,3 @@ def run_lucj_compressed_t2_task(
         diag_coulomb_mats=operator.diag_coulomb_mats,
         orbital_rotations=operator.orbital_rotations,
     )
-
-    

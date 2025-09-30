@@ -25,8 +25,14 @@ from ffsim.variational.util import interaction_pairs_spin_balanced
 from ffsim.linalg.util import unitaries_to_parameters
 from molecules_catalog.util import load_molecular_data
 from qiskit.primitives import BitArray
-from qiskit_addon_sqd.fermion import SCIResult, diagonalize_fermionic_hamiltonian, solve_sci_batch
-from lucj.operator_task.lucj_compressed_t2_task_ffsim.compressed_t2 import from_t_amplitudes_compressed
+from qiskit_addon_sqd.fermion import (
+    SCIResult,
+    diagonalize_fermionic_hamiltonian,
+    solve_sci_batch,
+)
+from lucj.operator_task.lucj_compressed_t2_task_ffsim.compressed_t2 import (
+    from_t_amplitudes_compressed,
+)
 from lucj.params import COBYQAParams, LUCJParams, CompressedT2Params
 from qiskit.circuit import QuantumCircuit, QuantumRegister
 import quimb.tensor
@@ -47,8 +53,8 @@ class LUCJSQDQuimbTask:
     compressed_t2_params: CompressedT2Params | None
     connectivity_opt: bool = False
     random_op: bool = False
-    regularization: bool = False,
-    regularization_option: int = 0,
+    regularization: bool = (False,)
+    regularization_option: int = (0,)
     shots: int
     samples_per_batch: int
     n_batches: int
@@ -73,7 +79,9 @@ class LUCJSQDQuimbTask:
         elif self.compressed_t2_params is not None:
             compress_option = self.compressed_t2_params.dirpath
             if self.regularization:
-                compress_option = f"{compress_option}/regularization_{self.regularization_option}"
+                compress_option = (
+                    f"{compress_option}/regularization_{self.regularization_option}"
+                )
         else:
             compress_option = "truncated"
         return (
@@ -102,7 +110,7 @@ class LUCJSQDQuimbTask:
             / f"perm_mps-{self.perm_mps}"
             / f"seed-{self.seed}"
         )
-    
+
     @property
     def operatorpath(self) -> Path:
         if self.random_op:
@@ -112,7 +120,9 @@ class LUCJSQDQuimbTask:
         elif self.compressed_t2_params is not None:
             compress_option = self.compressed_t2_params.dirpath
             if self.regularization:
-                compress_option = f"{compress_option}/regularization_{self.regularization_option}"
+                compress_option = (
+                    f"{compress_option}/regularization_{self.regularization_option}"
+                )
         else:
             compress_option = "truncated"
         return (
@@ -138,7 +148,7 @@ def load_operator(task: LUCJSQDQuimbTask, data_dir: str, mol_data):
             norb,
             n_reps=task.lucj_params.n_reps,
             interaction_pairs=(pairs_aa, pairs_ab),
-            with_final_orbital_rotation=True
+            with_final_orbital_rotation=True,
         )
     elif task.connectivity_opt or task.compressed_t2_params is not None:
         operator_filename = data_dir / task.operatorpath / "operator.npz"
@@ -153,7 +163,9 @@ def load_operator(task: LUCJSQDQuimbTask, data_dir: str, mol_data):
         final_orbital_rotation = None
         if mol_data.ccsd_t1 is not None:
             final_orbital_rotation = (
-                ffsim.variational.util.orbital_rotation_from_t1_amplitudes(mol_data.ccsd_t1)
+                ffsim.variational.util.orbital_rotation_from_t1_amplitudes(
+                    mol_data.ccsd_t1
+                )
             )
         elif mol_data.ccsd_t2 is None:
             nelec = mol_data.nelec
@@ -192,15 +204,18 @@ def load_operator(task: LUCJSQDQuimbTask, data_dir: str, mol_data):
                 interaction_pairs=interaction_pairs_spin_balanced(
                     connectivity=task.lucj_params.connectivity, norb=norb
                 ),
-            ) 
+            )
         else:
             operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(
                 mol_data.ccsd_t2,
                 n_reps=task.lucj_params.n_reps,
-                t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
+                t1=mol_data.ccsd_t1
+                if task.lucj_params.with_final_orbital_rotation
+                else None,
                 interaction_pairs=(pairs_aa, pairs_ab),
             )
     return operator
+
 
 def to_backend(x):
     # return jnp(x, dtype=torch.complex64, device="cuda")
@@ -224,7 +239,7 @@ def run_lucj_sqd_quimb_task(
     state_vector_filename = data_dir / task.dirpath / "state_vector.npy"
     sample_filename = data_dir / task.dirpath / "sample.pickle"
     sqd_result_filename = data_dir / task.dirpath / "sqd_data.pickle"
-    
+
     if (
         (not overwrite)
         and os.path.exists(result_filename)
@@ -233,9 +248,7 @@ def run_lucj_sqd_quimb_task(
     ):
         logger.info(f"Data for {task} already exists. Skipping...\n")
         return task
-    intermediate_result_filename = (
-        data_dir / task.dirpath / "intermediate_data.pickle"
-    )
+    intermediate_result_filename = data_dir / task.dirpath / "intermediate_data.pickle"
 
     # Get molecular data and molecular Hamiltonian
     molecule_basename = task.molecule_basename
@@ -309,7 +322,7 @@ def run_lucj_sqd_quimb_task(
             symmetrize_spin=task.symmetrize_spin,
             carryover_threshold=task.carryover_threshold,
             seed=rng,
-            max_dim=task.max_dim
+            max_dim=task.max_dim,
         )
         return result.energy + mol_data.core_energy
 
@@ -322,7 +335,9 @@ def run_lucj_sqd_quimb_task(
                 operator, _, _ = from_t_amplitudes_compressed(
                     mol_data.ccsd_t2,
                     n_reps=task.lucj_params.n_reps,
-                    t1=mol_data.ccsd_t1 if task.lucj_params.with_final_orbital_rotation else None,
+                    t1=mol_data.ccsd_t1
+                    if task.lucj_params.with_final_orbital_rotation
+                    else None,
                     interaction_pairs=(pairs_aa, pairs_ab),
                     optimize=True,
                 )
@@ -368,7 +383,6 @@ def run_lucj_sqd_quimb_task(
             #     if (abs(info["fun"][-1] - info["fun"][-2]) < 1e-5) and (abs(info["fun"][-2] - info["fun"][-3]) < 1e-5):
             #         raise StopIteration("Objective function value does not decrease for two iterations.")
 
-
         t0 = timeit.default_timer()
         result = scipy.optimize.minimize(
             fun,
@@ -409,14 +423,16 @@ def run_lucj_sqd_quimb_task(
             with_final_orbital_rotation=task.lucj_params.with_final_orbital_rotation,
         )
         reference_state = ffsim.hartree_fock_state(norb, nelec)
-        final_state = ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
+        final_state = ffsim.apply_unitary(
+            reference_state, operator, norb=norb, nelec=nelec
+        )
         with open(state_vector_filename, "wb") as f:
             np.save(f, final_state)
     else:
         with open(state_vector_filename, "rb") as f:
             final_state = np.load(f)
 
-    if not os.path.exists(sample_filename):        
+    if not os.path.exists(sample_filename):
         logging.info(f"{task} Sampling...\n")
         samples = ffsim.sample_state_vector(
             final_state,
@@ -435,7 +451,7 @@ def run_lucj_sqd_quimb_task(
         with open(sample_filename, "rb") as f:
             bit_array_count = pickle.load(f)
             bit_array = BitArray.from_counts(bit_array_count)
-        
+
     # Run SQD
     logging.info(f"{task} Running SQD...\n")
     # sci_solver = partial(solve_sci_batch, spin_sq=0.0)
@@ -443,6 +459,7 @@ def run_lucj_sqd_quimb_task(
     result_history_energy = []
     result_history_subspace_dim = []
     result_history = []
+
     def callback(results: list[SCIResult]):
         result_energy = []
         result_subspace_dim = []
@@ -460,8 +477,6 @@ def run_lucj_sqd_quimb_task(
         result_history_energy.append(result_energy)
         result_history_subspace_dim.append(result_subspace_dim)
 
-
-
     result = diagonalize_fermionic_hamiltonian(
         mol_ham.one_body_tensor,
         mol_ham.two_body_tensor,
@@ -478,7 +493,7 @@ def run_lucj_sqd_quimb_task(
         carryover_threshold=task.carryover_threshold,
         seed=rng,
         callback=callback,
-        max_dim=task.max_dim
+        max_dim=task.max_dim,
     )
     logging.info(f"{task} Finish SQD\n")
     energy = result.energy + mol_data.core_energy
@@ -498,7 +513,7 @@ def run_lucj_sqd_quimb_task(
         "spin_squared": spin_squared,
         "sci_vec_shape": sci_state.amplitudes.shape,
         "history_energy": result_history_energy,
-        "history_sci_vec_shape": result_history_subspace_dim
+        "history_sci_vec_shape": result_history_subspace_dim,
     }
 
     logger.info(f"{task} Saving SQD data..\n")

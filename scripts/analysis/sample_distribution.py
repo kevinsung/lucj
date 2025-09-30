@@ -204,7 +204,9 @@ prop_cycle = plt.rcParams["axes.prop_cycle"]
 colors = prop_cycle.by_key()["color"]
 
 
-sample_filename_lucj_truncated = DATA_ROOT / task_lucj_truncated.operatorpath / "sample.pickle"
+sample_filename_lucj_truncated = (
+    DATA_ROOT / task_lucj_truncated.operatorpath / "sample.pickle"
+)
 sample_filename_lucj = DATA_ROOT / task_lucj_full.operatorpath / "sample.pickle"
 sample_filename_compressed_t2 = (
     DATA_ROOT / task_compressed_t2.operatorpath / "sample.pickle"

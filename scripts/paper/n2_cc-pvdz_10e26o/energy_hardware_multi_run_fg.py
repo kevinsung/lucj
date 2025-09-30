@@ -19,7 +19,7 @@ from lucj.hardware_sqd_task.lucj_t2_seperate_sqd_task_fg import HardwareSQDEnerg
 
 import json
 
-matplotlib.rcParams.update({'errorbar.capsize': 5})
+matplotlib.rcParams.update({"errorbar.capsize": 5})
 
 DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
@@ -62,9 +62,7 @@ tasks_compressed_t2 = [
             with_final_orbital_rotation=True,
         ),
         compressed_t2_params=CompressedT2Params(
-            multi_stage_optimization=True,
-            begin_reps=50,
-            step=2
+            multi_stage_optimization=True, begin_reps=50, step=2
         ),
         shots=shots,
         samples_per_batch=samples_per_batch,
@@ -77,65 +75,68 @@ tasks_compressed_t2 = [
         entropy=entropy,
         max_dim=max_dim,
         dynamic_decoupling=True,
-        n_hardware_run=n_hardware_run
+        n_hardware_run=n_hardware_run,
     )
     for d in bond_distance_range
-    for n_hardware_run in n_hardware_run_range]
+    for n_hardware_run in n_hardware_run_range
+]
 
 
 tasks_random = [
     HardwareSQDEnergyTask(
-            molecule_basename=molecule_basename,
-            bond_distance=d,
-            lucj_params=LUCJParams(
-                connectivity="heavy-hex",
-                n_reps=n_reps,
-                with_final_orbital_rotation=True,
-            ),
-            compressed_t2_params=None,
-            random_op =True,
-            shots=shots,
-            samples_per_batch=samples_per_batch,
-            n_batches=n_batches,
-            energy_tol=energy_tol,
-            occupancies_tol=occupancies_tol,
-            carryover_threshold=carryover_threshold,
-            max_iterations=max_iterations,
-            symmetrize_spin=symmetrize_spin,
-            entropy=entropy,
-            max_dim=max_dim,
-            dynamic_decoupling=True,
-            n_hardware_run=n_hardware_run
-        )
-        for d in bond_distance_range
-        for n_hardware_run in n_hardware_run_range]
-
-tasks_truncated_t2 = [
-        HardwareSQDEnergyTask(
-            molecule_basename=molecule_basename,
-            bond_distance=d,
-            lucj_params=LUCJParams(
-                connectivity="heavy-hex",
-                n_reps=n_reps,
-                with_final_orbital_rotation=True,
-            ),
-            compressed_t2_params=None,
-            random_op =False,
-            shots=shots,
-            samples_per_batch=samples_per_batch,
-            n_batches=n_batches,
-            energy_tol=energy_tol,
-            occupancies_tol=occupancies_tol,
-            carryover_threshold=carryover_threshold,
-            max_iterations=max_iterations,
-            symmetrize_spin=symmetrize_spin,
-            entropy=entropy,
-            max_dim=max_dim,
-            dynamic_decoupling=True,
-            n_hardware_run=n_hardware_run
+        molecule_basename=molecule_basename,
+        bond_distance=d,
+        lucj_params=LUCJParams(
+            connectivity="heavy-hex",
+            n_reps=n_reps,
+            with_final_orbital_rotation=True,
+        ),
+        compressed_t2_params=None,
+        random_op=True,
+        shots=shots,
+        samples_per_batch=samples_per_batch,
+        n_batches=n_batches,
+        energy_tol=energy_tol,
+        occupancies_tol=occupancies_tol,
+        carryover_threshold=carryover_threshold,
+        max_iterations=max_iterations,
+        symmetrize_spin=symmetrize_spin,
+        entropy=entropy,
+        max_dim=max_dim,
+        dynamic_decoupling=True,
+        n_hardware_run=n_hardware_run,
     )
     for d in bond_distance_range
-    for n_hardware_run in n_hardware_run_range]
+    for n_hardware_run in n_hardware_run_range
+]
+
+tasks_truncated_t2 = [
+    HardwareSQDEnergyTask(
+        molecule_basename=molecule_basename,
+        bond_distance=d,
+        lucj_params=LUCJParams(
+            connectivity="heavy-hex",
+            n_reps=n_reps,
+            with_final_orbital_rotation=True,
+        ),
+        compressed_t2_params=None,
+        random_op=False,
+        shots=shots,
+        samples_per_batch=samples_per_batch,
+        n_batches=n_batches,
+        energy_tol=energy_tol,
+        occupancies_tol=occupancies_tol,
+        carryover_threshold=carryover_threshold,
+        max_iterations=max_iterations,
+        symmetrize_spin=symmetrize_spin,
+        entropy=entropy,
+        max_dim=max_dim,
+        dynamic_decoupling=True,
+        n_hardware_run=n_hardware_run,
+    )
+    for d in bond_distance_range
+    for n_hardware_run in n_hardware_run_range
+]
 
 
 def load_data(filepath):
@@ -151,6 +152,7 @@ def load_data(filepath):
         with open(filepath, "rb") as f:
             result = pickle.load(f)
     return result
+
 
 print("Loading data")
 
@@ -171,7 +173,7 @@ for task in tasks_truncated_t2:
     # else:
     #     print(filepath)
     #     input()
-    
+
 results_compressed_t2 = {}
 for task in tasks_compressed_t2:
     filepath = DATA_ROOT / task.dirpath / "hardware_sqd_data.pickle"
@@ -188,7 +190,7 @@ width = 0.15
 # colors = prop_cycle.by_key()["color"]
 alphas = [0.5, 1.0]
 
-with open('scripts/paper/color.json', 'r') as file:
+with open("scripts/paper/color.json", "r") as file:
     colors = json.load(file)
 
 
@@ -204,7 +206,7 @@ fig, axes = plt.subplots(
 
 for i, bond_distance in enumerate(bond_distance_range):
     # random lucj
-    
+
     errors = []
     errors_min = []
     errors_max = []
@@ -214,54 +216,74 @@ for i, bond_distance in enumerate(bond_distance_range):
 
     tasks_random = [
         HardwareSQDEnergyTask(
-                molecule_basename=molecule_basename,
-                bond_distance=bond_distance,
-                lucj_params=LUCJParams(
-                    connectivity="heavy-hex",
-                    n_reps=n_reps,
-                    with_final_orbital_rotation=True,
-                ),
-                compressed_t2_params=None,
-                random_op =True,
-                shots=shots,
-                samples_per_batch=samples_per_batch,
-                n_batches=n_batches,
-                energy_tol=energy_tol,
-                occupancies_tol=occupancies_tol,
-                carryover_threshold=carryover_threshold,
-                max_iterations=max_iterations,
-                symmetrize_spin=symmetrize_spin,
-                entropy=entropy,
-                max_dim=max_dim,
-                dynamic_decoupling=True,
-                n_hardware_run=n_hardware_run
-            )
-            for n_hardware_run in n_hardware_run_range]
-    errors_n_reps = [results_random[task]['error'] for task in tasks_random  if task in results_random]
-    sci_vec_shape_n_reps = [results_random[task]["sci_vec_shape"][0] for task in tasks_random if task in results_random]
+            molecule_basename=molecule_basename,
+            bond_distance=bond_distance,
+            lucj_params=LUCJParams(
+                connectivity="heavy-hex",
+                n_reps=n_reps,
+                with_final_orbital_rotation=True,
+            ),
+            compressed_t2_params=None,
+            random_op=True,
+            shots=shots,
+            samples_per_batch=samples_per_batch,
+            n_batches=n_batches,
+            energy_tol=energy_tol,
+            occupancies_tol=occupancies_tol,
+            carryover_threshold=carryover_threshold,
+            max_iterations=max_iterations,
+            symmetrize_spin=symmetrize_spin,
+            entropy=entropy,
+            max_dim=max_dim,
+            dynamic_decoupling=True,
+            n_hardware_run=n_hardware_run,
+        )
+        for n_hardware_run in n_hardware_run_range
+    ]
+    errors_n_reps = [
+        results_random[task]["error"] for task in tasks_random if task in results_random
+    ]
+    sci_vec_shape_n_reps = [
+        results_random[task]["sci_vec_shape"][0]
+        for task in tasks_random
+        if task in results_random
+    ]
 
-    errors_n_reps = [list(x) for x in zip(*sorted(zip(errors_n_reps, sci_vec_shape_n_reps), key=lambda pair: pair[0]))][0]
-    sci_vec_shape_n_reps = [list(x) for x in zip(*sorted(zip(errors_n_reps, sci_vec_shape_n_reps), key=lambda pair: pair[0]))][1]
+    errors_n_reps = [
+        list(x)
+        for x in zip(
+            *sorted(zip(errors_n_reps, sci_vec_shape_n_reps), key=lambda pair: pair[0])
+        )
+    ][0]
+    sci_vec_shape_n_reps = [
+        list(x)
+        for x in zip(
+            *sorted(zip(errors_n_reps, sci_vec_shape_n_reps), key=lambda pair: pair[0])
+        )
+    ][1]
     errors_n_reps = errors_n_reps[:-1]
     sci_vec_shape_n_reps = sci_vec_shape_n_reps[:-1]
-    
+
     errors.append(np.average(errors_n_reps))
     errors_min.append(np.average(errors_n_reps) - np.min(errors_n_reps))
     errors_max.append(np.max(errors_n_reps) - np.average(errors_n_reps))
     sci_vec_shape.append(np.average(sci_vec_shape_n_reps))
-    sci_vec_shape_min.append(np.average(sci_vec_shape_n_reps) - np.min(sci_vec_shape_n_reps))
-    sci_vec_shape_max.append(np.max(sci_vec_shape_n_reps) - np.average(sci_vec_shape_n_reps))
+    sci_vec_shape_min.append(
+        np.average(sci_vec_shape_n_reps) - np.min(sci_vec_shape_n_reps)
+    )
+    sci_vec_shape_max.append(
+        np.max(sci_vec_shape_n_reps) - np.average(sci_vec_shape_n_reps)
+    )
 
-                 
     axes[row_error, i].errorbar(
-        - width,
+        -width,
         errors,
         [errors_min, errors_max],
-        color='black',
+        color="black",
     )
 
     axes[row_error, i].bar(
-        - width,
+        -width,
         errors,
         width=width,
         label="LUCJ-random",
@@ -269,19 +291,18 @@ for i, bond_distance in enumerate(bond_distance_range):
     )
 
     axes[row_sci_vec_dim, i].bar(
-        - width,
+        -width,
         sci_vec_shape,
         width=width,
         label="LUCJ random",
         color=colors["lucj_random"],
     )
 
-
     axes[row_sci_vec_dim, i].errorbar(
-        - width,
+        -width,
         sci_vec_shape,
         [sci_vec_shape_min, sci_vec_shape_max],
-        color='black',
+        color="black",
     )
     # LUCJ data
     errors = []
@@ -293,37 +314,56 @@ for i, bond_distance in enumerate(bond_distance_range):
 
     tasks_truncated_t2 = [
         HardwareSQDEnergyTask(
-                molecule_basename=molecule_basename,
-                bond_distance=bond_distance,
-                lucj_params=LUCJParams(
-                    connectivity="heavy-hex",
-                    n_reps=n_reps,
-                    with_final_orbital_rotation=True,
-                ),
-                compressed_t2_params=None,
-                random_op =False,
-                shots=shots,
-                samples_per_batch=samples_per_batch,
-                n_batches=n_batches,
-                energy_tol=energy_tol,
-                occupancies_tol=occupancies_tol,
-                carryover_threshold=carryover_threshold,
-                max_iterations=max_iterations,
-                symmetrize_spin=symmetrize_spin,
-                entropy=entropy,
-                max_dim=max_dim,
-                dynamic_decoupling=True,
-                n_hardware_run=n_hardware_run
-            )
-            for n_hardware_run in n_hardware_run_range]
+            molecule_basename=molecule_basename,
+            bond_distance=bond_distance,
+            lucj_params=LUCJParams(
+                connectivity="heavy-hex",
+                n_reps=n_reps,
+                with_final_orbital_rotation=True,
+            ),
+            compressed_t2_params=None,
+            random_op=False,
+            shots=shots,
+            samples_per_batch=samples_per_batch,
+            n_batches=n_batches,
+            energy_tol=energy_tol,
+            occupancies_tol=occupancies_tol,
+            carryover_threshold=carryover_threshold,
+            max_iterations=max_iterations,
+            symmetrize_spin=symmetrize_spin,
+            entropy=entropy,
+            max_dim=max_dim,
+            dynamic_decoupling=True,
+            n_hardware_run=n_hardware_run,
+        )
+        for n_hardware_run in n_hardware_run_range
+    ]
 
-    errors_n_reps = [results_truncated_t2[task]['error'] for task in tasks_truncated_t2 if task in results_truncated_t2]
-    sci_vec_shape_n_reps = [results_truncated_t2[task]["sci_vec_shape"][0] for task in tasks_truncated_t2 if task in results_truncated_t2]
+    errors_n_reps = [
+        results_truncated_t2[task]["error"]
+        for task in tasks_truncated_t2
+        if task in results_truncated_t2
+    ]
+    sci_vec_shape_n_reps = [
+        results_truncated_t2[task]["sci_vec_shape"][0]
+        for task in tasks_truncated_t2
+        if task in results_truncated_t2
+    ]
     # errors_n_reps = [results_truncated_t2[task]['error'] for task in tasks_truncated_t2]
     # sci_vec_shape_n_reps = [results_truncated_t2[task]["sci_vec_shape"][0] for task in tasks_truncated_t2]
 
-    errors_n_reps = [list(x) for x in zip(*sorted(zip(errors_n_reps, sci_vec_shape_n_reps), key=lambda pair: pair[0]))][0]
-    sci_vec_shape_n_reps = [list(x) for x in zip(*sorted(zip(errors_n_reps, sci_vec_shape_n_reps), key=lambda pair: pair[0]))][1]
+    errors_n_reps = [
+        list(x)
+        for x in zip(
+            *sorted(zip(errors_n_reps, sci_vec_shape_n_reps), key=lambda pair: pair[0])
+        )
+    ][0]
+    sci_vec_shape_n_reps = [
+        list(x)
+        for x in zip(
+            *sorted(zip(errors_n_reps, sci_vec_shape_n_reps), key=lambda pair: pair[0])
+        )
+    ][1]
     errors_n_reps = errors_n_reps[:-1]
     sci_vec_shape_n_reps = sci_vec_shape_n_reps[:-1]
 
@@ -331,10 +371,12 @@ for i, bond_distance in enumerate(bond_distance_range):
     errors_min.append(np.average(errors_n_reps) - np.min(errors_n_reps))
     errors_max.append(np.max(errors_n_reps) - np.average(errors_n_reps))
     sci_vec_shape.append(np.average(sci_vec_shape_n_reps))
-    sci_vec_shape_min.append(np.average(sci_vec_shape_n_reps) - np.min(sci_vec_shape_n_reps))
-    sci_vec_shape_max.append(np.max(sci_vec_shape_n_reps) - np.average(sci_vec_shape_n_reps))
-
-    
+    sci_vec_shape_min.append(
+        np.average(sci_vec_shape_n_reps) - np.min(sci_vec_shape_n_reps)
+    )
+    sci_vec_shape_max.append(
+        np.max(sci_vec_shape_n_reps) - np.average(sci_vec_shape_n_reps)
+    )
 
     axes[row_error, i].bar(
         0,
@@ -343,12 +385,12 @@ for i, bond_distance in enumerate(bond_distance_range):
         label="LUCJ-truncated",
         color=colors["lucj_truncated"],
     )
-               
+
     axes[row_error, i].errorbar(
         0,
         errors,
         [errors_min, errors_max],
-        color='black',
+        color="black",
     )
 
     axes[row_sci_vec_dim, i].bar(
@@ -363,7 +405,7 @@ for i, bond_distance in enumerate(bond_distance_range):
         0,
         sci_vec_shape,
         [sci_vec_shape_min, sci_vec_shape_max],
-        color='black',
+        color="black",
     )
 
     # compressed_t2
@@ -376,37 +418,54 @@ for i, bond_distance in enumerate(bond_distance_range):
 
     tasks_compressed_t2 = [
         HardwareSQDEnergyTask(
-                molecule_basename=molecule_basename,
-                bond_distance=bond_distance,
-                lucj_params=LUCJParams(
+            molecule_basename=molecule_basename,
+            bond_distance=bond_distance,
+            lucj_params=LUCJParams(
                 connectivity="heavy-hex",
-                    n_reps=n_reps,
-                    with_final_orbital_rotation=True,
-                ),
-                compressed_t2_params=CompressedT2Params(
-                    multi_stage_optimization=True,
-                    begin_reps=50,
-                    step=2
-                ),
-                shots=shots,
-                samples_per_batch=samples_per_batch,
-                n_batches=n_batches,
-                energy_tol=energy_tol,
-                occupancies_tol=occupancies_tol,
-                carryover_threshold=carryover_threshold,
-                max_iterations=max_iterations,
-                symmetrize_spin=symmetrize_spin,
-                entropy=entropy,
-                max_dim=max_dim,
-                dynamic_decoupling=True,
-                n_hardware_run=n_hardware_run
-            )
-            for n_hardware_run in n_hardware_run_range]   
-    errors_n_reps = [results_compressed_t2[task]['error'] for task in tasks_compressed_t2 if task in results_compressed_t2]
-    sci_vec_shape_n_reps = [results_compressed_t2[task]["sci_vec_shape"][0] for task in tasks_compressed_t2 if task in results_compressed_t2]
-    
-    errors_n_reps = [list(x) for x in zip(*sorted(zip(errors_n_reps, sci_vec_shape_n_reps), key=lambda pair: pair[0]))][0]
-    sci_vec_shape_n_reps = [list(x) for x in zip(*sorted(zip(errors_n_reps, sci_vec_shape_n_reps), key=lambda pair: pair[0]))][1]
+                n_reps=n_reps,
+                with_final_orbital_rotation=True,
+            ),
+            compressed_t2_params=CompressedT2Params(
+                multi_stage_optimization=True, begin_reps=50, step=2
+            ),
+            shots=shots,
+            samples_per_batch=samples_per_batch,
+            n_batches=n_batches,
+            energy_tol=energy_tol,
+            occupancies_tol=occupancies_tol,
+            carryover_threshold=carryover_threshold,
+            max_iterations=max_iterations,
+            symmetrize_spin=symmetrize_spin,
+            entropy=entropy,
+            max_dim=max_dim,
+            dynamic_decoupling=True,
+            n_hardware_run=n_hardware_run,
+        )
+        for n_hardware_run in n_hardware_run_range
+    ]
+    errors_n_reps = [
+        results_compressed_t2[task]["error"]
+        for task in tasks_compressed_t2
+        if task in results_compressed_t2
+    ]
+    sci_vec_shape_n_reps = [
+        results_compressed_t2[task]["sci_vec_shape"][0]
+        for task in tasks_compressed_t2
+        if task in results_compressed_t2
+    ]
+
+    errors_n_reps = [
+        list(x)
+        for x in zip(
+            *sorted(zip(errors_n_reps, sci_vec_shape_n_reps), key=lambda pair: pair[0])
+        )
+    ][0]
+    sci_vec_shape_n_reps = [
+        list(x)
+        for x in zip(
+            *sorted(zip(errors_n_reps, sci_vec_shape_n_reps), key=lambda pair: pair[0])
+        )
+    ][1]
     errors_n_reps = errors_n_reps[:-1]
     sci_vec_shape_n_reps = sci_vec_shape_n_reps[:-1]
 
@@ -414,13 +473,25 @@ for i, bond_distance in enumerate(bond_distance_range):
     errors_min.append(np.average(errors_n_reps) - np.min(errors_n_reps))
     errors_max.append(np.max(errors_n_reps) - np.average(errors_n_reps))
     sci_vec_shape.append(np.average(sci_vec_shape_n_reps))
-    sci_vec_shape_min.append(np.average(sci_vec_shape_n_reps) - np.min(sci_vec_shape_n_reps))
-    sci_vec_shape_max.append(np.max(sci_vec_shape_n_reps) - np.average(sci_vec_shape_n_reps))
-    
+    sci_vec_shape_min.append(
+        np.average(sci_vec_shape_n_reps) - np.min(sci_vec_shape_n_reps)
+    )
+    sci_vec_shape_max.append(
+        np.max(sci_vec_shape_n_reps) - np.average(sci_vec_shape_n_reps)
+    )
+
     if bond_distance == 2.4:
-        energy_n_reps = [results_truncated_t2[task]['energy'] for task in tasks_truncated_t2 if task in results_truncated_t2]
+        energy_n_reps = [
+            results_truncated_t2[task]["energy"]
+            for task in tasks_truncated_t2
+            if task in results_truncated_t2
+        ]
         print(energy_n_reps)
-        energy_n_reps = [results_compressed_t2[task]['energy'] for task in tasks_compressed_t2 if task in results_compressed_t2]
+        energy_n_reps = [
+            results_compressed_t2[task]["energy"]
+            for task in tasks_compressed_t2
+            if task in results_compressed_t2
+        ]
         print(energy_n_reps)
 
     axes[row_error, i].bar(
@@ -430,12 +501,12 @@ for i, bond_distance in enumerate(bond_distance_range):
         label="LUCJ-compressed",
         color=colors["lucj_compressed"],
     )
-           
+
     axes[row_error, i].errorbar(
         width,
         errors,
         [errors_min, errors_max],
-        color='black',
+        color="black",
     )
 
     axes[row_sci_vec_dim, i].bar(
@@ -449,7 +520,7 @@ for i, bond_distance in enumerate(bond_distance_range):
         width,
         sci_vec_shape,
         [sci_vec_shape_min, sci_vec_shape_max],
-        color='black',
+        color="black",
     )
 
     axes[row_error, i].set_title(f"R: {bond_distance} Å ")
@@ -467,16 +538,18 @@ for i, bond_distance in enumerate(bond_distance_range):
     #     bbox_to_anchor=(-0.32, -0.05), loc="upper center", ncol=4, columnspacing=0.8, handletextpad=0.2
     # )
     leg = axes[row_sci_vec_dim, 1].legend(
-        bbox_to_anchor=(-0.32, -0.05), loc="upper center", ncol=3, columnspacing=0.8, handletextpad=0.2
+        bbox_to_anchor=(-0.32, -0.05),
+        loc="upper center",
+        ncol=3,
+        columnspacing=0.8,
+        handletextpad=0.2,
     )
     leg.set_in_layout(False)
     plt.tight_layout()
     # plt.subplots_adjust(bottom=0.15, top=0.85)
     plt.subplots_adjust(bottom=0.1, top=0.88)
 
-    fig.suptitle(
-        f"N$_2$/cc-PVDZ ({nelectron}e, {norb}o)"
-    )
+    fig.suptitle(f"N$_2$/cc-PVDZ ({nelectron}e, {norb}o)")
 
 filepath = os.path.join(
     plots_dir,
