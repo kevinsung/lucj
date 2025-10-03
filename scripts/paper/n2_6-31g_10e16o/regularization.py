@@ -36,8 +36,8 @@ connectivity = "all-to-all"
 
 n_reps_range = list(range(1, 11))
 
-shots = 100_000
-n_batches = 10
+shots = 1_000_000
+n_batches = 1
 energy_tol = 1e-5
 occupancies_tol = 1e-3
 carryover_threshold = 1e-3
@@ -46,22 +46,13 @@ symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
 
-max_dim = 4000
-samples_per_batch = max_dim
+max_dim = None
+samples_per_batch = shots
 
 
 def load_data(filepath):
-    if not os.path.exists(filepath):
-        result = {
-            "energy": 0,
-            "error": 0,
-            "spin_squared": 0,
-            "sci_vec_shape": (0, 0),
-            "n_reps": 0,
-        }
-    else:
-        with open(filepath, "rb") as f:
-            result = pickle.load(f)
+    with open(filepath, "rb") as f:
+        result = pickle.load(f)
     return result
 
 
@@ -324,7 +315,7 @@ for i, bond_distance in enumerate(bond_distances):
         va="top",
     )
     axes[2, i].set_yscale("log")
-    axes[2, i].set_ylim(1e-3, 1)
+    axes[2, i].set_ylim(1e-4, 1)
     axes[2, i].set_ylabel("Energy error (Hartree)", fontsize=12)
     axes[2, i].set_xlabel("Repetitions", fontsize=12)
     # axes[2, i].set_xticks(n_reps_range)

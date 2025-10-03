@@ -46,16 +46,16 @@ reference_bond_distance_range = np.linspace(
 bond_distance_truncation = 1.2
 n_reps_range = [1, 5] + list(range(10, 110, 10))
 
-shots = 100_000
-n_batches = 10
+shots = 1_000_000
+n_batches = 1
 energy_tol = 1e-5
 occupancies_tol = 1e-3
 carryover_threshold = 1e-3
 max_iterations = 1
 symmetrize_spin = True
 entropy = 0
-max_dim = 4000
-samples_per_batch = max_dim
+max_dim = None
+samples_per_batch = shots
 
 mol_datas_reference: dict[float, ffsim.MolecularData] = {}
 mol_datas_experiment: dict[float, ffsim.MolecularData] = {}
@@ -107,17 +107,8 @@ fci_energies_experiment = np.array(
 
 
 def load_data(filepath):
-    if not os.path.exists(filepath):
-        result = {
-            "energy": 0,
-            "error": 0,
-            "spin_squared": 0,
-            "sci_vec_shape": (0, 0),
-            "n_reps": 0,
-        }
-    else:
-        with open(filepath, "rb") as f:
-            result = pickle.load(f)
+    with open(filepath, "rb") as f:
+        result = pickle.load(f)
     return result
 
 
@@ -397,12 +388,12 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
     # axes[2, col_idx].minorticks_on()
 
     axes[2, col_idx].text(
-        0.97,
         0.05,
+        0.97,
         f"bond length {bond_distance_truncation} Å",
         transform=axes[2, col_idx].transAxes,
-        ha="right",
-        va="bottom",
+        ha="left",
+        va="top",
         fontsize=14,
         # bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8),
     )
