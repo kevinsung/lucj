@@ -48,7 +48,7 @@ molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 connectivities = [
     "all-to-all",
-    # "heavy-hex",
+    "heavy-hex",
     # "square",
 ]
 n_reps_range = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]

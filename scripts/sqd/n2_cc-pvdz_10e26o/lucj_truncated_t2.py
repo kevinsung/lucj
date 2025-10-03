@@ -33,11 +33,11 @@ logging.basicConfig(
     filename=filename,
 )
 
-DATA_ROOT = "/media/storage/WanHsuan.Lin/"
+DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 2
+MAX_PROCESSES = 1
 OVERWRITE = False
 
 molecule_name = "n2"
@@ -46,14 +46,13 @@ nelectron, norb = 10, 26
 molecule_basename = f"{molecule_name}_{basis}_{nelectron}e{norb}o"
 
 connectivities = [
-    # "all-to-all",
+    "all-to-all",
     "heavy-hex",
     # "square",
 ]
-# n_reps_range = [None, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-n_reps_range = [None]
-shots = 100_000
-n_batches = 10
+n_reps_range = [None, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+shots = 1_000_000
+n_batches = 1
 energy_tol = 1e-5
 occupancies_tol = 1e-3
 carryover_threshold = 1e-3
@@ -61,8 +60,8 @@ max_iterations = 1
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
-max_dim = 4000
-samples_per_batch = max_dim
+max_dim = None
+samples_per_batch = shots
 bond_distance_range = [1.2, 2.4]
 
 tasks = [
