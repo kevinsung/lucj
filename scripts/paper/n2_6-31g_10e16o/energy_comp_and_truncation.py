@@ -380,6 +380,7 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
             color=colors[color_key],
         )
 
+    axes[2, col_idx].axhline(1.6e-3, linestyle="--", color=colors["chemical_precision"])
     axes[2, col_idx].set_ylabel("Energy error (Hartree)", fontsize=12)
     axes[2, col_idx].set_xlabel("Repetitions", fontsize=12)
     axes[2, col_idx].set_yscale("log")
@@ -446,7 +447,10 @@ axes[1, 0].text(
 )
 
 axes[0, 0].legend()
-axes[2, 0].legend()
+leg = axes[2, 0].legend(
+    loc="lower left",
+    bbox_to_anchor=(0, 0.07),
+)
 
 plt.tight_layout()
 plt.subplots_adjust(top=0.91)
