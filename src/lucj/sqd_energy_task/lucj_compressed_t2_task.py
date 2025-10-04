@@ -12,21 +12,21 @@ import logging
 import os
 import pickle
 from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
-import pyscf
+
 import ffsim
 import numpy as np
+import pyscf
 import scipy.stats
-from molecules_catalog.util import load_molecular_data
 from ffsim.variational.util import interaction_pairs_spin_balanced
-from lucj.params import LUCJParams, CompressedT2Params
-
+from molecules_catalog.util import load_molecular_data
 from qiskit.primitives import BitArray
-from qiskit_addon_sqd.fermion import SCIResult, diagonalize_fermionic_hamiltonian
-
-# from functools import partial
 from qiskit_addon_dice_solver import solve_sci_batch
 from qiskit_addon_dice_solver.dice_solver import DiceExecutionError
+from qiskit_addon_sqd.fermion import SCIResult, diagonalize_fermionic_hamiltonian
+
+from lucj.params import CompressedT2Params, LUCJParams
 
 logger = logging.getLogger(__name__)
 
@@ -345,7 +345,10 @@ def run_sqd_energy_task(
 
     # Run SQD
     logging.info(f"{task} Running SQD...\n")
-    # sci_solver = partial(solve_sci_batch, spin_sq=0.0)
+    sci_solver = partial(
+        solve_sci_batch,
+        mpirun_options=["--quiet", "-n", f"{os.environ.get('OMP_NUM_THREADS', '8')}"],
+    )
 
     result_history_energy = []
     result_history_subspace_dim = []
@@ -382,7 +385,7 @@ def run_sqd_energy_task(
                 energy_tol=task.energy_tol,
                 occupancies_tol=task.occupancies_tol,
                 max_iterations=task.max_iterations,
-                sci_solver=solve_sci_batch,
+                sci_solver=sci_solver,
                 symmetrize_spin=task.symmetrize_spin,
                 carryover_threshold=task.carryover_threshold,
                 seed=rng,
