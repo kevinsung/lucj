@@ -72,7 +72,7 @@ fig, axes = plt.subplots(3, 2, figsize=(12, 10))
 
 
 for i, connectivity in enumerate(connectivities):
-    title_map = {"all-to-all": "all-to-all (UCJ)", "heavy-hex": "heavy-hex"}
+    title_map = {"all-to-all": "UCJ", "heavy-hex": "LUCJ heavy-hex"}
     axes[0, i].set_title(title_map[connectivity], fontsize=16)
 
     task_lucj_full = SQDEnergyTask(
