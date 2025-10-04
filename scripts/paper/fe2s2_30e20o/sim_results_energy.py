@@ -311,7 +311,7 @@ for col, connectivity in enumerate(connectivities):
     axes[energy_row, col].set_title(connectivity, fontsize=16)
 
     axes[sci_row, col].set_ylim(0, 4000)
-    axes[sci_row, col].set_ylabel("Subspace dim", fontsize=12)
+    axes[sci_row, col].set_ylabel("SCI dim sqrt", fontsize=12)
     axes[sci_row, col].set_xlabel("Repetitions", fontsize=12)
 
 leg = axes[1, 0].legend(

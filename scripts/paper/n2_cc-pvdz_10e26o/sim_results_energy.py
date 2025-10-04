@@ -291,7 +291,7 @@ for bond_idx, bond_distance in enumerate(bond_distance_range):
         axes[energy_row, col].set_xticks([])
 
         axes[sci_row, col].set_ylim(0, 2000)
-        axes[sci_row, col].set_ylabel("Subspace dim", fontsize=12)
+        axes[sci_row, col].set_ylabel("SCI dim sqrt", fontsize=12)
         axes[sci_row, col].set_xlabel("Repetitions", fontsize=12)
 
         axes[energy_row, col].set_title(
