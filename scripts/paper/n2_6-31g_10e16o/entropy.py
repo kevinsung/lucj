@@ -258,7 +258,7 @@ for i, connectivity in enumerate(connectivities):
     axes[0, i].set_ylabel("Entropy", fontsize=12)
     axes[0, i].set_xlabel("Repetitions", fontsize=12)
     axes[0, i].set_yscale("log")
-    axes[0, i].set_ylim(1e-2, 10)
+    # axes[0, i].set_ylim(1e-2, 10)
     # axes[0, i].set_ylim(0, 8)
 
     axes[1, i].set_ylabel("SCI dim sqrt", fontsize=12)
