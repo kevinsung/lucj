@@ -39,7 +39,7 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 DATA_DIR = DATA_ROOT
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
 MAX_PROCESSES = 1
-OVERWRITE = True
+OVERWRITE = False
 
 molecule_name = "n2"
 basis = "cc-pvdz"
@@ -61,7 +61,7 @@ max_iterations = 1
 symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
-max_dim = None
+max_dim = 4000
 samples_per_batch = shots
 bond_distance_range = [1.2, 2.4]
 
