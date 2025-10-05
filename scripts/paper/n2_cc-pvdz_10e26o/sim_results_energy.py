@@ -283,8 +283,9 @@ for bond_idx, bond_distance in enumerate(bond_distance_range):
         axes[sci_row, col].set_ylabel("SCI dim sqrt", fontsize=12)
         axes[sci_row, col].set_xlabel("Repetitions", fontsize=12)
 
+        title_map = {"all-to-all": "UCJ", "heavy-hex": "LUCJ heavy-hex"}
         axes[energy_row, col].set_title(
-            f"bond length {bond_distance} Å {connectivity}", fontsize=16
+            f"bond length {bond_distance} Å {title_map[connectivity]}", fontsize=16
         )
 
 

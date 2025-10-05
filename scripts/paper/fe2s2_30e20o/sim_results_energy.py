@@ -308,7 +308,8 @@ for col, connectivity in enumerate(connectivities):
     axes[energy_row, col].set_ylabel("Energy error (Hartree)", fontsize=12)
     axes[energy_row, col].set_ylim(1e-1, 10)
     axes[energy_row, col].set_xticks([])
-    axes[energy_row, col].set_title(connectivity, fontsize=16)
+    title_map = {"all-to-all": "UCJ", "heavy-hex": "LUCJ heavy-hex"}
+    axes[energy_row, col].set_title(title_map[connectivity], fontsize=16)
 
     axes[sci_row, col].set_ylim(0, 4000)
     axes[sci_row, col].set_ylabel("SCI dim sqrt", fontsize=12)
