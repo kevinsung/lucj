@@ -46,16 +46,16 @@ reference_bond_distance_range = np.linspace(
 bond_distance_truncation = 1.2
 n_reps_range = [1, 5] + list(range(10, 110, 10))
 
-shots = 1_000_000
-n_batches = 1
+shots = 100_000
+n_batches = 10
 energy_tol = 1e-5
 occupancies_tol = 1e-3
 carryover_threshold = 1e-3
 max_iterations = 1
 symmetrize_spin = True
 entropy = 0
-max_dim = None
-samples_per_batch = shots
+max_dim = 4000
+samples_per_batch = max_dim
 
 mol_datas_reference: dict[float, ffsim.MolecularData] = {}
 mol_datas_experiment: dict[float, ffsim.MolecularData] = {}

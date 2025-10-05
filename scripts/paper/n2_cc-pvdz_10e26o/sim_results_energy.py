@@ -59,19 +59,8 @@ samples_per_batch = max_dim
 
 
 def load_data(filepath):
-    if not os.path.exists(filepath):
-        result = {
-            "energy": 0,
-            "history_energy": [0],
-            "error": 0,
-            "spin_squared": 0,
-            "sci_vec_shape": (0, 0),
-            "n_reps": 0,
-            "history_sci_vec_shape": [0],
-        }
-    else:
-        with open(filepath, "rb") as f:
-            result = pickle.load(f)
+    with open(filepath, "rb") as f:
+        result = pickle.load(f)
     return result
 
 

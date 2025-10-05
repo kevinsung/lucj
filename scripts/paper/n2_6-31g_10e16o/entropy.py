@@ -39,8 +39,8 @@ connectivities = [
 
 n_reps_range = list(range(1, 11))
 
-shots = 1_000_000
-n_batches = 1
+shots = 100_000
+n_batches = 10
 energy_tol = 1e-5
 occupancies_tol = 1e-3
 carryover_threshold = 1e-3
@@ -49,8 +49,8 @@ symmetrize_spin = True
 # TODO set entropy and generate seeds properly
 entropy = 0
 
-max_dim = None
-samples_per_batch = shots
+max_dim = 4000
+samples_per_batch = max_dim
 
 
 def load_data(filepath):
@@ -263,12 +263,12 @@ for i, connectivity in enumerate(connectivities):
 
     axes[1, i].set_ylabel("SCI dim sqrt", fontsize=12)
     axes[1, i].set_xlabel("Repetitions", fontsize=12)
-    axes[1, i].set_ylim(0, 2500)
+    axes[1, i].set_ylim(0, 1000)
 
     axes[2, i].set_ylabel("Energy error (Hartree)", fontsize=12)
     axes[2, i].set_xlabel("Repetitions", fontsize=12)
     axes[2, i].set_yscale("log")
-    axes[2, i].set_ylim(1e-4, 1)
+    axes[2, i].set_ylim(1e-3, 1)
 
 
 fig.suptitle(
