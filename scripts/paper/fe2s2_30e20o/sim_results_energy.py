@@ -311,7 +311,7 @@ for col, connectivity in enumerate(connectivities):
     title_map = {"all-to-all": "UCJ", "heavy-hex": "LUCJ heavy-hex"}
     axes[energy_row, col].set_title(title_map[connectivity], fontsize=16)
 
-    axes[sci_row, col].set_ylim(0, 4000)
+    axes[sci_row, col].set_ylim(0, 2000)
     axes[sci_row, col].set_ylabel("SCI dim sqrt", fontsize=12)
     axes[sci_row, col].set_xlabel("Repetitions", fontsize=12)
 
