@@ -10,7 +10,6 @@ requires-python = ">=3.10"
 dependencies = [
     "ffsim",
     "qiskit-addon-aqc-tensor[quimb-jax]",
-    "qiskit-addon-sqd",
     "qiskit[visualization] >= 1.0",
     "tqdm",
     # recommended optional dependencies for cotengra
@@ -25,6 +24,8 @@ dependencies = [
     "optuna",
     "qiskit-quimb>=0.0.9",
     "molecules-catalog",
+    "qiskit-ibm-runtime>=0.42.0",
+    "qiskit-addon-sqd>=0.12.0",
 ]
 
 [project.optional-dependencies]
