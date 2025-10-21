@@ -307,10 +307,10 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
             color=colors[color_key],
         )
 
-    axes[0, col_idx].set_ylabel("Energy (Hartree)", fontsize=12)
+    axes[0, col_idx].set_ylabel("Energy (Hartree)", fontsize=16)
     axes[0, col_idx].set_ylim(-109.2, -108.5)
-    axes[0, col_idx].set_xlabel("Bond length (Å)", fontsize=12)
-    axes[0, col_idx].set_title(f"{plot_type.upper()}", fontsize=16)
+    axes[0, col_idx].set_xlabel("Bond length (Å)", fontsize=16)
+    axes[0, col_idx].set_title(f"{plot_type.upper()}", fontsize=20)
     # axes[0, col_idx].margins(x=0.02)
 
     axes[1, col_idx].plot(
@@ -353,10 +353,10 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
         )
 
     axes[1, col_idx].axhline(1.6e-3, linestyle="--", color=colors["chemical_precision"])
-    axes[1, col_idx].set_ylabel("Energy error (Hartree)", fontsize=12)
+    axes[1, col_idx].set_ylabel("Energy error (Hartree)", fontsize=16)
     axes[1, col_idx].set_yscale("log")
     axes[1, col_idx].set_ylim(1e-3, 1)
-    axes[1, col_idx].set_xlabel("Bond length (Å)", fontsize=12)
+    axes[1, col_idx].set_xlabel("Bond length (Å)", fontsize=16)
     # axes[1, col_idx].margins(x=0.02)
 
     for tasks, color_key, label, marker in zip(
@@ -381,8 +381,8 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
         )
 
     axes[2, col_idx].axhline(1.6e-3, linestyle="--", color=colors["chemical_precision"])
-    axes[2, col_idx].set_ylabel("Energy error (Hartree)", fontsize=12)
-    axes[2, col_idx].set_xlabel("Repetitions", fontsize=12)
+    axes[2, col_idx].set_ylabel("Energy error (Hartree)", fontsize=16)
+    axes[2, col_idx].set_xlabel("Repetitions", fontsize=16)
     axes[2, col_idx].set_yscale("log")
     axes[2, col_idx].set_ylim(1e-3, 1)
     # axes[2, col_idx].margins(x=0.02)
@@ -403,35 +403,35 @@ arrow1 = FancyArrowPatch(
     (105, 2.6e-2),
     (105, 1.3e-1),
     arrowstyle="->",
-    mutation_scale=10,
+    mutation_scale=15,
     color=colors["annotation"],
 )
 axes[2, 0].add_patch(arrow1)
 axes[2, 0].text(
-    83,
+    76,
     5.5e-2,
     "truncate interactions",
     ha="center",
     va="center",
-    fontsize=11,
+    fontsize=14,
     color=colors["annotation"],
 )
 
 arrow2 = FancyArrowPatch(
-    (95, 1.1e-2),
-    (60, 1.1e-2),
+    (100, 1.1e-2),
+    (55, 1.1e-2),
     arrowstyle="->",
-    mutation_scale=10,
+    mutation_scale=15,
     color=colors["annotation"],
 )
 axes[2, 0].add_patch(arrow2)
 axes[2, 0].text(
     77.5,
-    6.5e-3,
+    6e-3,
     "truncate repetitions",
     ha="center",
     va="center",
-    fontsize=11,
+    fontsize=14,
     color=colors["annotation"],
 )
 
@@ -442,20 +442,30 @@ axes[1, 0].text(
     transform=axes[1, 0].transAxes,
     ha="right",
     va="bottom",
-    fontsize=11,
+    fontsize=15,
     color=colors["chemical_precision"],
 )
 
-axes[0, 0].legend()
+axes[0, 0].legend(
+    fontsize=11,
+)
 leg = axes[2, 0].legend(
     loc="lower left",
     bbox_to_anchor=(0, 0.07),
+    fontsize=11,
 )
 
-plt.tight_layout()
-plt.subplots_adjust(top=0.91)
+for row in axes:
+    for ax in row:
+        ax.tick_params(axis="both", labelsize=13)
 
-fig.suptitle(f"N$_2$ 6-31G ({nelectron}e, {norb}o)", fontsize=18)
+plt.tight_layout()
+plt.subplots_adjust(
+    top=0.91,
+    hspace=0.4,
+)
+
+fig.suptitle(f"N$_2$/6-31G ({nelectron}e, {norb}o)", fontsize=22)
 
 filepath = os.path.join(
     plots_dir,
