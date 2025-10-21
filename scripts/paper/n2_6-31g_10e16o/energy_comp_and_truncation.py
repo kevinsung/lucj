@@ -257,7 +257,7 @@ list_tasks_truncation = [
 color_keys_truncation = ["ucj", "lucj_square", "lucj_heavy_hex"]
 labels_truncation = ["UCJ", "LUCJ:square", "LUCJ:heavy-hex"]
 
-fig, axes = plt.subplots(3, 2, figsize=(12, 10))
+fig, axes = plt.subplots(3, 2, figsize=(12, 12))
 
 for col_idx, plot_type in enumerate(["vqe", "qsci"]):
     axes[0, col_idx].plot(
@@ -462,7 +462,7 @@ for row in axes:
 plt.tight_layout()
 plt.subplots_adjust(
     top=0.91,
-    hspace=0.4,
+    hspace=0.3,
 )
 
 fig.suptitle(f"N$_2$/6-31G ({nelectron}e, {norb}o)", fontsize=22)
