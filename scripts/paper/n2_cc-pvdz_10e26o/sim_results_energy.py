@@ -81,8 +81,8 @@ for d in bond_distance_range:
 fig, axes = plt.subplots(
     len(bond_distance_range) * 2,
     2,
-    figsize=(12, 10),
-    gridspec_kw={"height_ratios": [2, 1, 2, 1], "hspace": 0.07},
+    figsize=(12, 12),
+    gridspec_kw={"height_ratios": [2, 1, 2, 1], "hspace": 0.12},
 )
 
 for bond_idx, bond_distance in enumerate(bond_distance_range):
@@ -275,33 +275,40 @@ for bond_idx, bond_distance in enumerate(bond_distance_range):
 
         # axis properties
         axes[energy_row, col].set_yscale("log")
-        axes[energy_row, col].set_ylabel("Energy error (Hartree)", fontsize=12)
+        axes[energy_row, col].set_ylabel("Energy error (Hartree)", fontsize=16)
         axes[energy_row, col].set_ylim(1e-3, 1)
         axes[energy_row, col].set_xticks([])
 
         axes[sci_row, col].set_ylim(0, 2000)
-        axes[sci_row, col].set_ylabel("SCI dim sqrt", fontsize=12)
-        axes[sci_row, col].set_xlabel("Repetitions", fontsize=12)
+        axes[sci_row, col].set_ylabel("SCI dim sqrt", fontsize=16)
+        axes[sci_row, col].set_xlabel("Repetitions", fontsize=16)
 
         title_map = {"all-to-all": "UCJ", "heavy-hex": "LUCJ heavy-hex"}
         axes[energy_row, col].set_title(
-            f"bond length {bond_distance} Å {title_map[connectivity]}", fontsize=16
+            f"bond length {bond_distance} Å {title_map[connectivity]}", fontsize=20
         )
 
 
 leg = axes[1, 0].legend(
-    bbox_to_anchor=(1.05, -4.62),
+    bbox_to_anchor=(1.05, -4.75),
     loc="upper center",
     ncol=4,
     handletextpad=0.8,
+    fontsize=12,
 )
 leg.set_in_layout(False)
+
+for row in axes:
+    for ax in row:
+        ax.tick_params(axis="both", labelsize=13)
+
 # plt.tight_layout()
 plt.subplots_adjust(
     bottom=0.2,
     top=0.9,
     left=0.07,
     right=0.97,
+    # hspace=0.3,
 )
 
 for col in range(2):
@@ -312,7 +319,7 @@ for col in range(2):
     axes[2, col].set_position([pos2.x0, pos2.y0 - extra_space, pos2.width, pos2.height])
     axes[3, col].set_position([pos3.x0, pos3.y0 - extra_space, pos3.width, pos3.height])
 
-fig.suptitle(f"N$_2$ cc-pVDZ ({nelectron}e, {norb}o)", fontsize=18)
+fig.suptitle(f"N$_2$ cc-pVDZ ({nelectron}e, {norb}o)", fontsize=24)
 
 filepath = os.path.join(
     plots_dir,
