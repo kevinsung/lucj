@@ -207,8 +207,8 @@ for i, connectivity in enumerate(connectivities):
             label=label,
             color=colors[color_key],
         )
-    axes[0, i].set_ylabel("Loss function", fontsize=18)
-    axes[0, i].set_xlabel("Repetitions", fontsize=18)
+    axes[0, i].set_ylabel("Loss function", fontsize=16)
+    axes[0, i].set_xlabel("Repetitions", fontsize=16)
     # axes[0, i].set_xticks(n_reps_range)
     axes[0, i].set_yscale("log")
     # axes[0, i].set_ylim(1e-4, 1e-1)
@@ -254,8 +254,8 @@ for i, connectivity in enumerate(connectivities):
     )
     axes[1, i].set_yscale("log")
     axes[1, i].set_ylim(1e-2, 10)
-    axes[1, i].set_ylabel("Energy error (Hartree)", fontsize=18)
-    axes[1, i].set_xlabel("Repetitions", fontsize=18)
+    axes[1, i].set_ylabel("Energy error (Hartree)", fontsize=16)
+    axes[1, i].set_xlabel("Repetitions", fontsize=16)
     # axes[1, i].set_xticks(n_reps_range)
 
     axes[2, i].axhline(
@@ -289,8 +289,8 @@ for i, connectivity in enumerate(connectivities):
     )
     axes[2, i].set_yscale("log")
     axes[2, i].set_ylim(1e-3, 1)
-    axes[2, i].set_ylabel("Energy error (Hartree)", fontsize=18)
-    axes[2, i].set_xlabel("Repetitions", fontsize=18)
+    axes[2, i].set_ylabel("Energy error (Hartree)", fontsize=16)
+    axes[2, i].set_xlabel("Repetitions", fontsize=16)
     # axes[2, i].set_xticks(n_reps_range)
 
 

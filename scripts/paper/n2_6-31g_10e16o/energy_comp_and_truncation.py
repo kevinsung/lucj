@@ -307,9 +307,9 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
             color=colors[color_key],
         )
 
-    axes[0, col_idx].set_ylabel("Energy (Hartree)", fontsize=18)
+    axes[0, col_idx].set_ylabel("Energy (Hartree)", fontsize=16)
     axes[0, col_idx].set_ylim(-109.2, -108.5)
-    axes[0, col_idx].set_xlabel("Bond length (Å)", fontsize=18)
+    axes[0, col_idx].set_xlabel("Bond length (Å)", fontsize=16)
     axes[0, col_idx].set_title(f"{plot_type.upper()}", fontsize=22)
     # axes[0, col_idx].margins(x=0.02)
 
@@ -353,10 +353,10 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
         )
 
     axes[1, col_idx].axhline(1.6e-3, linestyle="--", color=colors["chemical_precision"])
-    axes[1, col_idx].set_ylabel("Energy error (Hartree)", fontsize=18)
+    axes[1, col_idx].set_ylabel("Energy error (Hartree)", fontsize=16)
     axes[1, col_idx].set_yscale("log")
     axes[1, col_idx].set_ylim(1e-3, 1)
-    axes[1, col_idx].set_xlabel("Bond length (Å)", fontsize=18)
+    axes[1, col_idx].set_xlabel("Bond length (Å)", fontsize=16)
     # axes[1, col_idx].margins(x=0.02)
 
     for tasks, color_key, label, marker in zip(
@@ -381,8 +381,8 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
         )
 
     axes[2, col_idx].axhline(1.6e-3, linestyle="--", color=colors["chemical_precision"])
-    axes[2, col_idx].set_ylabel("Energy error (Hartree)", fontsize=18)
-    axes[2, col_idx].set_xlabel("Repetitions", fontsize=18)
+    axes[2, col_idx].set_ylabel("Energy error (Hartree)", fontsize=16)
+    axes[2, col_idx].set_xlabel("Repetitions", fontsize=16)
     axes[2, col_idx].set_yscale("log")
     axes[2, col_idx].set_ylim(1e-3, 1)
     # axes[2, col_idx].margins(x=0.02)
