@@ -68,12 +68,12 @@ with open("scripts/paper/color.json", "r") as file:
     colors = json.load(file)
 
 
-fig, axes = plt.subplots(3, 2, figsize=(12, 10))
+fig, axes = plt.subplots(3, 2, figsize=(12, 12))
 
 
 for i, connectivity in enumerate(connectivities):
     title_map = {"all-to-all": "UCJ", "heavy-hex": "LUCJ heavy-hex"}
-    axes[0, i].set_title(title_map[connectivity], fontsize=16)
+    axes[0, i].set_title(title_map[connectivity], fontsize=22)
 
     task_lucj_full = SQDEnergyTask(
         molecule_basename=molecule_basename,
@@ -255,24 +255,24 @@ for i, connectivity in enumerate(connectivities):
             color=colors[color_key],
         )
 
-    axes[0, i].set_ylabel("Entropy", fontsize=12)
-    axes[0, i].set_xlabel("Repetitions", fontsize=12)
+    axes[0, i].set_ylabel("Entropy", fontsize=16)
+    axes[0, i].set_xlabel("Repetitions", fontsize=16)
     axes[0, i].set_yscale("log")
     # axes[0, i].set_ylim(1e-2, 10)
     # axes[0, i].set_ylim(0, 8)
 
-    axes[1, i].set_ylabel("SCI dim sqrt", fontsize=12)
-    axes[1, i].set_xlabel("Repetitions", fontsize=12)
+    axes[1, i].set_ylabel("SCI dim sqrt", fontsize=16)
+    axes[1, i].set_xlabel("Repetitions", fontsize=16)
     axes[1, i].set_ylim(0, 1000)
 
-    axes[2, i].set_ylabel("Energy error (Hartree)", fontsize=12)
-    axes[2, i].set_xlabel("Repetitions", fontsize=12)
+    axes[2, i].set_ylabel("Energy error (Hartree)", fontsize=16)
+    axes[2, i].set_xlabel("Repetitions", fontsize=16)
     axes[2, i].set_yscale("log")
     axes[2, i].set_ylim(1e-3, 1)
 
 
 fig.suptitle(
-    f"N$_2$ 6-31G ({nelectron}e, {norb}o) bond length {bond_distance} Å", fontsize=18
+    f"N$_2$ / 6-31G ({nelectron}e, {norb}o) bond length {bond_distance} Å", fontsize=24
 )
 
 # axes[2, 0].legend()
@@ -283,10 +283,20 @@ leg = axes[2, 0].legend(
     ncol=4,
     # columnspacing=1,
     handletextpad=0.8,
+    fontsize=12,
 )
 leg.set_in_layout(False)
+
+for row in axes:
+    for ax in row:
+        ax.tick_params(axis="both", labelsize=13)
+
 plt.tight_layout()
-plt.subplots_adjust(top=0.91, bottom=0.1)
+plt.subplots_adjust(
+    top=0.91,
+    bottom=0.1,
+    hspace=0.3,
+)
 
 filepath = os.path.join(
     plots_dir,
