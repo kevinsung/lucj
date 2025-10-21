@@ -88,8 +88,8 @@ nelec = mol_data.nelec
 fig, axes = plt.subplots(
     2,
     len(connectivities),
-    figsize=(12, 5),
-    gridspec_kw={"height_ratios": [2, 1], "hspace": 0.07},
+    figsize=(12, 6),
+    gridspec_kw={"height_ratios": [2, 1], "hspace": 0.12},
 )
 
 for col, connectivity in enumerate(connectivities):
@@ -305,23 +305,28 @@ for col, connectivity in enumerate(connectivities):
 
     # axis properties
     axes[energy_row, col].set_yscale("log")
-    axes[energy_row, col].set_ylabel("Energy error (Hartree)", fontsize=12)
+    axes[energy_row, col].set_ylabel("Energy error (Hartree)", fontsize=16)
     axes[energy_row, col].set_ylim(1e-1, 10)
     axes[energy_row, col].set_xticks([])
     title_map = {"all-to-all": "UCJ", "heavy-hex": "LUCJ heavy-hex"}
-    axes[energy_row, col].set_title(title_map[connectivity], fontsize=16)
+    axes[energy_row, col].set_title(title_map[connectivity], fontsize=20)
 
     axes[sci_row, col].set_ylim(0, 2000)
-    axes[sci_row, col].set_ylabel("SCI dim sqrt", fontsize=12)
-    axes[sci_row, col].set_xlabel("Repetitions", fontsize=12)
+    axes[sci_row, col].set_ylabel("SCI dim sqrt", fontsize=16)
+    axes[sci_row, col].set_xlabel("Repetitions", fontsize=16)
 
 leg = axes[1, 0].legend(
-    bbox_to_anchor=(1.05, -0.4),
+    bbox_to_anchor=(1.05, -0.5),
     loc="upper center",
     ncol=4,
     handletextpad=0.8,
+    fontsize=12,
 )
 leg.set_in_layout(False)
+
+for row in axes:
+    for ax in row:
+        ax.tick_params(axis="both", labelsize=13)
 
 plt.subplots_adjust(
     bottom=0.18,
@@ -330,7 +335,7 @@ plt.subplots_adjust(
     right=0.97,
 )
 
-fig.suptitle(f"Fe$_2$S$_2$ ({nelectron}e, {norb}o)", fontsize=18)
+fig.suptitle(f"[2Fe-2S] ({nelectron}e, {norb}o)", fontsize=24)
 
 filepath = os.path.join(
     plots_dir,

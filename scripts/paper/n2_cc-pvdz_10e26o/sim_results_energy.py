@@ -319,7 +319,7 @@ for col in range(2):
     axes[2, col].set_position([pos2.x0, pos2.y0 - extra_space, pos2.width, pos2.height])
     axes[3, col].set_position([pos3.x0, pos3.y0 - extra_space, pos3.width, pos3.height])
 
-fig.suptitle(f"N$_2$ cc-pVDZ ({nelectron}e, {norb}o)", fontsize=24)
+fig.suptitle(f"N$_2$ / cc-pVDZ ({nelectron}e, {norb}o)", fontsize=24)
 
 filepath = os.path.join(
     plots_dir,
