@@ -307,10 +307,10 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
             color=colors[color_key],
         )
 
-    axes[0, col_idx].set_ylabel("Energy (Hartree)", fontsize=16)
+    axes[0, col_idx].set_ylabel("Energy (Hartree)", fontsize=18)
     axes[0, col_idx].set_ylim(-109.2, -108.5)
-    axes[0, col_idx].set_xlabel("Bond length (Å)", fontsize=16)
-    axes[0, col_idx].set_title(f"{plot_type.upper()}", fontsize=20)
+    axes[0, col_idx].set_xlabel("Bond length (Å)", fontsize=18)
+    axes[0, col_idx].set_title(f"{plot_type.upper()}", fontsize=22)
     # axes[0, col_idx].margins(x=0.02)
 
     axes[1, col_idx].plot(
@@ -353,10 +353,10 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
         )
 
     axes[1, col_idx].axhline(1.6e-3, linestyle="--", color=colors["chemical_precision"])
-    axes[1, col_idx].set_ylabel("Energy error (Hartree)", fontsize=16)
+    axes[1, col_idx].set_ylabel("Energy error (Hartree)", fontsize=18)
     axes[1, col_idx].set_yscale("log")
     axes[1, col_idx].set_ylim(1e-3, 1)
-    axes[1, col_idx].set_xlabel("Bond length (Å)", fontsize=16)
+    axes[1, col_idx].set_xlabel("Bond length (Å)", fontsize=18)
     # axes[1, col_idx].margins(x=0.02)
 
     for tasks, color_key, label, marker in zip(
@@ -381,8 +381,8 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
         )
 
     axes[2, col_idx].axhline(1.6e-3, linestyle="--", color=colors["chemical_precision"])
-    axes[2, col_idx].set_ylabel("Energy error (Hartree)", fontsize=16)
-    axes[2, col_idx].set_xlabel("Repetitions", fontsize=16)
+    axes[2, col_idx].set_ylabel("Energy error (Hartree)", fontsize=18)
+    axes[2, col_idx].set_xlabel("Repetitions", fontsize=18)
     axes[2, col_idx].set_yscale("log")
     axes[2, col_idx].set_ylim(1e-3, 1)
     # axes[2, col_idx].margins(x=0.02)
@@ -395,7 +395,7 @@ for col_idx, plot_type in enumerate(["vqe", "qsci"]):
         transform=axes[2, col_idx].transAxes,
         ha="left",
         va="top",
-        fontsize=14,
+        fontsize=16,
         # bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8),
     )
 
@@ -442,17 +442,17 @@ axes[1, 0].text(
     transform=axes[1, 0].transAxes,
     ha="right",
     va="bottom",
-    fontsize=15,
+    fontsize=14,
     color=colors["chemical_precision"],
 )
 
 axes[0, 0].legend(
-    fontsize=11,
+    fontsize=12,
 )
 leg = axes[2, 0].legend(
     loc="lower left",
     bbox_to_anchor=(0, 0.07),
-    fontsize=11,
+    fontsize=12,
 )
 
 for row in axes:
@@ -465,7 +465,7 @@ plt.subplots_adjust(
     hspace=0.3,
 )
 
-fig.suptitle(f"N$_2$/6-31G ({nelectron}e, {norb}o)", fontsize=22)
+fig.suptitle(f"N$_2$ / 6-31G ({nelectron}e, {norb}o)", fontsize=24)
 
 filepath = os.path.join(
     plots_dir,
