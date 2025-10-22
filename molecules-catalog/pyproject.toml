@@ -1,0 +1,43 @@
+[build-system]
+requires = ["flit_core"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "molecules_catalog"
+description = "Catalog of molecular data and circuits"
+version = "0.0.0"
+requires-python = ">=3.10"
+dependencies = [
+    "ffsim >= 0.0.39",
+    "matplotlib>=3.10.3",
+    "requests",
+    "tqdm",
+]
+
+[project.optional-dependencies]
+dev = ["mypy", "pytest", "qiskit[visualization]", "ruff"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+include = [
+    "pyproject.toml",
+    "src/**/*.py",
+    "src/**/*.pyi",
+    "scripts/**/*.py",
+    "scripts/**/*.pyi",
+    "tests/**/*.py",
+    "tests/**/*.pyi",
+    "docs/**/*.py",
+    "docs/**/*.pyi",
+    "docs/**/*.ipynb",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "NPY"]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.30.0",
+]
