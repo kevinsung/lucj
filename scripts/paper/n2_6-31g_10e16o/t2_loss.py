@@ -300,7 +300,10 @@ fig.suptitle(
 
 # axes[2, 0].legend()
 
+handles, labels = axes[2, 0].get_legend_handles_labels()
+order = [0, 1, 3, 2]
 leg = axes[2, 0].legend(
+    [handles[idx] for idx in order], [labels[idx] for idx in order],
     bbox_to_anchor=(1, -0.25),
     loc="upper center",
     ncol=4,
