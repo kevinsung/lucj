@@ -215,7 +215,7 @@ for i, connectivity in enumerate(connectivities):
         tasks_compressed_t2_reg,
     ]
     color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_reg"]
-    labels = ["truncated", "compressed", "compressed with regularization 5e-3"]
+    labels = ["truncated", "compressed", r"compressed with regularization $\lambda = 10^{-3}$"]
 
     for tasks, color_key, label, marker in zip(list_tasks, color_keys, labels, markers):
         results = {}
