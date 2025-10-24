@@ -225,7 +225,7 @@ for i, bond_distance in enumerate(bond_distances):
         results = load_data(filepath)
         list_loss[2].append(results["final_loss"])
     color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_reg"]
-    labels = ["truncated", "compressed", "compressed with regularization 5e-3"]
+    labels = ["truncated", "compressed", r"compressed with regularization $\lambda = 10^{-3}$"]
     for loss, color_key, label, marker in zip(list_loss, color_keys, labels, markers):
         axes[0, i].plot(
             n_reps_range,
@@ -248,7 +248,7 @@ for i, bond_distance in enumerate(bond_distances):
         tasks_compressed_t2_reg,
     ]
     color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_reg"]
-    labels = ["truncated", "compressed", "compressed with regularization 5e-3"]
+    labels = ["truncated", "compressed", r"compressed with regularization $\lambda = 10^{-3}$"]
 
     axes[1, i].axhline(
         vqe_error_lucj_full,
