@@ -8,6 +8,12 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 
+[manifest]
+members = [
+    "lucj",
+    "molecules-catalog",
+]
+
 [[package]]
 name = "alembic"
 version = "1.16.5"
@@ -1417,7 +1423,7 @@ requires-dist = [
     { name = "ffsim" },
     { name = "kahypar" },
     { name = "loky" },
-    { name = "molecules-catalog", editable = "../molecules-catalog" },
+    { name = "molecules-catalog", editable = "molecules-catalog" },
     { name = "mypy", marker = "extra == 'dev'" },
     { name = "networkx" },
     { name = "opt-einsum" },
@@ -1660,12 +1666,25 @@ wheels = [
 [[package]]
 name = "molecules-catalog"
 version = "0.0.0"
-source = { editable = "../molecules-catalog" }
+source = { editable = "molecules-catalog" }
 dependencies = [
     { name = "ffsim" },
     { name = "matplotlib" },
     { name = "requests" },
     { name = "tqdm" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "qiskit", extra = ["visualization"] },
+    { name = "ruff" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "ipykernel" },
 ]
 
 [package.metadata]

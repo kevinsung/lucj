@@ -32,8 +32,12 @@ dependencies = [
 dev = ["mypy", "pytest", "pre-commit", "ruff"]
 
 [tool.uv.sources]
-# molecules-catalog = { path = "../../../../media/storage/kevinsung-public/molecules-catalog", editable = true }
-molecules-catalog = { path = "../molecules-catalog", editable = true }
+molecules-catalog = { workspace = true, editable = true }
+
+[tool.uv.workspace]
+members = [
+    "molecules-catalog",
+]
 
 
 [dependency-groups]
