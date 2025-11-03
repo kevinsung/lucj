@@ -68,7 +68,7 @@ class LUCJSQDQuimbTask:
     entropy: int | None
     max_bond: int
     perm_mps: bool
-    cutoff: int
+    cutoff: float
     seed: int
     max_dim: int
 

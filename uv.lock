@@ -1393,6 +1393,7 @@ dependencies = [
     { name = "networkx", version = "3.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "opt-einsum" },
     { name = "optuna" },
+    { name = "pynomadbbo" },
     { name = "qiskit", extra = ["visualization"] },
     { name = "qiskit-addon-aqc-tensor", extra = ["quimb-jax"] },
     { name = "qiskit-addon-sqd" },
@@ -1429,6 +1430,7 @@ requires-dist = [
     { name = "opt-einsum" },
     { name = "optuna" },
     { name = "pre-commit", marker = "extra == 'dev'" },
+    { name = "pynomadbbo", specifier = ">=4.5.1" },
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "qiskit", extras = ["visualization"], specifier = ">=1.0" },
     { name = "qiskit-addon-aqc-tensor", extras = ["quimb-jax"] },
@@ -2529,6 +2531,33 @@ name = "pylatexenc"
 version = "2.10"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/5d/ab/34ec41718af73c00119d0351b7a2531d2ebddb51833a36448fc7b862be60/pylatexenc-2.10.tar.gz", hash = "sha256:3dd8fd84eb46dc30bee1e23eaab8d8fb5a7f507347b23e5f38ad9675c84f40d3", size = 162597, upload-time = "2021-04-06T07:56:07.854Z" }
+
+[[package]]
+name = "pynomadbbo"
+version = "4.5.1"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/79/f4/dc6e969ef1bada220923403fd04214fb0835d74929c050549e167cfd5979/PyNomadBBO-4.5.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:4ed4861da93582591ba5970a385be51923c85f084b7112e4c1525a735e406f87", size = 1823386, upload-time = "2025-05-26T16:31:31.209Z" },
+    { url = "https://files.pythonhosted.org/packages/0b/52/ac44f96c32183ead25739fcb29e94abc0ae7eef4a75c89139c0d60fd50c0/PyNomadBBO-4.5.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:1819b6d5d7a1b338952ca820c9af51704877990929a64705b098a6a414baf88e", size = 1683961, upload-time = "2025-05-26T16:31:33.208Z" },
+    { url = "https://files.pythonhosted.org/packages/1e/cc/52ff1ecfd82bd0546dafaaa1c403705eddd93e31908ad8dae5e8d11c3bc2/PyNomadBBO-4.5.1-cp310-cp310-win_amd64.whl", hash = "sha256:dc85cf7bf721a7a7315847727ea52b7013438685244441e9e94c5241410aebde", size = 1354554, upload-time = "2025-05-26T16:31:35.068Z" },
+    { url = "https://files.pythonhosted.org/packages/7a/d2/8bc10463a300a2ef72ddc63049538760fd4ecdeb5a36347725fd60b246f9/PyNomadBBO-4.5.1-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:cdb5ebc953aa9dbcbd1c49e7d7427768f12b8840b7af375dc48bc75629dd4861", size = 1825051, upload-time = "2025-05-26T16:31:36.982Z" },
+    { url = "https://files.pythonhosted.org/packages/bd/25/54cbf83a87e5742c4a118540c44634b442f219556f9bc5ecaba09db553ea/PyNomadBBO-4.5.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:48b18eeaf80bd5455daa75bd548141f9d59e39fcd2c0c8193fe5ec5a2a20825d", size = 1685015, upload-time = "2025-05-26T16:31:38.889Z" },
+    { url = "https://files.pythonhosted.org/packages/f4/7f/c6bec3851f90951351243fd97cd226a7f787ef1211a7bd2a7dd90cc7af92/PyNomadBBO-4.5.1-cp311-cp311-win_amd64.whl", hash = "sha256:1f99835516fadb5adf26c67adf3cac6a7825be1e05ccf101d9c38ac5541f54fa", size = 1354702, upload-time = "2025-05-26T16:31:41.846Z" },
+    { url = "https://files.pythonhosted.org/packages/3a/c3/ccee1f770f5d14c7bb0c9189a47bed973dd05ce9eef7be67fe5de1edab0b/PyNomadBBO-4.5.1-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:3a4adb1ad32ee0463378a81e01815987e73b3298b9a8ba621917a0feaa83ccc6", size = 1826244, upload-time = "2025-05-26T16:31:43.795Z" },
+    { url = "https://files.pythonhosted.org/packages/98/90/f6d44777713711d7fe76cdf2229a9a187b6142cd7aea8c25c52fcdbce5b7/PyNomadBBO-4.5.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:d433545865224388e97ce9418faa2525ee0e0a932402b574e4947fcc09dd0116", size = 1685046, upload-time = "2025-05-26T16:31:45.678Z" },
+    { url = "https://files.pythonhosted.org/packages/a5/fa/c3e44a414c98eb8d1cbbeac223ab7056e75652a8c8628fcfd022781dd761/PyNomadBBO-4.5.1-cp312-cp312-win_amd64.whl", hash = "sha256:1710bd661535df8215f954ef80ad8397ea7aef70ead5d5f24cb56a252bf77fd2", size = 1355274, upload-time = "2025-05-26T16:31:47.564Z" },
+    { url = "https://files.pythonhosted.org/packages/80/4e/5bd6908f7c8d32df8c36393a57d59dec3e60a6170e0bafbe9b596a753752/pynomadbbo-4.5.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d2206abdb4cb5252cab52f27abd82acb6c8b2f7d72555641da59c82e46fa8d3d", size = 3799472, upload-time = "2025-05-26T16:31:59.773Z" },
+    { url = "https://files.pythonhosted.org/packages/6b/ae/766ce85a0f4cb00b474bda96c3cfc32dbd25fb63ff6f2c393d11664fa30a/pynomadbbo-4.5.1-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:40f7dc348e0d62fa9cff635b74d1c8dfd0cb17fb953cfa4e154e333859d1939d", size = 4155369, upload-time = "2025-05-26T16:32:01.675Z" },
+    { url = "https://files.pythonhosted.org/packages/f9/99/f306535104edbb0808c65c6d0fc05e08e0a41adc899a3427f4a996d63720/pynomadbbo-4.5.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b0f285f64811640980fdd9367122013791d600807428db93ae1424c01f9cb053", size = 3819346, upload-time = "2025-05-26T16:32:03.301Z" },
+    { url = "https://files.pythonhosted.org/packages/59/84/41d8550c8f598b0f2eb7bfd4e5a41e6a6ddea5dbea6735b75134605536fb/pynomadbbo-4.5.1-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:cb0ed4d16ed9c8b925c9be7519e7e487560664d572b9eae03962f9c559316f7f", size = 4166804, upload-time = "2025-05-26T16:32:04.812Z" },
+    { url = "https://files.pythonhosted.org/packages/4f/b5/b7d6bc8a66f60f2ff3842ebd6d634a74fc76bc788f7f72beb7feadf28a94/pynomadbbo-4.5.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d9adcdb57dac481def024050ed34608ce79d1766d7310cffc5bf4a3e22755653", size = 3807820, upload-time = "2025-05-26T16:32:06.863Z" },
+    { url = "https://files.pythonhosted.org/packages/b6/af/163bba19e51e85dafbe00230bb9ca17e0da9bf3a76308854a40b9e30060c/pynomadbbo-4.5.1-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:28802b09f6a13e6c2fe014d8f19d51d914d2ffbf2bf42aff323d374d5acc5a28", size = 4175392, upload-time = "2025-05-26T16:32:08.408Z" },
+    { url = "https://files.pythonhosted.org/packages/f0/78/da1924242aa87416b4a537f31e38a48f6e55058e536db1b499e3cb560cc8/pynomadbbo-4.5.1-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:523133a6411f3fe2c64a8978784ebed92625b296eb56759718b6b02e460bd8d2", size = 1825688, upload-time = "2025-05-26T19:00:43.613Z" },
+    { url = "https://files.pythonhosted.org/packages/18/99/9059ee15ad771f7089a4f927ae255160ae60ef6f58636f930e549c467434/pynomadbbo-4.5.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:5a6256061e6601b283f6c8743eb0894933760e0d3bce41fc4fccd9958d85add6", size = 1684549, upload-time = "2025-05-26T19:00:45.397Z" },
+    { url = "https://files.pythonhosted.org/packages/d6/b4/2bd21ba9548c3f61192dfba7d0f814dd6b5c1381f801e30bb477309ad4c0/pynomadbbo-4.5.1-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:db7f38b7fea4999ad8ab6518deade3cb9f530f9c4cdc8554ee9371acae1e4748", size = 3803833, upload-time = "2025-05-26T19:00:47.228Z" },
+    { url = "https://files.pythonhosted.org/packages/ed/7f/54037631b34948ccfd6ee1dd6e567aac6e1a805c91fa037b60b8cc9f0b8f/pynomadbbo-4.5.1-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:e8d85fbf9b95412a4c077ab82e343390639a8b65c39e156f93bbdd6dae066e42", size = 4952759, upload-time = "2025-05-26T19:00:49.094Z" },
+    { url = "https://files.pythonhosted.org/packages/97/04/ac1b85f39fb74708f89f09dddfc2fc60392fda5fa743746ae5502e459661/pynomadbbo-4.5.1-cp313-cp313-win_amd64.whl", hash = "sha256:53e12713f9e65beffba4926ac14dc715f09c98541fe91846544efac7c20416a0", size = 1354908, upload-time = "2025-05-26T19:00:50.628Z" },
+]
 
 [[package]]
 name = "pyparsing"
