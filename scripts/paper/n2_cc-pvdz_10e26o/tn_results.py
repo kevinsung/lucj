@@ -325,7 +325,7 @@ tasks_fe2s2 = [
 task_lists = [tasks_n2_eq, tasks_n2_stretched, tasks_fe2s2]
 labels = ["truncated", "compressed", "tn-optimized"]
 color_keys = ["lucj_truncated", "lucj_compressed", "lucj_compressed_quimb"]
-hatches = ["", "//", r"xx"]
+hatches = ["//", r"xx", ""]
 bar_width = 0.25  # Width of each bar
 x_vals = range(len(task_lists))  # Base positions for each molecule
 
