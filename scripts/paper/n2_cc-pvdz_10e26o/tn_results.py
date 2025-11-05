@@ -367,6 +367,7 @@ for i, (tasks, exact_energy) in enumerate(zip(task_lists, exact_energies)):
             fmt="none",
         )
 
+ax.set_title("LUCJ heavy-hex", fontsize=22)
 ax.set_yscale("log")
 ax.set_xticks(x_vals)
 ax.set_xticklabels([r"N$_2$/cc-pVDZ 1.2Å", r"N$_2$/cc-pVDZ 2.4Å", "[2Fe-2S]"])
