@@ -1,6 +1,6 @@
 # lucj
 
-Numerical studies of the LUCJ ansatz.
+Source code for the paper *Improved parameter initialization for the (local) unitary cluster Jastrow ansatz* ([arXiv:2511.22476](https://arxiv.org/abs/2511.22476)).
 
 The instructions below use uv (https://docs.astral.sh/uv/getting-started/installation/).
 
