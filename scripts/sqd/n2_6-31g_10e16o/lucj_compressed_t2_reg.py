@@ -64,7 +64,13 @@ entropy = 0
 
 max_dim = None
 samples_per_batch = shots
-regularization_factors = [1e-4, 1e-3, 5e-3, 1e-2, 1e-1]
+regularization_factors = [
+    # 1e-4,
+    # 1e-3,
+    5e-3,
+    # 1e-2,
+    # 1e-1,
+]
 
 tasks_reg1 = [
     SQDEnergyTask(
@@ -97,8 +103,39 @@ tasks_reg1 = [
     for d in bond_distance_range
     for regularization_factor in regularization_factors
 ]
+tasks_reg2 = [
+    SQDEnergyTask(
+        molecule_basename=molecule_basename,
+        bond_distance=d,
+        lucj_params=LUCJParams(
+            connectivity=connectivity,
+            n_reps=n_reps,
+            with_final_orbital_rotation=True,
+        ),
+        compressed_t2_params=CompressedT2Params(
+            multi_stage_optimization=False, begin_reps=n_reps, step=2
+        ),
+        regularization=True,
+        regularization_option=1,
+        regularization_factor=regularization_factor,
+        shots=shots,
+        samples_per_batch=samples_per_batch,
+        n_batches=n_batches,
+        energy_tol=energy_tol,
+        occupancies_tol=occupancies_tol,
+        carryover_threshold=carryover_threshold,
+        max_iterations=max_iterations,
+        symmetrize_spin=symmetrize_spin,
+        entropy=entropy,
+        max_dim=max_dim,
+    )
+    for n_reps in n_reps_range
+    for connectivity in connectivities
+    for d in bond_distance_range
+    for regularization_factor in regularization_factors
+]
 
-tasks = tasks_reg1  # tasks_reg2 + tasks_reg0 + tasks_reg1
+tasks = tasks_reg1 + tasks_reg2
 
 if MAX_PROCESSES == 1:
     for task in tqdm(tasks):

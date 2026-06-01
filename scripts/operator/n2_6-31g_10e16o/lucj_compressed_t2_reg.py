@@ -38,8 +38,8 @@ DATA_ROOT = Path(os.environ.get("LUCJ_DATA_ROOT", "data"))
 # DATA_DIR = DATA_ROOT / os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = DATA_ROOT
 MOLECULES_CATALOG_DIR = Path(os.environ.get("MOLECULES_CATALOG_DIR"))
-MAX_PROCESSES = 60
-OVERWRITE = True
+MAX_PROCESSES = 48
+OVERWRITE = False
 
 molecule_name = "n2"
 basis = "6-31g"
@@ -55,7 +55,7 @@ connectivities = [
 ]
 n_reps_range = list(range(1, 11, 1))
 regularization_options = [1]
-regularization_factors = [1e-4, 1e-3, 1e-2, 1e-1]
+regularization_factors = [1e-4, 1e-3, 5e-3, 1e-2, 1e-1]
 
 tasks = [
     LUCJCompressedT2Task(
@@ -78,6 +78,29 @@ tasks = [
     for d in bond_distance_range
     for connectivity, n_reps in itertools.product(connectivities, n_reps_range)
 ]
+tasks.extend(
+    [
+        LUCJCompressedT2Task(
+            molecule_basename=molecule_basename,
+            bond_distance=d,
+            lucj_params=LUCJParams(
+                connectivity=connectivity,
+                n_reps=n_reps,
+                with_final_orbital_rotation=True,
+            ),
+            compressed_t2_params=CompressedT2Params(
+                multi_stage_optimization=False, begin_reps=n_reps, step=2
+            ),
+            regularization=True,
+            regularization_option=regularization_option,
+            regularization_factor=regularization_factor,
+        )
+        for regularization_option in regularization_options
+        for regularization_factor in regularization_factors
+        for d in bond_distance_range
+        for connectivity, n_reps in itertools.product(connectivities, n_reps_range)
+    ]
+)
 
 if MAX_PROCESSES == 1:
     for task in tqdm(tasks):
